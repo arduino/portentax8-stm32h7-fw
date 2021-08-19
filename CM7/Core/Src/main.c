@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,6 +60,10 @@ SPI_HandleTypeDef hspi3;
 DMA_HandleTypeDef hdma_spi3_tx;
 DMA_HandleTypeDef hdma_spi3_rx;
 
+SPI_HandleTypeDef hspi2;
+DMA_HandleTypeDef hdma_spi2_tx;
+DMA_HandleTypeDef hdma_spi2_rx;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -77,14 +82,30 @@ static void MX_DMA_Init(void);
 static void MX_ADC3_Init(void);
 static void MX_HRTIM_Init(void);
 static void MX_RTC_Init(void);
+static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 #define SPI_DMA_BUFFER_SIZE		512
 
-static __attribute__ ((aligned(32))) char aTxBuffer[SPI_DMA_BUFFER_SIZE];
-static __attribute__ ((aligned(32))) char aRxBuffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((packed, aligned(4))) struct subpacket {
+  uint8_t peripheral;
+  uint8_t opcode;
+  uint16_t size;
+  uint8_t raw_data;
+};
+
+__attribute__((packed, aligned(4))) struct complete_packet {
+  uint16_t size;
+  struct subpacket data;
+  // ... other subpackets will follow
+};
+
+__attribute__ ((aligned(32))) volatile uint8_t  TX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__ ((aligned(32))) volatile uint8_t  RX_Buffer[SPI_DMA_BUFFER_SIZE];
+
+__attribute__ ((aligned(32))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 enum {
   TRANSFER_WAIT,
@@ -92,7 +113,14 @@ enum {
   TRANSFER_ERROR
 };
 
-__IO uint32_t wTransferState = TRANSFER_WAIT;
+__IO uint32_t transferState = TRANSFER_WAIT;
+volatile bool get_data_amount = true;
+volatile uint16_t data_amount = 0;
+
+#define max(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+    _a > _b ? _a : _b; })
 
 /* USER CODE END PFP */
 
@@ -118,7 +146,7 @@ int main(void)
   SCB_EnableICache();
 
   /* Enable D-Cache---------------------------------------------------------*/
-  SCB_EnableDCache();
+  // SCB_EnableDCache();
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -165,28 +193,97 @@ Error_Handler();
   MX_HRTIM_Init();
   MX_RTC_Init();
   MX_SPI3_Init();
+  MX_SPI2_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, SPI_DMA_BUFFER_SIZE);
+  memset(TX_Buffer, 0, sizeof(TX_Buffer));
+  memset(RX_Buffer, 0, sizeof(RX_Buffer));
+
+  struct complete_packet* tx_pkt = (struct complete_packet*)TX_Buffer;
+  tx_pkt->size = 0;
+
+  HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)TX_Buffer, (uint8_t*)RX_Buffer, sizeof(uint16_t));
 
   /* USER CODE END 2 */
 
+  __HAL_RCC_GPIOK_CLK_ENABLE();
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  char* string = "TRANSFER_COMPLETE\n";
+  char string[200] = "STARTING\n";
+  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
 
   while (1)
   {
+	/*
+	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 0);
+	HAL_Delay(200);
+	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
+	HAL_Delay(200);
+	*/
     /* USER CODE END WHILE */
-	  if (wTransferState == TRANSFER_COMPLETE) {
-		  // do something with the buffer
-		  wTransferState = TRANSFER_WAIT;
-		  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-		  HAL_UART_Transmit(&huart2, aRxBuffer, strlen(aRxBuffer), 100);
-		  // reenable DMA
-		  HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, SPI_DMA_BUFFER_SIZE);
-	  }
+
+	if (transferState == TRANSFER_COMPLETE) {
+
+	   struct complete_packet* rx_pkt = (struct complete_packet*)RX_Buffer;
+	   struct complete_packet* tx_pkt = (struct complete_packet*)TX_Buffer;
+
+		//SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
+
+	   if (get_data_amount) {
+			data_amount = max(tx_pkt->size, rx_pkt->size);
+			// reconfigure the DMA to
+
+			HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data), data_amount);
+			get_data_amount = false;
+	  } else {
+			// real end of operation, pause DMA, memcpy stuff around and reenable DMA
+			//HAL_SPI_DMAPause(&hspi1);
+			get_data_amount = true;
+			memcpy((void*)RX_Buffer_userspace,  &(rx_pkt->data),  rx_pkt->size);
+
+			char string[50];
+			sprintf(string, "amount: %d\n", rx_pkt->size);
+			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+
+			sprintf(string, "rx_pkt->size: %x\n", rx_pkt->size);
+			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+			sprintf(string, "RX_Buffer: 0x%x0x%x0x%x0x%x0x%x0x%x\n", RX_Buffer[0], RX_Buffer[1], RX_Buffer[2], RX_Buffer[3], RX_Buffer[4], RX_Buffer[5]);
+			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+
+			// mark the next packet as invalid
+			*((uint8_t*)RX_Buffer_userspace + rx_pkt->size) = 0xFFFFFF; //INVALID;
+
+			// dispatch some kind of handling
+			//HAL_SPI_DMAResume(&hspi1);
+
+			struct subpacket* rx_pkt_userspace = (struct subpacket*)RX_Buffer_userspace;
+
+			sprintf(string, "peripheral[0]: 0x%x\n", rx_pkt_userspace->peripheral);
+
+			while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00) {
+				  sprintf(string, "\nPeripheral: %X Opcode: %X Size: %X\n  data: ",
+						  rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,  rx_pkt_userspace->size);
+				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+				  for (int i = 0; i < rx_pkt_userspace->size; i++) {
+					  sprintf(string + i * 5, "0x%02X ", *((&rx_pkt_userspace->raw_data)+i));
+				  }
+				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+				  rx_pkt_userspace = (uint8_t*)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+			}
+			HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)TX_Buffer, (uint8_t*)RX_Buffer, sizeof(uint16_t));
+      }
+
+	  // do something with the buffer
+	  transferState = TRANSFER_WAIT;
+	}
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -194,9 +291,16 @@ Error_Handler();
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  wTransferState = TRANSFER_COMPLETE;
+   transferState = TRANSFER_COMPLETE;
 }
 
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+	char string[50];
+	transferState = TRANSFER_ERROR;
+	sprintf(string, "HAL_SPI_ErrorCallback\n");
+	HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+}
 
 /**
   * @brief System Clock Configuration
@@ -820,6 +924,48 @@ static void MX_RTC_Init(void)
 
 }
 
+static void MX_SPI2_Init(void)
+{
+
+  /* USER CODE BEGIN SPI3_Init 0 */
+
+  /* USER CODE END SPI3_Init 0 */
+
+  /* USER CODE BEGIN SPI3_Init 1 */
+
+  /* USER CODE END SPI3_Init 1 */
+  /* SPI3 parameter configuration*/
+  hspi2.Instance = SPI2;
+  hspi2.Init.Mode = SPI_MODE_SLAVE;
+  hspi2.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi2.Init.CRCPolynomial = 0x0;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi2.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
+  hspi2.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+  hspi2.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+  hspi2.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+  hspi2.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+  hspi2.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+  hspi2.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+  hspi2.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi2.Init.IOSwap = SPI_IO_SWAP_DISABLE;
+  if (HAL_SPI_Init(&hspi2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI3_Init 2 */
+
+  /* USER CODE END SPI3_Init 2 */
+
+}
+
 /**
   * @brief SPI3 Initialization Function
   * @param None
@@ -839,7 +985,7 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_SLAVE;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_HARD_INPUT;
@@ -932,6 +1078,12 @@ static void MX_DMA_Init(void)
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
+  /* DMA1_Stream0_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 }
 
 /**
