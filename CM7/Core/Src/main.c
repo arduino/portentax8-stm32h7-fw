@@ -232,6 +232,32 @@ Error_Handler();
 
 	if (transferState == TRANSFER_COMPLETE) {
 
+			struct subpacket* rx_pkt_userspace = (struct subpacket*)RX_Buffer_userspace;
+
+			sprintf(string, "peripheral[0]: 0x%x\n", rx_pkt_userspace->peripheral);
+
+			while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00) {
+				  sprintf(string, "\nPeripheral: %X Opcode: %X Size: %X\n  data: ",
+						  rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,  rx_pkt_userspace->size);
+				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+				  for (int i = 0; i < rx_pkt_userspace->size; i++) {
+					  sprintf(string + i * 5, "0x%02X ", *((&rx_pkt_userspace->raw_data)+i));
+				  }
+				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+				  rx_pkt_userspace = (uint8_t*)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+			}
+
+	  // do something with the buffer
+	  transferState = TRANSFER_WAIT;
+	}
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+
 	   struct complete_packet* rx_pkt = (struct complete_packet*)RX_Buffer;
 	   struct complete_packet* tx_pkt = (struct complete_packet*)TX_Buffer;
 
@@ -249,49 +275,16 @@ Error_Handler();
 			get_data_amount = true;
 			memcpy((void*)RX_Buffer_userspace,  &(rx_pkt->data),  rx_pkt->size);
 
-			char string[50];
-			sprintf(string, "amount: %d\n", rx_pkt->size);
-			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-
-			sprintf(string, "rx_pkt->size: %x\n", rx_pkt->size);
-			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-			sprintf(string, "RX_Buffer: 0x%x0x%x0x%x0x%x0x%x0x%x\n", RX_Buffer[0], RX_Buffer[1], RX_Buffer[2], RX_Buffer[3], RX_Buffer[4], RX_Buffer[5]);
-			HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-
 			// mark the next packet as invalid
 			*((uint8_t*)RX_Buffer_userspace + rx_pkt->size) = 0xFFFFFF; //INVALID;
 
+			transferState = TRANSFER_COMPLETE;
+
+			HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)TX_Buffer, (uint8_t*)RX_Buffer, sizeof(uint16_t));
+
 			// dispatch some kind of handling
 			//HAL_SPI_DMAResume(&hspi1);
-
-			struct subpacket* rx_pkt_userspace = (struct subpacket*)RX_Buffer_userspace;
-
-			sprintf(string, "peripheral[0]: 0x%x\n", rx_pkt_userspace->peripheral);
-
-			while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00) {
-				  sprintf(string, "\nPeripheral: %X Opcode: %X Size: %X\n  data: ",
-						  rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,  rx_pkt_userspace->size);
-				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-				  for (int i = 0; i < rx_pkt_userspace->size; i++) {
-					  sprintf(string + i * 5, "0x%02X ", *((&rx_pkt_userspace->raw_data)+i));
-				  }
-				  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-				  rx_pkt_userspace = (uint8_t*)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
-			}
-			HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)TX_Buffer, (uint8_t*)RX_Buffer, sizeof(uint16_t));
-      }
-
-	  // do something with the buffer
-	  transferState = TRANSFER_WAIT;
-	}
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-}
-
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-   transferState = TRANSFER_COMPLETE;
+	  }
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
