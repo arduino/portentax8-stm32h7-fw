@@ -201,7 +201,7 @@ Error_Handler();
   memset(RX_Buffer, 0, sizeof(RX_Buffer));
 
   struct complete_packet* tx_pkt = (struct complete_packet*)TX_Buffer;
-  tx_pkt->size = 0;
+  tx_pkt->size = 50;
 
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)TX_Buffer, (uint8_t*)RX_Buffer, sizeof(uint16_t));
 
