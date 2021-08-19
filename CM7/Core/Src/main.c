@@ -81,6 +81,19 @@ static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
+#define SPI_DMA_BUFFER_SIZE		512
+
+static __attribute__ ((aligned(32))) char aTxBuffer[SPI_DMA_BUFFER_SIZE];
+static __attribute__ ((aligned(32))) char aRxBuffer[SPI_DMA_BUFFER_SIZE];
+
+enum {
+  TRANSFER_WAIT,
+  TRANSFER_COMPLETE,
+  TRANSFER_ERROR
+};
+
+__IO uint32_t wTransferState = TRANSFER_WAIT;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -166,18 +179,35 @@ Error_Handler();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, SPI_DMA_BUFFER_SIZE);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  char* string = "TRANSFER_COMPLETE\n";
+
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  if (wTransferState == TRANSFER_COMPLETE) {
+		  // do something with the buffer
+		  wTransferState = TRANSFER_WAIT;
+		  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+		  HAL_UART_Transmit(&huart2, aRxBuffer, strlen(aRxBuffer), 100);
+		  // reenable DMA
+		  HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, SPI_DMA_BUFFER_SIZE);
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  wTransferState = TRANSFER_COMPLETE;
+}
+
 
 /**
   * @brief System Clock Configuration
