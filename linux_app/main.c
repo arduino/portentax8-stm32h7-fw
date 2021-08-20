@@ -60,7 +60,7 @@ __attribute__((packed, aligned(4))) struct subpacket {
   uint8_t peripheral;
   uint8_t opcode;
   uint16_t size;
-  uint8_t* raw_data;
+  uint8_t raw_data;
 };
 
 __attribute__((packed, aligned(4))) struct complete_packet {
@@ -78,7 +78,7 @@ static port_err_t spi_open(struct port_interface *port,
 	uint8_t mode = 0;
 	uint8_t lsb = 0;
 	uint8_t bits;
-    uint32_t speed = 6000000;
+    uint32_t speed = 1000000;
 
 	/* 1. check device name match */
 	if (strncmp(ops->device, "/dev/spidev", strlen("/dev/spidev")))
@@ -324,6 +324,11 @@ int main(int argc, char** argv) {
 		0x11,	// data
 	};
 
+	uint8_t rxb[50];
+	memset(rxb, 0, sizeof(rxb));
+
+	struct subpacket *rx_pkt_userspace = (struct subpacket *)rxb;
+
 	uint16_t rx_data;
 
 	struct spi_priv * h = (struct spi_priv *)port.private;
@@ -331,7 +336,21 @@ int main(int argc, char** argv) {
 	spi_transfer(h->fd, samplebuffer, &rx_data, sizeof(uint16_t));
 	printf("STM32 has %d bytes\n", rx_data);
 	printf("Sending %d bytes\n", max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data));
-	spi_transfer(h->fd, &samplebuffer[2], &samplebuffer[2], max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data));
+	spi_transfer(h->fd, &samplebuffer[2], &rxb, max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data));
+	printf("Input data: %x %x %x %x %x %x %x\n", rxb[0], rxb[1], rxb[2], rxb[3], rxb[4], rxb[5], rxb[6]);
+
+	while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00) {
+	    printf("Peripheral: %X Opcode: %X Size: %X\n  data: ",
+	            rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
+	            rx_pkt_userspace->size);
+	    for (int i = 0; i < rx_pkt_userspace->size; i++) {
+	      printf("0x%02X ", *((uint8_t*)(((uint8_t*)(&rx_pkt_userspace->raw_data)) + i)));
+	    }
+	    printf("\n");
+	    rx_pkt_userspace =
+	        (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+	}
+
 	spi_close(&port);
 
 	return 0;

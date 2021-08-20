@@ -126,7 +126,149 @@ volatile uint16_t data_amount = 0;
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+enum Peripherals {
+	PERIPH_ADC = 0x01,
+	PERIPH_PWM = 0x02,
+	PERIPH_FDCAN1 = 0x03,
+	PERIPH_FDCAN2 = 0x04,
+	PERIPH_UART = 0x05,
+	PERIPH_RTC = 0x06,
+	PERIPH_GPIO = 0x07,
+};
+
+const char* to_peripheral_string(enum Peripherals peripheral) {
+	switch (peripheral) {
+		case PERIPH_ADC:
+			return "ADC";
+		case PERIPH_PWM:
+			return "PWM";
+		case PERIPH_FDCAN1:
+			return "FDCAN1";
+		case PERIPH_FDCAN2:
+			return "FDCAN2";
+		case PERIPH_UART:
+			return "UART";
+		case PERIPH_RTC:
+			return "RTC";
+		case PERIPH_GPIO:
+			return "GPIO";
+	}
+}
+
+enum Opcodes {
+	CONFIGURE = 0x10,
+	DATA = 0x01,
+};
+
+enum Opcodes_UART {
+	GET_LINESTATE = 0x20,
+};
+
+enum Opcodes_RTC {
+	SET_DATE = 0x01,
+	GET_DATE = 0x02,
+	SET_ALARM = 0x11,
+	GET_ALARM = 0x12,
+};
+
+enum Opcodes_GPIO {
+	DIRECTION = 0x10,
+	WRITE = 0x20,
+	READ = 0x30,
+};
+
+enum AnalogPins {
+	A0 = 0x1,
+	A1,
+	A2,
+	A3,
+	A4,
+	A5,
+	A6,
+	A7,
+};
+
 /* USER CODE END 0 */
+void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
+
+	// don't feed data in the middle of a transmission
+	if (get_data_amount == false) {
+		return;
+	}
+	__disable_irq();
+	struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
+	uint16_t offset = tx_pkt->size;
+	if (offset + size > sizeof(TX_Buffer)) {
+		goto cleanup;
+	}
+	struct subpacket pkt;
+	pkt.peripheral = peripheral;
+	pkt.opcode = opcode;
+	pkt.size = size;
+	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
+	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
+	tx_pkt->size += 4 + size;
+cleanup:
+	__enable_irq();
+}
+
+
+uint16_t get_ADC_value(enum AnalogPins name) {
+	ADC_ChannelConfTypeDef conf = {0};
+	ADC_HandleTypeDef* peripheral;
+
+	conf.Rank = ADC_REGULAR_RANK_1;
+	conf.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+	conf.SingleDiff = ADC_SINGLE_ENDED;
+	conf.OffsetNumber = ADC_OFFSET_NONE;
+
+	switch (name) {
+	case A0:
+		conf.Channel = ADC_CHANNEL_2;
+		peripheral = &hadc1;
+		break;
+	case A1:
+		conf.Channel = ADC_CHANNEL_3;
+		peripheral = &hadc2;
+		break;
+	case A2:
+		conf.Channel = ADC_CHANNEL_2;
+		peripheral = &hadc2;
+		break;
+	case A3:
+		conf.Channel = ADC_CHANNEL_5;
+		peripheral = &hadc2;
+		break;
+	case A4:
+		conf.Channel = ADC_CHANNEL_4;
+		peripheral = &hadc2;
+		break;
+	case A5:
+		conf.Channel = ADC_CHANNEL_3;
+		peripheral = &hadc3;
+		break;
+	case A6:
+		conf.Channel = ADC_CHANNEL_2;
+		peripheral = &hadc3;
+		break;
+	case A7:
+		conf.Channel = ADC_CHANNEL_4;
+		peripheral = &hadc3;
+		break;
+	}
+
+	char string[20];
+
+    HAL_ADC_ConfigChannel(peripheral, &conf);
+    HAL_ADC_Start(peripheral);
+    HAL_ADC_PollForConversion(peripheral, 10);
+    uint16_t value = HAL_ADC_GetValue(peripheral);
+	sprintf(string, "\nHAL_ADC_GetValue: %d %x\n", value, value);
+    HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+    HAL_ADC_Stop(peripheral);
+
+    enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
+}
 
 /**
  * @brief  The application entry point.
@@ -196,11 +338,14 @@ int main(void) {
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_ADC_Start(&hadc1);
+  HAL_ADC_Start(&hadc2);
+  HAL_ADC_Start(&hadc3);
+
   memset(TX_Buffer, 0, sizeof(TX_Buffer));
   memset(RX_Buffer, 0, sizeof(RX_Buffer));
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
-  tx_pkt->size = 50;
 
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
                               (uint8_t *)RX_Buffer, sizeof(uint16_t));
@@ -221,12 +366,7 @@ int main(void) {
   HAL_UART_Transmit(&huart2, string, strlen(string), 100);
 
   while (1) {
-    /*
-    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 0);
-    HAL_Delay(200);
-    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
-    HAL_Delay(200);
-    */
+
     /* USER CODE END WHILE */
 
     if (transferState == TRANSFER_COMPLETE) {
@@ -238,6 +378,13 @@ int main(void) {
 
       while (rx_pkt_userspace->peripheral != 0xFF &&
              rx_pkt_userspace->peripheral != 0x00) {
+    	if (rx_pkt_userspace->peripheral == 0x99) {
+    		get_ADC_value(A1);
+    		get_ADC_value(A1);
+    		sprintf(string, "tx_pkt->size: %d %x %x %x %d\n", tx_pkt->size, tx_pkt->data.peripheral,
+    				tx_pkt->data.opcode, tx_pkt->data.size, (uint16_t)tx_pkt->data.raw_data);
+            HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+    	}
         sprintf(string, "\nPeripheral: %X Opcode: %X Size: %X\n  data: ",
                 rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
                 rx_pkt_userspace->size);
@@ -264,7 +411,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  // SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
+  SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
+  SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
 
   if (get_data_amount) {
     data_amount = max(tx_pkt->size, rx_pkt->size);
@@ -272,6 +420,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data),
                                 data_amount);
+
     get_data_amount = false;
   } else {
     // real end of operation, pause DMA, memcpy stuff around and reenable DMA
@@ -287,6 +436,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
                                 (uint8_t *)RX_Buffer, sizeof(uint16_t));
 
+    // clean the transfer buffer size to restart
+    tx_pkt->size = 0;
+
     // dispatch some kind of handling
     // HAL_SPI_DMAResume(&hspi1);
   }
@@ -297,6 +449,8 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
   transferState = TRANSFER_ERROR;
   sprintf(string, "HAL_SPI_ErrorCallback\n");
   HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+  HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
+                                  (uint8_t *)RX_Buffer, sizeof(uint16_t));
 }
 
 /**
@@ -406,10 +560,10 @@ static void MX_ADC1_Init(void) {
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
-  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.NbrOfConversion = 1;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -463,12 +617,12 @@ static void MX_ADC2_Init(void) {
   /** Common config
    */
   hadc2.Instance = ADC2;
-  hadc2.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
+  hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc2.Init.Resolution = ADC_RESOLUTION_16B;
   hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
   hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc2.Init.LowPowerAutoWait = DISABLE;
-  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.ContinuousConvMode = ENABLE;
   hadc2.Init.NbrOfConversion = 1;
   hadc2.Init.DiscontinuousConvMode = DISABLE;
   hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -482,7 +636,7 @@ static void MX_ADC2_Init(void) {
   }
   /** Configure Regular Channel
    */
-  sConfig.Channel = ADC_CHANNEL_2;
+  sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
@@ -518,10 +672,10 @@ static void MX_ADC3_Init(void) {
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc3.Init.Resolution = ADC_RESOLUTION_16B;
-  hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc3.Init.ScanConvMode = ADC_SCAN_ENABLE;
   hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc3.Init.LowPowerAutoWait = DISABLE;
-  hadc3.Init.ContinuousConvMode = DISABLE;
+  hadc3.Init.ContinuousConvMode = ENABLE;
   hadc3.Init.NbrOfConversion = 1;
   hadc3.Init.DiscontinuousConvMode = DISABLE;
   hadc3.Init.ExternalTrigConv = ADC_SOFTWARE_START;
