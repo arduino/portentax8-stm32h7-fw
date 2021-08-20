@@ -51,8 +51,8 @@ struct port_interface port_spi = {
 #include <linux/spi/spidev.h>
 
 struct spi_priv {
-	int fd;
-	uint8_t mode, lsb, bits;
+  int fd;
+  uint8_t mode, lsb, bits;
   uint32_t speed;
 };
 
@@ -65,6 +65,7 @@ __attribute__((packed, aligned(4))) struct subpacket {
 
 __attribute__((packed, aligned(4))) struct complete_packet {
   uint16_t size;
+  uint16_t checksum;
   struct subpacket data;
   // ... other subpackets will follow
 };
@@ -173,22 +174,15 @@ int need_sync = true;
 
 ssize_t spi_transfer(int fd, void *out, void *in, size_t len)
 {
-    struct spi_ioc_transfer msgs[2] = {};
+    struct spi_ioc_transfer msgs[1] = {};
 
     memset(msgs, 0, sizeof(msgs));
 
-  	uint8_t buf[] = { 0x5A, 0x00, 0x79 };
   	uint8_t temp_buf[len + 1];
 
   	msgs[0].tx_buf = out;
   	msgs[0].rx_buf = temp_buf;
   	msgs[0].len = len;
-  	msgs[0].cs_change = 0;
-
-  	msgs[1].tx_buf = out;
-  	msgs[1].rx_buf = in ? in : temp_buf;
-  	msgs[1].len = len;
-  	msgs[1].cs_change = 0;
 
   	if(ioctl(fd, SPI_IOC_MESSAGE(1), &msgs) < 0) {
   		printf("ioctl failed: %d\n", len);
@@ -196,30 +190,8 @@ ssize_t spi_transfer(int fd, void *out, void *in, size_t len)
     }
 
     if (in) {
-
     	memmove(in, temp_buf, len);
-
-/*
-    	if (((uint8_t*)in)[0] == 0xA5) {
-    		return PORT_ERR_TIMEDOUT;
-    	} else {
-    		if ((((uint8_t*)in)[0] == 0x79)) {
-    			msgs[0].tx_buf = &buf[2];
-    			msgs[0].rx_buf = temp_buf;
-    			msgs[0].len = 1;
-    			if(ioctl(fd, SPI_IOC_MESSAGE(1), &msgs) < 0)
-        		return PORT_ERR_UNKNOWN;
-    		} else {
-    			printf("got %x\n", ((uint8_t*)in)[0]);
-    		}
-    	}
-    */
     }
-/*
-    if (in) {
-    	memcpy(in, &temp_buf[1], len);
-    }
-*/
 
     return len;
 }
@@ -285,10 +257,102 @@ static struct varlen_cmd spi_cmd_get_reply[] = {
 	{ /* sentinel */ }
 };
 
+enum Peripherals {
+	PERIPH_ADC = 0x01,
+	PERIPH_PWM = 0x02,
+	PERIPH_FDCAN1 = 0x03,
+	PERIPH_FDCAN2 = 0x04,
+	PERIPH_UART = 0x05,
+	PERIPH_RTC = 0x06,
+	PERIPH_GPIO = 0x07,
+	PERIPH_MAX,
+};
+
+const char* to_peripheral_string(enum Peripherals peripheral) {
+	switch (peripheral) {
+		case PERIPH_ADC:
+			return "ADC";
+		case PERIPH_PWM:
+			return "PWM";
+		case PERIPH_FDCAN1:
+			return "FDCAN1";
+		case PERIPH_FDCAN2:
+			return "FDCAN2";
+		case PERIPH_UART:
+			return "UART";
+		case PERIPH_RTC:
+			return "RTC";
+		case PERIPH_GPIO:
+			return "GPIO";
+		default:
+			return "UNKNOWN";
+	}
+}
+
+enum Opcodes {
+	CONFIGURE = 0x10,
+	DATA = 0x01,
+};
+
+enum Opcodes_UART {
+	GET_LINESTATE = 0x20,
+};
+
+enum Opcodes_RTC {
+	SET_DATE = 0x01,
+	GET_DATE = 0x02,
+	SET_ALARM = 0x11,
+	GET_ALARM = 0x12,
+};
+
+enum Opcodes_GPIO {
+	DIRECTION = 0x10,
+	WRITE = 0x20,
+	READ = 0x30,
+};
+
+enum AnalogPins {
+	A0 = 0x1,
+	A1,
+	A2,
+	A3,
+	A4,
+	A5,
+	A6,
+	A7,
+};
+
+void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
+	switch (peripheral) {
+	case PERIPH_ADC:
+		if (opcode != CONFIGURE) {
+			printf("ADC%d: %d\n", opcode - 1, *((uint16_t*)data));
+		}
+		break;
+	}
+}
+
 #define max(a,b) \
   ({ __typeof__ (a) _a = (a); \
       __typeof__ (b) _b = (b); \
     _a > _b ? _a : _b; })
+
+void print_packet_header(struct subpacket *pkt) {
+
+	printf("Peripheral: %X Opcode: %X Size: %X\n  data: ",
+		            pkt->peripheral, pkt->opcode,
+		            pkt->size);
+
+	if (pkt->size > 30) {
+		printf("Not printing data\n");
+		return;
+	}
+
+	for (int i = 0; i < pkt->size; i++) {
+		printf("0x%02X ", *((uint8_t*)(((uint8_t*)(&pkt->raw_data)) + i)));
+	}
+	printf("\n");
+}
 
 int main(int argc, char** argv) {
 
@@ -301,14 +365,17 @@ int main(int argc, char** argv) {
 
 	printf(spi_get_cfg_str(&port));
 
-	uint8_t samplebuffer[50] = { 
-		19,		// lsb_len
+	uint8_t samplebuffer[UINT16_MAX] = { 
+		20,		// lsb_len
 		0,		// msb_len
-		0x12,	// peripheral
-		0x34,	// opcode
-		0x01,	// data_len_lsb
+		0,		// lsb_len
+		0,		// msb_len
+		0x1,	// peripheral
+		0x10,	// opcode
+		0x02,	// data_len_lsb
 		0x00,	// data_len_msb
-		0x77,	// data
+		0xE8,	// data
+		0x00,	// data
 		0x99,	// peripheral
 		0xAB,	// opcode
 		0x04,	// data_len_lsb
@@ -324,31 +391,57 @@ int main(int argc, char** argv) {
 		0x11,	// data
 	};
 
-	uint8_t rxb[50];
-	memset(rxb, 0, sizeof(rxb));
-
-	struct subpacket *rx_pkt_userspace = (struct subpacket *)rxb;
-
-	uint16_t rx_data;
+	uint8_t rxb[512];
+	uint16_t rx_data[2];
 
 	struct spi_priv * h = (struct spi_priv *)port.private;
 
-	spi_transfer(h->fd, samplebuffer, &rx_data, sizeof(uint16_t));
-	printf("STM32 has %d bytes\n", rx_data);
-	printf("Sending %d bytes\n", max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data));
-	spi_transfer(h->fd, &samplebuffer[2], &rxb, max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data));
-	printf("Input data: %x %x %x %x %x %x %x\n", rxb[0], rxb[1], rxb[2], rxb[3], rxb[4], rxb[5], rxb[6]);
+	while (1) {
 
-	while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00) {
-	    printf("Peripheral: %X Opcode: %X Size: %X\n  data: ",
-	            rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
-	            rx_pkt_userspace->size);
-	    for (int i = 0; i < rx_pkt_userspace->size; i++) {
-	      printf("0x%02X ", *((uint8_t*)(((uint8_t*)(&rx_pkt_userspace->raw_data)) + i)));
-	    }
-	    printf("\n");
-	    rx_pkt_userspace =
-	        (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+		spi_transfer(h->fd, samplebuffer, rx_data, sizeof(uint16_t) * 2);
+		printf("STM32 has %d bytes\n", rx_data[0]);
+		if (rx_data[0] != 0 && ((rx_data[0] ^ 0x5555) != rx_data[1])) {
+			printf("Out of sync %x %x\n", rx_data[0], rx_data[1]);
+			usleep(1000000);
+			continue;
+		}
+
+		if (max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data[0]) == 0) {
+			// send some nonsense anyway
+			spi_transfer(h->fd, &samplebuffer[4], &rxb, 4);
+			usleep(1000000);
+			continue;
+		}
+
+		printf("Transferring %d bytes\n", max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data[0]));
+
+		//memset(rxb, 0, sizeof(rxb));
+		//usleep(500);
+
+		spi_transfer(h->fd, &samplebuffer[4], &rxb, max(((uint16_t)samplebuffer[1] << 8 | samplebuffer[0]), rx_data[0]));
+
+		struct subpacket *rx_pkt_userspace = (struct subpacket *)rxb;
+		rxb[rx_data[0]] = 0xFF;
+
+		while (rx_pkt_userspace->peripheral != 0xFF && rx_pkt_userspace->peripheral != 0x00 && rx_pkt_userspace->peripheral < PERIPH_MAX) {
+		    print_packet_header(rx_pkt_userspace);
+
+		    dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
+        		rx_pkt_userspace->size, (uint8_t*)(&rx_pkt_userspace->raw_data));
+
+		    rx_pkt_userspace =
+		        (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+		}
+
+		// don't send anything after config phase
+		memset(samplebuffer, 0, sizeof(samplebuffer));
+
+		// FIXMEEEE: if I set 0 here, the whole stuff breaks
+		// Probably, the STM DMA is one step "beyond" the actual execution, so the 2 step procedure creates a
+		// DMA request which is "empty" for the iMX pow but contains some data from the STM
+		samplebuffer[0] = 50;
+
+		usleep(1000000);
 	}
 
 	spi_close(&port);

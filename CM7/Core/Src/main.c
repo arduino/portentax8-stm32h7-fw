@@ -1,50 +1,10 @@
-/* USER CODE BEGIN Header */
-/**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
- *
- ******************************************************************************
- */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include <stdbool.h>
-
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
 
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
 #endif
-/* USER CODE END PD */
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 ADC_HandleTypeDef hadc3;
@@ -66,11 +26,6 @@ DMA_HandleTypeDef hdma_spi2_rx;
 
 UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -85,7 +40,6 @@ static void MX_RTC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
-/* USER CODE BEGIN PFP */
 
 #define SPI_DMA_BUFFER_SIZE 512
 
@@ -98,6 +52,7 @@ __attribute__((packed, aligned(4))) struct subpacket {
 
 __attribute__((packed, aligned(4))) struct complete_packet {
   uint16_t size;
+  uint16_t checksum;
   struct subpacket data;
   // ... other subpackets will follow
 };
@@ -120,11 +75,6 @@ volatile uint16_t data_amount = 0;
     __typeof__(b) _b = (b);                                                    \
     _a > _b ? _a : _b;                                                         \
   })
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
 enum Peripherals {
 	PERIPH_ADC = 0x01,
@@ -152,6 +102,8 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
 			return "RTC";
 		case PERIPH_GPIO:
 			return "GPIO";
+		default:
+			return "UNKNOWN";
 	}
 }
 
@@ -188,7 +140,6 @@ enum AnalogPins {
 	A7,
 };
 
-/* USER CODE END 0 */
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
 	// don't feed data in the middle of a transmission
@@ -208,10 +159,10 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
 	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
 	tx_pkt->size += 4 + size;
+	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
 cleanup:
 	__enable_irq();
 }
-
 
 uint16_t get_ADC_value(enum AnalogPins name) {
 	ADC_ChannelConfTypeDef conf = {0};
@@ -257,71 +208,60 @@ uint16_t get_ADC_value(enum AnalogPins name) {
 		break;
 	}
 
-	char string[20];
-
     HAL_ADC_ConfigChannel(peripheral, &conf);
     HAL_ADC_Start(peripheral);
     HAL_ADC_PollForConversion(peripheral, 10);
     uint16_t value = HAL_ADC_GetValue(peripheral);
-	sprintf(string, "\nHAL_ADC_GetValue: %d %x\n", value, value);
-    HAL_UART_Transmit(&huart2, string, strlen(string), 100);
     HAL_ADC_Stop(peripheral);
+
+    printf("ADC%d: %d\n", name-1, value);
 
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
-/**
- * @brief  The application entry point.
- * @retval int
- */
+uint16_t adc_sample_rate = 0;
+
+void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
+	switch (peripheral) {
+	case PERIPH_ADC:
+		if (opcode == CONFIGURE) {
+			adc_sample_rate = *((uint16_t*)data);
+			printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
+		}
+		break;
+	}
+}
+
+int _read(int file, char *ptr, int len) {
+
+}
+
+int _write(int file, char *ptr, int len) {
+  HAL_UART_Transmit(&huart2, ptr, len, 100);
+  return len;
+}
+
+long adc_sample_rate_last_tick = 0;
+
 int main(void) {
-  /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
-  /* USER CODE BEGIN Boot_Mode_Sequence_0 */
   int32_t timeout;
-  /* USER CODE END Boot_Mode_Sequence_0 */
 
-  /* Enable I-Cache---------------------------------------------------------*/
   SCB_EnableICache();
-
-  /* Enable D-Cache---------------------------------------------------------*/
   // SCB_EnableDCache();
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick.
-   */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
-
-  /* Configure the peripherals common clocks */
   PeriphCommonClock_Config();
-  /* USER CODE BEGIN Boot_Mode_Sequence_2 */
-  /* When system initialization is finished, Cortex-M7 will release Cortex-M4 by
-  means of HSEM notification */
-  /*HW semaphore Clock enable*/
+
   __HAL_RCC_HSEM_CLK_ENABLE();
-  /*Take HSEM */
   HAL_HSEM_FastTake(HSEM_ID_0);
-  /*Release HSEM in order to notify the CPU2(CM4)*/
   HAL_HSEM_Release(HSEM_ID_0, 0);
-  /* wait until CPU2 wakes up from stop mode */
   timeout = 0xFFFF;
-  while ((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0))
-    ;
+  while ((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
   if (timeout < 0) {
     Error_Handler();
   }
-  /* USER CODE END Boot_Mode_Sequence_2 */
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -334,9 +274,10 @@ int main(void) {
   MX_HRTIM_Init();
   MX_RTC_Init();
   MX_SPI3_Init();
-  MX_SPI2_Init();
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
+
+  // Enable SPI2 (Portenta only)
+  MX_SPI2_Init();
 
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
@@ -347,11 +288,11 @@ int main(void) {
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
+  // Start DMA on SPI
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                              (uint8_t *)RX_Buffer, sizeof(uint16_t));
+                              (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 
-  /* USER CODE END 2 */
-
+  // Enable LEDs (Portenta only)
   __HAL_RCC_GPIOK_CLK_ENABLE();
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
@@ -360,50 +301,43 @@ int main(void) {
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  char string[200] = "STARTING\n";
-  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+  printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
+  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
 
   while (1) {
 
-    /* USER CODE END WHILE */
+	if (HAL_GetTick() % adc_sample_rate == 0 && adc_sample_rate != 0 && HAL_GetTick() != adc_sample_rate_last_tick) {
+		adc_sample_rate_last_tick = HAL_GetTick();
+		get_ADC_value(A1);
+	}
 
     if (transferState == TRANSFER_COMPLETE) {
+
+      HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
 
       struct subpacket *rx_pkt_userspace =
           (struct subpacket *)RX_Buffer_userspace;
 
-      sprintf(string, "peripheral[0]: 0x%x\n", rx_pkt_userspace->peripheral);
-
       while (rx_pkt_userspace->peripheral != 0xFF &&
              rx_pkt_userspace->peripheral != 0x00) {
-    	if (rx_pkt_userspace->peripheral == 0x99) {
-    		get_ADC_value(A1);
-    		get_ADC_value(A1);
-    		sprintf(string, "tx_pkt->size: %d %x %x %x %d\n", tx_pkt->size, tx_pkt->data.peripheral,
-    				tx_pkt->data.opcode, tx_pkt->data.size, (uint16_t)tx_pkt->data.raw_data);
-            HAL_UART_Transmit(&huart2, string, strlen(string), 100);
-    	}
-        sprintf(string, "\nPeripheral: %X Opcode: %X Size: %X\n  data: ",
-                rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
+        printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
+        		to_peripheral_string(rx_pkt_userspace->peripheral), rx_pkt_userspace->opcode,
                 rx_pkt_userspace->size);
-        HAL_UART_Transmit(&huart2, string, strlen(string), 100);
         for (int i = 0; i < rx_pkt_userspace->size; i++) {
-          sprintf(string + i * 5, "0x%02X ",
-                  *((&rx_pkt_userspace->raw_data) + i));
+          printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
         }
-        HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+        printf("\n");
+
+        // do something useful with this packet
+        dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
+        		rx_pkt_userspace->size, &(rx_pkt_userspace->raw_data));
+
         rx_pkt_userspace =
             (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
       }
-
-      // do something with the buffer
       transferState = TRANSFER_WAIT;
     }
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
@@ -415,16 +349,20 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
 
   if (get_data_amount) {
+
+	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, 0);
     data_amount = max(tx_pkt->size, rx_pkt->size);
-    // reconfigure the DMA to
 
-    HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data),
-                                data_amount);
+	// reconfigure the DMA to actually receive the data
+	HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data),
+									data_amount);
+	get_data_amount = false;
 
-    get_data_amount = false;
   } else {
     // real end of operation, pause DMA, memcpy stuff around and reenable DMA
     // HAL_SPI_DMAPause(&hspi1);
+	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
+
     get_data_amount = true;
     memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->size);
 
@@ -434,48 +372,39 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     transferState = TRANSFER_COMPLETE;
 
     HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                                (uint8_t *)RX_Buffer, sizeof(uint16_t));
+                                (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;
 
-    // dispatch some kind of handling
     // HAL_SPI_DMAResume(&hspi1);
   }
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
-  char string[50];
   transferState = TRANSFER_ERROR;
-  sprintf(string, "HAL_SPI_ErrorCallback\n");
-  HAL_UART_Transmit(&huart2, string, strlen(string), 100);
+  printf("HAL_SPI_ErrorCallback\n");
+
+  // Restart DMA
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                                  (uint8_t *)RX_Buffer, sizeof(uint16_t));
+                                  (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 }
 
-/**
- * @brief System Clock Configuration
- * @retval None
- */
+
 void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Supply configuration update enable
-   */
+  // ATTENTION: make sure this matches the actual hardware configuration
   HAL_PWREx_ConfigSupply(PWR_SMPS_1V8_SUPPLIES_LDO);
-  /** Configure the main internal regulator output voltage
-   */
+
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
   }
-  /** Macro to configure the PLL clock source
-   */
+
   __HAL_RCC_PLL_PLLSOURCE_CONFIG(RCC_PLLSOURCE_HSI);
-  /** Initializes the RCC Oscillators according to the specified parameters
-   * in the RCC_OscInitTypeDef structure.
-   */
+
   RCC_OscInitStruct.OscillatorType =
       RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.LSEState = RCC_LSE_BYPASS;
@@ -494,8 +423,7 @@ void SystemClock_Config(void) {
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
-  /** Initializes the CPU, AHB and APB buses clocks
-   */
+
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2 |
                                 RCC_CLOCKTYPE_D3PCLK1 | RCC_CLOCKTYPE_D1PCLK1;
@@ -512,15 +440,9 @@ void SystemClock_Config(void) {
   }
 }
 
-/**
- * @brief Peripherals Common Clock Configuration
- * @retval None
- */
 void PeriphCommonClock_Config(void) {
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-  /** Initializes the peripherals clock
-   */
   PeriphClkInitStruct.PeriphClockSelection =
       RCC_PERIPHCLK_ADC | RCC_PERIPHCLK_FDCAN;
   PeriphClkInitStruct.PLL2.PLL2M = 4;
@@ -538,25 +460,11 @@ void PeriphCommonClock_Config(void) {
   }
 }
 
-/**
- * @brief ADC1 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_ADC1_Init(void) {
-
-  /* USER CODE BEGIN ADC1_Init 0 */
-
-  /* USER CODE END ADC1_Init 0 */
 
   ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-  /** Common config
-   */
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
@@ -575,14 +483,12 @@ static void MX_ADC1_Init(void) {
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
     Error_Handler();
   }
-  /** Configure the ADC multi-mode
-   */
+
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
     Error_Handler();
   }
-  /** Configure Regular Channel
-   */
+
   sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
@@ -593,29 +499,12 @@ static void MX_ADC1_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC1_Init 2 */
-
-  /* USER CODE END ADC1_Init 2 */
 }
 
-/**
- * @brief ADC2 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_ADC2_Init(void) {
-
-  /* USER CODE BEGIN ADC2_Init 0 */
-
-  /* USER CODE END ADC2_Init 0 */
 
   ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC2_Init 1 */
-
-  /* USER CODE END ADC2_Init 1 */
-  /** Common config
-   */
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc2.Init.Resolution = ADC_RESOLUTION_16B;
@@ -634,8 +523,7 @@ static void MX_ADC2_Init(void) {
   if (HAL_ADC_Init(&hadc2) != HAL_OK) {
     Error_Handler();
   }
-  /** Configure Regular Channel
-   */
+
   sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
@@ -646,29 +534,12 @@ static void MX_ADC2_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC2_Init 2 */
-
-  /* USER CODE END ADC2_Init 2 */
 }
 
-/**
- * @brief ADC3 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_ADC3_Init(void) {
-
-  /* USER CODE BEGIN ADC3_Init 0 */
-
-  /* USER CODE END ADC3_Init 0 */
 
   ADC_ChannelConfTypeDef sConfig = {0};
 
-  /* USER CODE BEGIN ADC3_Init 1 */
-
-  /* USER CODE END ADC3_Init 1 */
-  /** Common config
-   */
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc3.Init.Resolution = ADC_RESOLUTION_16B;
@@ -687,8 +558,7 @@ static void MX_ADC3_Init(void) {
   if (HAL_ADC_Init(&hadc3) != HAL_OK) {
     Error_Handler();
   }
-  /** Configure Regular Channel
-   */
+
   sConfig.Channel = ADC_CHANNEL_3;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
@@ -699,25 +569,10 @@ static void MX_ADC3_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN ADC3_Init 2 */
-
-  /* USER CODE END ADC3_Init 2 */
 }
 
-/**
- * @brief FDCAN1 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_FDCAN1_Init(void) {
 
-  /* USER CODE BEGIN FDCAN1_Init 0 */
-
-  /* USER CODE END FDCAN1_Init 0 */
-
-  /* USER CODE BEGIN FDCAN1_Init 1 */
-
-  /* USER CODE END FDCAN1_Init 1 */
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
@@ -749,25 +604,10 @@ static void MX_FDCAN1_Init(void) {
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN FDCAN1_Init 2 */
-
-  /* USER CODE END FDCAN1_Init 2 */
 }
 
-/**
- * @brief FDCAN2 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_FDCAN2_Init(void) {
 
-  /* USER CODE BEGIN FDCAN2_Init 0 */
-
-  /* USER CODE END FDCAN2_Init 0 */
-
-  /* USER CODE BEGIN FDCAN2_Init 1 */
-
-  /* USER CODE END FDCAN2_Init 1 */
   hfdcan2.Instance = FDCAN2;
   hfdcan2.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan2.Init.Mode = FDCAN_MODE_NORMAL;
@@ -799,29 +639,14 @@ static void MX_FDCAN2_Init(void) {
   if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN FDCAN2_Init 2 */
-
-  /* USER CODE END FDCAN2_Init 2 */
 }
 
-/**
- * @brief HRTIM Initialization Function
- * @param None
- * @retval None
- */
 static void MX_HRTIM_Init(void) {
-
-  /* USER CODE BEGIN HRTIM_Init 0 */
-
-  /* USER CODE END HRTIM_Init 0 */
 
   HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
   HRTIM_TimerCfgTypeDef pTimerCfg = {0};
   HRTIM_OutputCfgTypeDef pOutputCfg = {0};
 
-  /* USER CODE BEGIN HRTIM_Init 1 */
-
-  /* USER CODE END HRTIM_Init 1 */
   hhrtim.Instance = HRTIM1;
   hhrtim.Init.HRTIMInterruptResquests = HRTIM_IT_NONE;
   hhrtim.Init.SyncOptions = HRTIM_SYNCOPTION_NONE;
@@ -953,32 +778,15 @@ static void MX_HRTIM_Init(void) {
                                &pTimeBaseCfg) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN HRTIM_Init 2 */
-
-  /* USER CODE END HRTIM_Init 2 */
   HAL_HRTIM_MspPostInit(&hhrtim);
 }
 
-/**
- * @brief RTC Initialization Function
- * @param None
- * @retval None
- */
 static void MX_RTC_Init(void) {
-
-  /* USER CODE BEGIN RTC_Init 0 */
-
-  /* USER CODE END RTC_Init 0 */
 
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
   RTC_AlarmTypeDef sAlarm = {0};
 
-  /* USER CODE BEGIN RTC_Init 1 */
-
-  /* USER CODE END RTC_Init 1 */
-  /** Initialize RTC Only
-   */
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -991,12 +799,6 @@ static void MX_RTC_Init(void) {
     Error_Handler();
   }
 
-  /* USER CODE BEGIN Check_RTC_BKUP */
-
-  /* USER CODE END Check_RTC_BKUP */
-
-  /** Initialize RTC and set the Time and Date
-   */
   sTime.Hours = 0;
   sTime.Minutes = 0;
   sTime.Seconds = 0;
@@ -1012,8 +814,7 @@ static void MX_RTC_Init(void) {
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
     Error_Handler();
   }
-  /** Enable the Alarm A
-   */
+
   sAlarm.AlarmTime.Hours = 0;
   sAlarm.AlarmTime.Minutes = 0;
   sAlarm.AlarmTime.Seconds = 0;
@@ -1028,33 +829,20 @@ static void MX_RTC_Init(void) {
   if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
     Error_Handler();
   }
-  /** Enable the Alarm B
-   */
+
   sAlarm.Alarm = RTC_ALARM_B;
   if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
     Error_Handler();
   }
-  /** Enable the WakeUp
-   */
+
   if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) !=
       HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN RTC_Init 2 */
-
-  /* USER CODE END RTC_Init 2 */
 }
 
 static void MX_SPI2_Init(void) {
 
-  /* USER CODE BEGIN SPI3_Init 0 */
-
-  /* USER CODE END SPI3_Init 0 */
-
-  /* USER CODE BEGIN SPI3_Init 1 */
-
-  /* USER CODE END SPI3_Init 1 */
-  /* SPI3 parameter configuration*/
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_SLAVE;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
@@ -1081,26 +869,10 @@ static void MX_SPI2_Init(void) {
   if (HAL_SPI_Init(&hspi2) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI3_Init 2 */
-
-  /* USER CODE END SPI3_Init 2 */
 }
 
-/**
- * @brief SPI3 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_SPI3_Init(void) {
 
-  /* USER CODE BEGIN SPI3_Init 0 */
-
-  /* USER CODE END SPI3_Init 0 */
-
-  /* USER CODE BEGIN SPI3_Init 1 */
-
-  /* USER CODE END SPI3_Init 1 */
-  /* SPI3 parameter configuration*/
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_SLAVE;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
@@ -1127,25 +899,10 @@ static void MX_SPI3_Init(void) {
   if (HAL_SPI_Init(&hspi3) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI3_Init 2 */
-
-  /* USER CODE END SPI3_Init 2 */
 }
 
-/**
- * @brief USART2 Initialization Function
- * @param None
- * @retval None
- */
 static void MX_USART2_UART_Init(void) {
 
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -1171,40 +928,26 @@ static void MX_USART2_UART_Init(void) {
   if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK) {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
 }
 
-/**
- * Enable DMA controller clock
- */
 static void MX_DMA_Init(void) {
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
 
-  /* DMA interrupt init */
-  /* DMA1_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
-  /* DMA1_Stream1_IRQn interrupt configuration */
+
   HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
 
-  /* DMA1_Stream0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
-  /* DMA1_Stream1_IRQn interrupt configuration */
+
   HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
 }
 
-/**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
 static void MX_GPIO_Init(void) {
 
   /* GPIO Ports Clock Enable */
@@ -1216,38 +959,8 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOF_CLK_ENABLE();
 }
 
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
-/**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
 void Error_Handler(void) {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1) {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef USE_FULL_ASSERT
-/**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line) {
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line
-     number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
-#endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
