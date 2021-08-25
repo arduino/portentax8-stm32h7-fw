@@ -384,11 +384,11 @@ void configureADCSampleRate(uint16_t rate) {
 	enqueue_packet(PERIPH_ADC, CONFIGURE, sizeof(uint16_t), &rate);
 }
 
-void configurePWM(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
+void configurePWM(uint8_t channel, bool enable, bool polarity, float duty, uint32_t frequency) {
 	struct pwmPacket conf;
 	conf.enable = enable;
 	conf.polarity = polarity;
-	conf.duty = duty;
+	conf.duty = duty * 1024;
 	conf.frequency = frequency;
 	enqueue_packet(PERIPH_PWM, channel, sizeof(conf), &conf);
 }
@@ -406,8 +406,8 @@ int main(int argc, char** argv) {
 
 	memset(samplebuffer, 0 , sizeof(samplebuffer));
 
-	configureADCSampleRate(500);
-	configurePWM(2, true, false, 0.5678 * 1024, 500000);
+	configureADCSampleRate(100);
+	configurePWM(2, true, false, 0.3356, 500000);
 
 	uint8_t rxb[512];
 	uint16_t rx_data[2];

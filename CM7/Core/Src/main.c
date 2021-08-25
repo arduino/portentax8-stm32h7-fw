@@ -221,7 +221,7 @@ uint16_t get_ADC_value(enum AnalogPins name) {
     uint16_t value = HAL_ADC_GetValue(peripheral);
     HAL_ADC_Stop(peripheral);
 
-    printf("ADC%d: %d\n", name-1, value);
+    //printf("ADC%d: %d\n", name-1, value);
 
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
@@ -229,7 +229,7 @@ uint16_t get_ADC_value(enum AnalogPins name) {
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
 	uint16_t duty_int = duty*100/1024;
 	printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
-			polarity? "high": "low", duty_int, duty*100-duty_int, frequency);
+			polarity? "high": "low", duty_int, duty-duty_int*1024/100, frequency);
 }
 
 uint16_t adc_sample_rate = 0;
