@@ -288,10 +288,6 @@ int main(void) {
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  // Start DMA on SPI
-  HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                              (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-
   // Enable LEDs (Portenta only)
   __HAL_RCC_GPIOK_CLK_ENABLE();
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -300,6 +296,19 @@ int main(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
+  // Interrupt on CS LOW
+  GPIO_InitStruct.Pin = GPIO_PIN_0;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+
+  // Start DMA on SPI
+  //HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
+  //                            (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
@@ -340,6 +349,15 @@ int main(void) {
   }
 }
 
+void EXTI0_IRQHandler(void)
+{
+	if (get_data_amount) {
+		HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
+		                                (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+	}
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+}
+
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
@@ -356,26 +374,25 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 	// reconfigure the DMA to actually receive the data
 	HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data),
 									data_amount);
-	get_data_amount = false;
+
+    get_data_amount = false;
 
   } else {
     // real end of operation, pause DMA, memcpy stuff around and reenable DMA
     // HAL_SPI_DMAPause(&hspi1);
-	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
 
-    get_data_amount = true;
+    transferState = TRANSFER_COMPLETE;
+
     memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->size);
 
     // mark the next packet as invalid
     *((uint8_t *)RX_Buffer_userspace + rx_pkt->size) = 0xFFFFFF; // INVALID;
 
-    transferState = TRANSFER_COMPLETE;
-
-    HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                                (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;
+	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
+
+    get_data_amount = true;
 
     // HAL_SPI_DMAResume(&hspi1);
   }
@@ -849,7 +866,7 @@ static void MX_SPI2_Init(void) {
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi2.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi2.Init.NSS = SPI_NSS_SOFT;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

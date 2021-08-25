@@ -439,7 +439,7 @@ int main(int argc, char** argv) {
 		// FIXMEEEE: if I set 0 here, the whole stuff breaks
 		// Probably, the STM DMA is one step "beyond" the actual execution, so the 2 step procedure creates a
 		// DMA request which is "empty" for the iMX pow but contains some data from the STM
-		samplebuffer[0] = 50;
+		// samplebuffer[0] = 50;
 
 		usleep(1000000);
 	}
