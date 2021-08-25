@@ -140,6 +140,13 @@ enum AnalogPins {
 	A7,
 };
 
+struct __attribute__((packed, aligned(4))) pwmPacket {
+	uint8_t enable: 1;
+	uint8_t polarity: 1;
+	uint16_t duty: 10;
+	uint32_t frequency: 20;
+};
+
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
 	// don't feed data in the middle of a transmission
@@ -219,16 +226,29 @@ uint16_t get_ADC_value(enum AnalogPins name) {
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
+void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
+	uint16_t duty_int = duty*100/1024;
+	printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
+			polarity? "high": "low", duty_int, duty*100-duty_int, frequency);
+}
+
 uint16_t adc_sample_rate = 0;
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
 	switch (peripheral) {
-	case PERIPH_ADC:
+	case PERIPH_ADC: {
 		if (opcode == CONFIGURE) {
 			adc_sample_rate = *((uint16_t*)data);
 			printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
 		}
 		break;
+	}
+	case PERIPH_PWM: {
+		uint8_t channel = opcode;
+		struct pwmPacket config = *((struct pwmPacket*)data);
+		configurePwm(channel, config.enable, config.polarity, config.duty, config.frequency);
+		break;
+	}
 	}
 }
 
@@ -317,7 +337,14 @@ int main(void) {
 
 	if (HAL_GetTick() % adc_sample_rate == 0 && adc_sample_rate != 0 && HAL_GetTick() != adc_sample_rate_last_tick) {
 		adc_sample_rate_last_tick = HAL_GetTick();
+		get_ADC_value(A0);
 		get_ADC_value(A1);
+		get_ADC_value(A2);
+		get_ADC_value(A3);
+		get_ADC_value(A4);
+		get_ADC_value(A5);
+		get_ADC_value(A6);
+		get_ADC_value(A7);
 	}
 
     if (transferState == TRANSFER_COMPLETE) {

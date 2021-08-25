@@ -322,6 +322,32 @@ enum AnalogPins {
 	A7,
 };
 
+struct __attribute__((packed, aligned(4))) pwmPacket {
+	uint8_t enable: 1;
+	uint8_t polarity: 1;
+	uint16_t duty: 10;
+	uint32_t frequency: 20;
+};
+
+uint8_t samplebuffer[UINT16_MAX];
+
+void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
+
+	struct complete_packet *tx_pkt = (struct complete_packet *)samplebuffer;
+	uint16_t offset = tx_pkt->size;
+	if (offset + size > sizeof(samplebuffer)) {
+		return;
+	}
+	struct subpacket pkt;
+	pkt.peripheral = peripheral;
+	pkt.opcode = opcode;
+	pkt.size = size;
+	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
+	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
+	tx_pkt->size += 4 + size;
+	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
+}
+
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
 	switch (peripheral) {
 	case PERIPH_ADC:
@@ -354,6 +380,19 @@ void print_packet_header(struct subpacket *pkt) {
 	printf("\n");
 }
 
+void configureADCSampleRate(uint16_t rate) {
+	enqueue_packet(PERIPH_ADC, CONFIGURE, sizeof(uint16_t), &rate);
+}
+
+void configurePWM(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
+	struct pwmPacket conf;
+	conf.enable = enable;
+	conf.polarity = polarity;
+	conf.duty = duty;
+	conf.frequency = frequency;
+	enqueue_packet(PERIPH_PWM, channel, sizeof(conf), &conf);
+}
+
 int main(int argc, char** argv) {
 
 	struct port_interface port;
@@ -365,31 +404,10 @@ int main(int argc, char** argv) {
 
 	printf(spi_get_cfg_str(&port));
 
-	uint8_t samplebuffer[UINT16_MAX] = { 
-		20,		// lsb_len
-		0,		// msb_len
-		0,		// lsb_len
-		0,		// msb_len
-		0x1,	// peripheral
-		0x10,	// opcode
-		0x02,	// data_len_lsb
-		0x00,	// data_len_msb
-		0xE8,	// data
-		0x00,	// data
-		0x99,	// peripheral
-		0xAB,	// opcode
-		0x04,	// data_len_lsb
-		0x00,	// data_len_msb
-		0x87,	// data
-		0x88,	// data
-		0x89,	// data
-		0x90,	// data
-		0x03,	// peripheral
-		0x02,	// opcode
-		0x01,	// data_len_lsb
-		0x00,	// data_len_msb
-		0x11,	// data
-	};
+	memset(samplebuffer, 0 , sizeof(samplebuffer));
+
+	configureADCSampleRate(500);
+	configurePWM(2, true, false, 0.5678 * 1024, 500000);
 
 	uint8_t rxb[512];
 	uint16_t rx_data[2];
