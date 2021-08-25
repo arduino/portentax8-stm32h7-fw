@@ -81,6 +81,14 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
+  .dma_buffers :
+  {
+    . = ALIGN(4);
+    *(.dma)
+    *(.dma*)
+    . = ALIGN(4);
+  } > ITCMRAM
+
   /* Constant data into "FLASH" Rom type memory */
   .rodata :
   {

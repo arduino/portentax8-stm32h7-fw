@@ -41,6 +41,14 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 
+#undef DEBUG
+
+#ifdef DEBUG
+#define dbg_printf(...)	printf(__VA_ARGS__)
+#else
+#define dbg_printf
+#endif
+
 #define SPI_DMA_BUFFER_SIZE 512
 
 __attribute__((packed, aligned(4))) struct subpacket {
@@ -57,11 +65,10 @@ __attribute__((packed, aligned(4))) struct complete_packet {
   // ... other subpackets will follow
 };
 
-__attribute__((aligned(32))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
-__attribute__((aligned(32))) volatile uint8_t RX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"))) volatile uint8_t RX_Buffer[SPI_DMA_BUFFER_SIZE];
 
-__attribute__((
-    aligned(32))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -228,7 +235,7 @@ uint16_t get_ADC_value(enum AnalogPins name) {
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
 	uint16_t duty_int = duty*100/1024;
-	printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
+	dbg_printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
 			polarity? "high": "low", duty_int, duty-duty_int*1024/100, frequency);
 }
 
@@ -239,7 +246,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 	case PERIPH_ADC: {
 		if (opcode == CONFIGURE) {
 			adc_sample_rate = *((uint16_t*)data);
-			printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
+			dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
 		}
 		break;
 	}
@@ -268,7 +275,7 @@ int main(void) {
   int32_t timeout;
 
   SCB_EnableICache();
-  // SCB_EnableDCache();
+  //SCB_EnableDCache();
 
   HAL_Init();
   SystemClock_Config();
@@ -356,13 +363,13 @@ int main(void) {
 
       while (rx_pkt_userspace->peripheral != 0xFF &&
              rx_pkt_userspace->peripheral != 0x00) {
-        printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
+        dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
         		to_peripheral_string(rx_pkt_userspace->peripheral), rx_pkt_userspace->opcode,
                 rx_pkt_userspace->size);
         for (int i = 0; i < rx_pkt_userspace->size; i++) {
-          printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
+          dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
         }
-        printf("\n");
+        dbg_printf("\n");
 
         // do something useful with this packet
         dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
@@ -390,8 +397,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
-  SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
+  //SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
+  //SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
 
   if (get_data_amount) {
 
