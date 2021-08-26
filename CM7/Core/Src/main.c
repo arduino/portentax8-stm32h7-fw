@@ -51,7 +51,7 @@ static void MX_USART2_UART_Init(void);
 #define dbg_printf(...)
 #endif
 
-#define SPI_DMA_BUFFER_SIZE 512
+#define SPI_DMA_BUFFER_SIZE 	2048
 
 __attribute__((packed, aligned(4))) struct subpacket {
   uint8_t peripheral;
@@ -426,7 +426,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->size);
 
     // mark the next packet as invalid
-    *((uint8_t *)RX_Buffer_userspace + rx_pkt->size) = 0xFF; // INVALID;
+    *((uint32_t*)((uint8_t *)RX_Buffer_userspace + rx_pkt->size)) = 0xFFFFFFFF; // INVALID;
 
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;

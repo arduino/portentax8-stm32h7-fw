@@ -286,7 +286,10 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		break;
   case PERIPH_FDCAN1:
     if (opcode == DATA) {
-      printf("FDCAN1: %s\n", data);
+      uint8_t string[size+1];
+      memcpy(string, data, size);
+      string[size] = '\0';
+      printf("FDCAN1: %s\n", string);
     }
     break;
   }
@@ -343,7 +346,7 @@ int main(int argc, char** argv) {
 	configureADCSampleRate(100);
 	configurePWM(2, true, false, 0.3356, 500000);
 
-	uint8_t rxb[512];
+	uint8_t rxb[2048];
 	uint16_t rx_data[2];
 
 	struct spi_priv * h = (struct spi_priv *)port.private;
