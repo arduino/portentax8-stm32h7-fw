@@ -1,5 +1,7 @@
 #include "main.h"
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
 
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
@@ -46,7 +48,7 @@ static void MX_USART2_UART_Init(void);
 #ifdef DEBUG
 #define dbg_printf(...)	printf(__VA_ARGS__)
 #else
-#define dbg_printf
+#define dbg_printf(...)
 #endif
 
 #define SPI_DMA_BUFFER_SIZE 512
@@ -228,7 +230,7 @@ uint16_t get_ADC_value(enum AnalogPins name) {
     uint16_t value = HAL_ADC_GetValue(peripheral);
     HAL_ADC_Stop(peripheral);
 
-    //printf("ADC%d: %d\n", name-1, value);
+    dbg_printf("ADC%d: %d\n", name-1, value);
 
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
@@ -310,8 +312,8 @@ int main(void) {
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
 
-  memset(TX_Buffer, 0, sizeof(TX_Buffer));
-  memset(RX_Buffer, 0, sizeof(RX_Buffer));
+  memset((uint8_t*)TX_Buffer, 0, sizeof(TX_Buffer));
+  memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
@@ -375,8 +377,7 @@ int main(void) {
         dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
         		rx_pkt_userspace->size, &(rx_pkt_userspace->raw_data));
 
-        rx_pkt_userspace =
-            (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+        rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size);
       }
       transferState = TRANSFER_WAIT;
     }
@@ -406,7 +407,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     data_amount = max(tx_pkt->size, rx_pkt->size);
 
 	// reconfigure the DMA to actually receive the data
-	HAL_SPI_TransmitReceive_DMA(&hspi2, &(tx_pkt->data), &(rx_pkt->data),
+	HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data),
 									data_amount);
 
     get_data_amount = false;
@@ -420,7 +421,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->size);
 
     // mark the next packet as invalid
-    *((uint8_t *)RX_Buffer_userspace + rx_pkt->size) = 0xFFFFFF; // INVALID;
+    *((uint8_t *)RX_Buffer_userspace + rx_pkt->size) = 0xFF; // INVALID;
 
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;

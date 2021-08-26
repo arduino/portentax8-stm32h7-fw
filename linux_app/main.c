@@ -31,21 +31,6 @@
 
 #include "port.h"
 
-#if !defined(__linux__)
-
-static port_err_t spi_open(struct port_interface __unused *port,
-			   struct port_options __unused *ops)
-{
-	return PORT_ERR_NODEV;
-}
-
-struct port_interface port_spi = {
-	.name	= "spi",
-	.open	= spi_open,
-};
-
-#else
-
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
@@ -54,20 +39,6 @@ struct spi_priv {
   int fd;
   uint8_t mode, lsb, bits;
   uint32_t speed;
-};
-
-__attribute__((packed, aligned(4))) struct subpacket {
-  uint8_t peripheral;
-  uint8_t opcode;
-  uint16_t size;
-  uint8_t raw_data;
-};
-
-__attribute__((packed, aligned(4))) struct complete_packet {
-  uint16_t size;
-  uint16_t checksum;
-  struct subpacket data;
-  // ... other subpackets will follow
 };
 
 static port_err_t spi_open(struct port_interface *port,
@@ -79,7 +50,7 @@ static port_err_t spi_open(struct port_interface *port,
 	uint8_t mode = 0;
 	uint8_t lsb = 0;
 	uint8_t bits;
-    uint32_t speed = 1000000;
+  uint32_t speed = 1000000;
 
 	/* 1. check device name match */
 	if (strncmp(ops->device, "/dev/spidev", strlen("/dev/spidev")))
@@ -170,66 +141,22 @@ static port_err_t spi_close(struct port_interface *port)
 	return PORT_ERR_OK;
 }
 
-int need_sync = true;
-
-ssize_t spi_transfer(int fd, void *out, void *in, size_t len)
+static ssize_t spi_transfer(int fd, void *out, void *in, size_t len)
 {
     struct spi_ioc_transfer msgs[1] = {};
 
     memset(msgs, 0, sizeof(msgs));
 
-  	uint8_t temp_buf[len + 1];
-
-  	msgs[0].tx_buf = out;
-  	msgs[0].rx_buf = temp_buf;
-  	msgs[0].len = len;
+    msgs[0].tx_buf = (uint64_t)out;
+    msgs[0].rx_buf = (uint64_t)in;
+    msgs[0].len = len;
 
   	if(ioctl(fd, SPI_IOC_MESSAGE(1), &msgs) < 0) {
   		printf("ioctl failed: %d\n", len);
       return PORT_ERR_UNKNOWN;
     }
 
-    if (in) {
-    	memmove(in, temp_buf, len);
-    }
-
     return len;
-}
-
-static port_err_t spi_read(struct port_interface *port, void *buf,
-			   size_t nbyte)
-{
-	struct spi_priv *h;
-	int ret;
-
-	h = (struct spi_priv *)port->private;
-	if (h == NULL)
-		return PORT_ERR_UNKNOWN;
-	ret = spi_transfer(h->fd, NULL, buf, nbyte);
-	if (ret != (int)nbyte)
-		return ret;
-	return PORT_ERR_OK;
-}
-
-static port_err_t spi_write(struct port_interface *port, void *buf,
-			    size_t nbyte)
-{
-	struct spi_priv *h;
-	int ret;
-
-	h = (struct spi_priv *)port->private;
-	if (h == NULL)
-		return PORT_ERR_UNKNOWN;
-	ret = spi_transfer(h->fd, buf, NULL, nbyte);
-
-	if (ret != (int)nbyte)
-		return ret;
-	return PORT_ERR_OK;
-}
-
-static port_err_t spi_gpio(struct port_interface *port, int level)
-{
-	return PORT_ERR_OK;
 }
 
 static const char *spi_get_cfg_str(struct port_interface *port)
@@ -244,17 +171,19 @@ static const char *spi_get_cfg_str(struct port_interface *port)
 	return str;
 }
 
-static port_err_t spi_flush(struct port_interface *port)
-{
-	/* We shouldn't need to flush I2C */
-	return PORT_ERR_OK;
-}
 
-static struct varlen_cmd spi_cmd_get_reply[] = {
-	{0x10, 11},
-	{0x11, 13},
-	{0x12, 18},
-	{ /* sentinel */ }
+__attribute__((packed, aligned(4))) struct subpacket {
+  uint8_t peripheral;
+  uint8_t opcode;
+  uint16_t size;
+  uint8_t raw_data;
+};
+
+__attribute__((packed, aligned(4))) struct complete_packet {
+  uint16_t size;
+  uint16_t checksum;
+  struct subpacket data;
+  // ... other subpackets will follow
 };
 
 enum Peripherals {
@@ -447,8 +376,7 @@ int main(int argc, char** argv) {
 		    dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
         		rx_pkt_userspace->size, (uint8_t*)(&rx_pkt_userspace->raw_data));
 
-		    rx_pkt_userspace =
-		        (uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size;
+		    rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size);
 		}
 
 		// don't send anything after config phase
@@ -469,16 +397,7 @@ int main(int argc, char** argv) {
 
 struct port_interface port_spi = {
 	.name	= "spi",
-	.flags	= PORT_CMD_INIT | PORT_RETRY | PORT_GVR_ETX | PORT_PROTOCOL_SPI,
 	.open	= spi_open,
 	.close	= spi_close,
-	.flush  = spi_flush,
-	.read	= spi_read,
-	.write	= spi_write,
-	.gpio	= spi_gpio,
 	.get_cfg_str	= spi_get_cfg_str,
-	.cmd_get_reply	= spi_cmd_get_reply,
 };
-
-#endif
-
