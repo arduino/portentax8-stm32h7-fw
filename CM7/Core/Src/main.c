@@ -235,6 +235,10 @@ uint16_t get_ADC_value(enum AnalogPins name) {
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
+void write_CAN_packet(const char* data) {
+  enqueue_packet(PERIPH_FDCAN1, DATA, strlen(data), data);
+}
+
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
 	uint16_t duty_int = duty*100/1024;
 	dbg_printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
@@ -354,6 +358,7 @@ int main(void) {
 		get_ADC_value(A5);
 		get_ADC_value(A6);
 		get_ADC_value(A7);
+		write_CAN_packet("A78");
 	}
 
     if (transferState == TRANSFER_COMPLETE) {

@@ -284,7 +284,12 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 			printf("ADC%d: %d\n", opcode - 1, *((uint16_t*)data));
 		}
 		break;
-	}
+  case PERIPH_FDCAN1:
+    if (opcode == DATA) {
+      printf("FDCAN1: %s\n", data);
+    }
+    break;
+  }
 }
 
 #define max(a,b) \
