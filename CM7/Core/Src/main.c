@@ -43,7 +43,8 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 
-#undef DEBUG
+#define DEBUG
+//#undef DEBUG
 
 #ifdef DEBUG
 #define dbg_printf(...)	printf(__VA_ARGS__)
@@ -285,8 +286,15 @@ int main(void) {
 
   HAL_Init();
   SystemClock_Config();
+
+  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
+
+
   PeriphCommonClock_Config();
 
+  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
+
+/*
   __HAL_RCC_HSEM_CLK_ENABLE();
   HAL_HSEM_FastTake(HSEM_ID_0);
   HAL_HSEM_Release(HSEM_ID_0, 0);
@@ -295,6 +303,7 @@ int main(void) {
   if (timeout < 0) {
     Error_Handler();
   }
+*/
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -309,8 +318,10 @@ int main(void) {
   MX_SPI3_Init();
   MX_USART2_UART_Init();
 
+#ifdef PORTENTA_DEBUG_WIRED
   // Enable SPI2 (Portenta only)
   MX_SPI2_Init();
+#endif
 
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
@@ -321,9 +332,25 @@ int main(void) {
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+#ifndef PORTENTA_DEBUG_WIRED
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  // Interrupt on CS LOW
+  GPIO_InitStruct.Pin = GPIO_PIN_15;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+#else
+
   // Enable LEDs (Portenta only)
   __HAL_RCC_GPIOK_CLK_ENABLE();
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
   GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -338,13 +365,17 @@ int main(void) {
 
   HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
   HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+#endif
 
   // Start DMA on SPI
   //HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
   //                            (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
+
+#ifdef PORTENTA_DEBUG_WIRED
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
+#endif
 
   while (1) {
 
@@ -363,7 +394,9 @@ int main(void) {
 
     if (transferState == TRANSFER_COMPLETE) {
 
+#ifdef PORTENTA_DEBUG_WIRED
       HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
+#endif
 
       struct subpacket *rx_pkt_userspace =
           (struct subpacket *)RX_Buffer_userspace;
@@ -389,6 +422,7 @@ int main(void) {
   }
 }
 
+#ifdef PORTENTA_DEBUG_WIRED
 void EXTI0_IRQHandler(void)
 {
 	if (get_data_amount) {
@@ -396,6 +430,16 @@ void EXTI0_IRQHandler(void)
 		                                (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
 	}
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+}
+#endif
+
+void EXTI15_10_IRQHandler(void)
+{
+  if (get_data_amount) {
+    HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t *)TX_Buffer,
+                                    (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+  }
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
@@ -408,13 +452,18 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (get_data_amount) {
 
-	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, 0);
+#ifdef PORTENTA_DEBUG_WIRED
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, 0);
+#endif
+
     data_amount = max(tx_pkt->size, rx_pkt->size);
 
-	// reconfigure the DMA to actually receive the data
-	HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data),
-									data_amount);
-
+    // reconfigure the DMA to actually receive the data
+#ifndef PORTENTA_DEBUG_WIRED
+    HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
+#else
+    HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
+#endif
     get_data_amount = false;
 
   } else {
@@ -430,7 +479,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;
-	HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
+
+#ifdef PORTENTA_DEBUG_WIRED
+    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
+#endif
 
     get_data_amount = true;
 
@@ -443,8 +495,13 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
   printf("HAL_SPI_ErrorCallback\n");
 
   // Restart DMA
+  #ifndef PORTENTA_DEBUG_WIRED
+  HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t *)TX_Buffer,
+                                  (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+  #else
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
                                   (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+  #endif
 }
 
 
@@ -453,12 +510,20 @@ void SystemClock_Config(void) {
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
   // ATTENTION: make sure this matches the actual hardware configuration
+#ifndef PORTENTA_DEBUG_WIRED
+  HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
+#else
   HAL_PWREx_ConfigSupply(PWR_SMPS_1V8_SUPPLIES_LDO);
+#endif
 
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
+
+  #ifndef PORTENTA_DEBUG_WIRED
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
 
   while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
   }
+  #endif
 
   __HAL_RCC_PLL_PLLSOURCE_CONFIG(RCC_PLLSOURCE_HSI);
 
@@ -936,7 +1001,7 @@ static void MX_SPI3_Init(void) {
   hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi3.Init.NSS = SPI_NSS_HARD_INPUT;
+  hspi3.Init.NSS = SPI_NSS_SOFT;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

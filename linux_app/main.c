@@ -335,7 +335,11 @@ int main(int argc, char** argv) {
 	struct port_interface port;
 	struct port_options ops;
 
+  #ifdef PORTENTA_DEBUG_WIRED
 	ops.device = "/dev/spidev1.1";
+  #else
+	ops.device = "/dev/spidev2.0";
+  #endif
 
 	spi_open(&port, &ops);
 
