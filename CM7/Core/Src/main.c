@@ -179,6 +179,9 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
 cleanup:
 	__enable_irq();
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
 }
 
 uint16_t get_ADC_value(enum AnalogPins name) {
@@ -254,7 +257,11 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		if (opcode == CONFIGURE) {
 			adc_sample_rate = *((uint16_t*)data);
 			dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
-		}
+      return;
+		} else {
+      // opcode == channel
+      get_ADC_value(opcode);
+    }
 		break;
 	}
 	case PERIPH_PWM: {
@@ -351,6 +358,16 @@ int main(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
+
+  // IRQ PIN from H7 to M8
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
 
   // Interrupt on CS LOW
   GPIO_InitStruct.Pin = GPIO_PIN_0;
