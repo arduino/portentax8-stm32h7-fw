@@ -287,12 +287,7 @@ int main(void) {
   HAL_Init();
   SystemClock_Config();
 
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
-
-
   PeriphCommonClock_Config();
-
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
 
 /*
   __HAL_RCC_HSEM_CLK_ENABLE();
@@ -378,19 +373,6 @@ int main(void) {
 #endif
 
   while (1) {
-
-	if (HAL_GetTick() % adc_sample_rate == 0 && adc_sample_rate != 0 && HAL_GetTick() != adc_sample_rate_last_tick) {
-		adc_sample_rate_last_tick = HAL_GetTick();
-		get_ADC_value(A0);
-		get_ADC_value(A1);
-		get_ADC_value(A2);
-		get_ADC_value(A3);
-		get_ADC_value(A4);
-		get_ADC_value(A5);
-		get_ADC_value(A6);
-		get_ADC_value(A7);
-		write_CAN_packet("A78");
-	}
 
     if (transferState == TRANSFER_COMPLETE) {
 
@@ -515,8 +497,6 @@ void SystemClock_Config(void) {
 #else
   HAL_PWREx_ConfigSupply(PWR_SMPS_1V8_SUPPLIES_LDO);
 #endif
-
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_HSI, RCC_MCODIV_15);
 
   #ifndef PORTENTA_DEBUG_WIRED
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE0);
