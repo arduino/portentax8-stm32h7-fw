@@ -87,13 +87,14 @@ volatile uint16_t data_amount = 0;
   })
 
 enum Peripherals {
-	PERIPH_ADC = 0x01,
+  PERIPH_H7 = 0x00,
+  PERIPH_ADC = 0x01,
 	PERIPH_PWM = 0x02,
 	PERIPH_FDCAN1 = 0x03,
 	PERIPH_FDCAN2 = 0x04,
 	PERIPH_UART = 0x05,
 	PERIPH_RTC = 0x06,
-	PERIPH_GPIO = 0x07,
+  PERIPH_GPIO = 0x07,
 };
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
@@ -120,6 +121,7 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
 enum Opcodes {
 	CONFIGURE = 0x10,
 	DATA = 0x01,
+  FW_VERSION = 0x10,
 };
 
 enum Opcodes_UART {
@@ -243,6 +245,11 @@ void write_CAN_packet(const char* data) {
   enqueue_packet(PERIPH_FDCAN1, DATA, strlen(data), data);
 }
 
+void writeVersion() {
+  const char* version = "v0.1";
+  enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), version);
+}
+
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
 	uint16_t duty_int = duty*100/1024;
 	dbg_printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
@@ -270,6 +277,12 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		configurePwm(channel, config.enable, config.polarity, config.duty, config.frequency);
 		break;
 	}
+  case PERIPH_H7: {
+    if (opcode == FW_VERSION) {
+      writeVersion();
+    }
+    break;
+  }
 	}
 }
 
