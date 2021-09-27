@@ -41,6 +41,8 @@ struct spi_priv {
   uint32_t speed;
 };
 
+#define PORTENTA_DEBUG_WIRED
+
 static port_err_t spi_open(struct port_interface *port,
 			   struct port_options *ops)
 {
@@ -321,6 +323,11 @@ void configureADCSampleRate(uint16_t rate) {
 	enqueue_packet(PERIPH_ADC, CONFIGURE, sizeof(uint16_t), &rate);
 }
 
+void getADC(uint8_t channel) {
+	uint16_t dummy;
+	enqueue_packet(PERIPH_ADC, channel, sizeof(uint16_t), &dummy);
+}
+
 void configurePWM(uint8_t channel, bool enable, bool polarity, float duty, uint32_t frequency) {
 	struct pwmPacket conf;
 	conf.enable = enable;
@@ -336,7 +343,7 @@ int main(int argc, char** argv) {
 	struct port_options ops;
 
   #ifdef PORTENTA_DEBUG_WIRED
-	ops.device = "/dev/spidev1.1";
+	ops.device = "/dev/spidev1.0";
   #else
 	ops.device = "/dev/spidev2.0";
   #endif
@@ -347,7 +354,8 @@ int main(int argc, char** argv) {
 
 	memset(samplebuffer, 0 , sizeof(samplebuffer));
 
-	configureADCSampleRate(100);
+	//configureADCSampleRate(100);
+	getADC(A0);
 	configurePWM(2, true, false, 0.3356, 500000);
 
 	uint8_t rxb[2048];
