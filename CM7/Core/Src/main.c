@@ -152,6 +152,21 @@ enum AnalogPins {
 	A7,
 };
 
+struct GPIO_numbers {
+  uint8_t port;
+  uint8_t pin;
+};
+
+struct GPIO_numbers GPIO_pinmap[] = {
+  { GPIOF, GPIO_PIN_8 },
+  { GPIOF, GPIO_PIN_6 },
+  { GPIOF, GPIO_PIN_3 },
+  { GPIOF, GPIO_PIN_4 },
+  { GPIOF, GPIO_PIN_12 },
+  { GPIOE, GPIO_PIN_10 },
+  { GPIOE, GPIO_PIN_11 },
+};
+
 struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint8_t enable: 1;
 	uint8_t polarity: 1;
@@ -241,6 +256,29 @@ uint16_t get_ADC_value(enum AnalogPins name) {
     enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
+void configureGPIO(uint8_t opcode, uint8_t data) {
+  enum Opcodes_GPIO action = opcode | 0xF0;
+  uint8_t index = opcode | 0xF;
+
+  switch (action) {
+    case CONFIGURE:
+      GPIO_InitTypeDef GPIO_InitStruct = {0};
+      GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
+      GPIO_InitStruct.Mode = data;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+      HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
+      break;
+    case WRITE:
+      HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, data);
+      break;
+    case READ:
+      uint8_t value = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
+      enqueue_packet(PERIPH_GPIO, opcode, sizeof(value), &value);
+      break;
+  }
+}
+
 void write_CAN_packet(const char* data) {
   enqueue_packet(PERIPH_FDCAN1, DATA, strlen(data), data);
 }
@@ -277,6 +315,10 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		configurePwm(channel, config.enable, config.polarity, config.duty, config.frequency);
 		break;
 	}
+  case PERIPH_GPIO: {
+    configureGPIO(opcode, *data);
+    break;
+  }
   case PERIPH_H7: {
     if (opcode == FW_VERSION) {
       writeVersion();
@@ -349,6 +391,18 @@ int main(void) {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+  // IRQ PIN from H7 to M8
+  // TODO: changeme when final HW is ready
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+
 #ifndef PORTENTA_DEBUG_WIRED
 
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -371,16 +425,6 @@ int main(void) {
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
-
-  // IRQ PIN from H7 to M8
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
 
   // Interrupt on CS LOW
   GPIO_InitStruct.Pin = GPIO_PIN_0;

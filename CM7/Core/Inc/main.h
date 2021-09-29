@@ -30,8 +30,6 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
 
-#define PORTENTA_DEBUG_WIRED
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
