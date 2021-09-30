@@ -157,7 +157,26 @@ struct GPIO_numbers {
   uint8_t pin;
 };
 
+struct ADC_numbers {
+  ADC_HandleTypeDef* peripheral;
+  uint32_t channel;
+};
+
+struct ADC_numbers ADC_pinmap[] = {
+  { NULL, 0 },
+  { &hadc1, ADC_CHANNEL_2 },
+  { &hadc2, ADC_CHANNEL_3 },
+  { &hadc2, ADC_CHANNEL_2 },
+  { &hadc2, ADC_CHANNEL_5 },
+  { &hadc2, ADC_CHANNEL_4 },
+  { &hadc3, ADC_CHANNEL_3 },
+  { &hadc3, ADC_CHANNEL_2 },
+  { &hadc3, ADC_CHANNEL_4 },
+};
+
 struct GPIO_numbers GPIO_pinmap[] = {
+  { 0, 0 },
+  // GPIOs
   { GPIOF, GPIO_PIN_8 },
   { GPIOF, GPIO_PIN_6 },
   { GPIOF, GPIO_PIN_3 },
@@ -165,6 +184,37 @@ struct GPIO_numbers GPIO_pinmap[] = {
   { GPIOF, GPIO_PIN_12 },
   { GPIOE, GPIO_PIN_10 },
   { GPIOE, GPIO_PIN_11 },
+  // ADCs
+  { GPIOF, GPIO_PIN_11 },
+  { GPIOA, GPIO_PIN_6 },
+  { GPIOF, GPIO_PIN_13 },
+  { GPIOB, GPIO_PIN_1 },
+  { GPIOC, GPIO_PIN_4 },
+  { GPIOF, GPIO_PIN_7 },
+  { GPIOF, GPIO_PIN_9 },
+  { GPIOF, GPIO_PIN_5 },
+  // FDCAN1
+  { GPIOD, GPIO_PIN_1 },
+  { GPIOD, GPIO_PIN_0 },
+  // FDCAN1
+  { GPIOB, GPIO_PIN_6 },
+  { GPIOB, GPIO_PIN_5 },
+  // USART2
+  { GPIOD, GPIO_PIN_5 },
+  { GPIOD, GPIO_PIN_6 },
+  { GPIOD, GPIO_PIN_4 },
+  { GPIOD, GPIO_PIN_3 },
+  // PWM
+  { GPIOC, GPIO_PIN_7 },
+  { GPIOA, GPIO_PIN_9 },
+  { GPIOA, GPIO_PIN_10 },
+  { GPIOB, GPIO_PIN_10 },
+  { GPIOA, GPIO_PIN_11 },
+  { GPIOD, GPIO_PIN_15 },
+  { GPIOA, GPIO_PIN_8 },
+  { GPIOC, GPIO_PIN_6 },
+  { GPIOA, GPIO_PIN_12 },
+  { GPIOC, GPIO_PIN_8 },
 };
 
 struct __attribute__((packed, aligned(4))) pwmPacket {
@@ -210,50 +260,18 @@ uint16_t get_ADC_value(enum AnalogPins name) {
 	conf.SingleDiff = ADC_SINGLE_ENDED;
 	conf.OffsetNumber = ADC_OFFSET_NONE;
 
-	switch (name) {
-	case A0:
-		conf.Channel = ADC_CHANNEL_2;
-		peripheral = &hadc1;
-		break;
-	case A1:
-		conf.Channel = ADC_CHANNEL_3;
-		peripheral = &hadc2;
-		break;
-	case A2:
-		conf.Channel = ADC_CHANNEL_2;
-		peripheral = &hadc2;
-		break;
-	case A3:
-		conf.Channel = ADC_CHANNEL_5;
-		peripheral = &hadc2;
-		break;
-	case A4:
-		conf.Channel = ADC_CHANNEL_4;
-		peripheral = &hadc2;
-		break;
-	case A5:
-		conf.Channel = ADC_CHANNEL_3;
-		peripheral = &hadc3;
-		break;
-	case A6:
-		conf.Channel = ADC_CHANNEL_2;
-		peripheral = &hadc3;
-		break;
-	case A7:
-		conf.Channel = ADC_CHANNEL_4;
-		peripheral = &hadc3;
-		break;
-	}
+  conf.Channel = ADC_pinmap[name].channel;
+  peripheral = ADC_pinmap[name].peripheral;
 
-    HAL_ADC_ConfigChannel(peripheral, &conf);
-    HAL_ADC_Start(peripheral);
-    HAL_ADC_PollForConversion(peripheral, 10);
-    uint16_t value = HAL_ADC_GetValue(peripheral);
-    HAL_ADC_Stop(peripheral);
+  HAL_ADC_ConfigChannel(peripheral, &conf);
+  HAL_ADC_Start(peripheral);
+  HAL_ADC_PollForConversion(peripheral, 10);
+  uint16_t value = HAL_ADC_GetValue(peripheral);
+  HAL_ADC_Stop(peripheral);
 
-    dbg_printf("ADC%d: %d\n", name-1, value);
+  dbg_printf("ADC%d: %d\n", name-1, value);
 
-    enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
+  enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
 void configureGPIO(uint8_t opcode, uint8_t data) {
