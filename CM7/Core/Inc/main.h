@@ -53,7 +53,9 @@ extern "C" {
 void HAL_HRTIM_MspPostInit(HRTIM_HandleTypeDef *hhrtim);
 
 /* Exported functions prototypes ---------------------------------------------*/
-void Error_Handler(void);
+void Error_Handler_Name(const char *name);
+
+#define Error_Handler() Error_Handler_Name(__func__)
 
 /* USER CODE BEGIN EFP */
 

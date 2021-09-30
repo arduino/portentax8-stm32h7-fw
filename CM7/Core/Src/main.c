@@ -46,6 +46,8 @@ static void MX_USART2_UART_Init(void);
 #define DEBUG
 //#undef DEBUG
 
+//#define PORTENTA_DEBUG_WIRED
+
 #ifdef DEBUG
 #define dbg_printf(...)	printf(__VA_ARGS__)
 #else
@@ -624,6 +626,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     data_amount = max(tx_pkt->size, rx_pkt->size);
 
+    if (data_amount == 0) {
+      return;
+    }
+
     // reconfigure the DMA to actually receive the data
 #ifndef PORTENTA_DEBUG_WIRED
     HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
@@ -1201,7 +1207,8 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOF_CLK_ENABLE();
 }
 
-void Error_Handler(void) {
+void Error_Handler_Name(const char* name) {
+  dbg_printf("Error_Handler called by %s\n", name);
   __disable_irq();
   while (1) {
   }
