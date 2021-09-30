@@ -219,8 +219,8 @@ struct GPIO_numbers GPIO_pinmap[] = {
 struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint8_t enable: 1;
 	uint8_t polarity: 1;
-	uint16_t duty: 10;
-	uint32_t frequency: 20;
+	uint32_t duty: 30;
+	uint32_t period: 32;
 };
 
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
@@ -312,10 +312,9 @@ void writeVersion() {
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), version);
 }
 
-void configurePwm(uint8_t channel, bool enable, bool polarity, uint16_t duty, uint32_t frequency) {
-	uint16_t duty_int = duty*100/1024;
-	dbg_printf("PWM channel %d %s with polarity %s, duty %d.%d%%, frequency %d\n", channel, enable ? "enabled" : "disabled",
-			polarity? "high": "low", duty_int, duty-duty_int*1024/100, frequency);
+void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
+	dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
+			polarity? "high": "low", duty_ns, period_ns);
 }
 
 uint16_t adc_sample_rate = 0;
@@ -336,7 +335,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 	case PERIPH_PWM: {
 		uint8_t channel = opcode;
 		struct pwmPacket config = *((struct pwmPacket*)data);
-		configurePwm(channel, config.enable, config.polarity, config.duty, config.frequency);
+		configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
 		break;
 	}
   case PERIPH_GPIO: {
