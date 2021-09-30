@@ -303,6 +303,90 @@ void configureGPIO(uint8_t opcode, uint16_t data) {
   }
 }
 
+struct rtc_time {
+  uint8_t tm_sec;
+  uint8_t tm_min;
+  uint8_t tm_hour;
+  uint8_t tm_mday;
+  uint8_t tm_mon;
+  uint8_t tm_year;
+  uint8_t tm_wday;
+};
+
+void doRTCStuff(uint8_t opcode, struct rtc_time *tm) {
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+  RTC_AlarmTypeDef sAlarm = {0};
+
+  if (opcode == SET_DATE) {
+    sTime.Hours = tm->tm_hour;
+    sTime.Minutes = tm->tm_min;
+    sTime.Seconds = tm->tm_sec;
+    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+      Error_Handler();
+    }
+    sDate.WeekDay = tm->tm_wday;
+    sDate.Month = tm->tm_mon;
+    sDate.Date = tm->tm_mday;
+    sDate.Year = tm->tm_year;
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+      Error_Handler();
+    }
+  }
+
+  if (opcode == GET_DATE) {
+
+    struct rtc_time now;
+
+    if (HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+      Error_Handler();
+    }
+    if (HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+      Error_Handler();
+    }
+
+    now.tm_hour = sTime.Hours;
+    now.tm_min = sTime.Minutes;
+    now.tm_sec = sTime.Seconds;
+    now.tm_wday = sDate.WeekDay;
+    now.tm_mon = sDate.Month;
+    now.tm_mday = sDate.Date;
+    now.tm_year = sDate.Year;
+
+    enqueue_packet(PERIPH_RTC, opcode, sizeof(now), &now);
+  }
+
+/*
+  sAlarm.AlarmTime.Hours = 0;
+  sAlarm.AlarmTime.Minutes = 0;
+  sAlarm.AlarmTime.Seconds = 0;
+  sAlarm.AlarmTime.SubSeconds = 0;
+  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
+  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
+  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  sAlarm.AlarmDateWeekDay = 1;
+  sAlarm.Alarm = RTC_ALARM_A;
+  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
+  }
+
+  sAlarm.Alarm = RTC_ALARM_B;
+  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
+  }
+
+  if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) !=
+      HAL_OK) {
+    Error_Handler();
+  }
+*/
+
+}
+
 void write_CAN_packet(const char* data) {
   enqueue_packet(PERIPH_FDCAN1, DATA, strlen(data), data);
 }
@@ -341,6 +425,9 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
   case PERIPH_GPIO: {
     configureGPIO(opcode, *((uint16_t*)data));
     break;
+  }
+  case PERIPH_RTC: {
+    doRTCStuff(opcode, (struct rtc_time*)data);
   }
   case PERIPH_H7: {
     if (opcode == FW_VERSION) {
@@ -982,10 +1069,6 @@ static void MX_HRTIM_Init(void) {
 
 static void MX_RTC_Init(void) {
 
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-  RTC_AlarmTypeDef sAlarm = {0};
-
   hrtc.Instance = RTC;
   hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
   hrtc.Init.AsynchPrediv = 127;
@@ -998,46 +1081,6 @@ static void MX_RTC_Init(void) {
     Error_Handler();
   }
 
-  sTime.Hours = 0;
-  sTime.Minutes = 0;
-  sTime.Seconds = 0;
-  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-  sDate.WeekDay = RTC_WEEKDAY_MONDAY;
-  sDate.Month = RTC_MONTH_JANUARY;
-  sDate.Date = 1;
-  sDate.Year = 0;
-  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-
-  sAlarm.AlarmTime.Hours = 0;
-  sAlarm.AlarmTime.Minutes = 0;
-  sAlarm.AlarmTime.Seconds = 0;
-  sAlarm.AlarmTime.SubSeconds = 0;
-  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 1;
-  sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-
-  sAlarm.Alarm = RTC_ALARM_B;
-  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-
-  if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) !=
-      HAL_OK) {
-    Error_Handler();
-  }
 }
 
 static void MX_SPI2_Init(void) {
