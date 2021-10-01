@@ -228,8 +228,8 @@ struct __attribute__((packed, aligned(4))) pwmPacket {
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
 	// don't feed data in the middle of a transmission
-	if (get_data_amount == false) {
-		return;
+	while (get_data_amount == false) {
+		// wait for the DMA interrupt to be over
 	}
 	__disable_irq();
 	struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
