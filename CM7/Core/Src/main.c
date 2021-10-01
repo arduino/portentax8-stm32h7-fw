@@ -159,6 +159,11 @@ struct GPIO_numbers {
   uint16_t pin;
 };
 
+struct PWM_numbers {
+  uint32_t index;
+  uint32_t channel;
+};
+
 struct ADC_numbers {
   ADC_HandleTypeDef* peripheral;
   uint32_t channel;
@@ -216,6 +221,20 @@ struct GPIO_numbers GPIO_pinmap[] = {
   { GPIOC, GPIO_PIN_6 },
   { GPIOA, GPIO_PIN_12 },
   { GPIOC, GPIO_PIN_8 },
+};
+
+struct PWM_numbers PWM_pinmap[] = {
+  // GPIOs
+  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA2 },
+  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC1 },
+  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC2 },
+  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE2 },
+  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD1 },
+  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE1 },
+  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB2 },
+  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1 },
+  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD2 },
+  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1 },
 };
 
 struct __attribute__((packed, aligned(4))) pwmPacket {
@@ -423,6 +442,37 @@ void writeVersion() {
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
 	dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
 			polarity? "high": "low", duty_ns, period_ns);
+
+  HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
+  HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
+
+  pTimeBaseCfg.Period = period_ns / 5;
+  pTimeBaseCfg.RepetitionCounter = 0x00;
+  pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
+  pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
+
+  sConfig_Channel.Polarity = HRTIM_OUTPUTPOLARITY_LOW;
+  sConfig_Channel.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
+  sConfig_Channel.Pulse = duty_ns / 5;
+
+  HAL_StatusTypeDef ret;
+
+  ret = HAL_HRTIM_TimeBaseConfig(&hhrtim, PWM_pinmap[channel].index, &pTimeBaseCfg);
+  dbg_printf("HAL_HRTIM_TimeBaseConfig: %d\n", ret);
+  
+  ret = HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel);
+  dbg_printf("HAL_HRTIM_SimplePWMChannelConfig: %d\n", ret);
+
+  HAL_HRTIM_SoftwareUpdate(&hhrtim,HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C
+      | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E);
+
+  if (enable) {
+    ret = HAL_HRTIM_SimplePWMStart(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
+    dbg_printf("HAL_HRTIM_SimplePWMStart: %d\n", ret);
+  } else {
+    ret = HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
+    dbg_printf("HAL_HRTIM_SimplePWMStop: %d\n", ret);
+  }
 }
 
 void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bits, bool flow_control) {
@@ -1050,131 +1100,6 @@ static void MX_HRTIM_Init(void) {
   hhrtim.Init.HRTIMInterruptResquests = HRTIM_IT_NONE;
   hhrtim.Init.SyncOptions = HRTIM_SYNCOPTION_NONE;
   if (HAL_HRTIM_Init(&hhrtim) != HAL_OK) {
-    Error_Handler();
-  }
-  pTimeBaseCfg.Period = 0xFFFD;
-  pTimeBaseCfg.RepetitionCounter = 0x00;
-  pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
-  pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_MASTER,
-                               &pTimeBaseCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  pTimerCfg.InterruptRequests = HRTIM_MASTER_IT_NONE;
-  pTimerCfg.DMARequests = HRTIM_MASTER_DMA_NONE;
-  pTimerCfg.DMASrcAddress = 0x0000;
-  pTimerCfg.DMADstAddress = 0x0000;
-  pTimerCfg.DMASize = 0x1;
-  pTimerCfg.HalfModeEnable = HRTIM_HALFMODE_DISABLED;
-  pTimerCfg.StartOnSync = HRTIM_SYNCSTART_DISABLED;
-  pTimerCfg.ResetOnSync = HRTIM_SYNCRESET_DISABLED;
-  pTimerCfg.DACSynchro = HRTIM_DACSYNC_NONE;
-  pTimerCfg.PreloadEnable = HRTIM_PRELOAD_DISABLED;
-  pTimerCfg.UpdateGating = HRTIM_UPDATEGATING_INDEPENDENT;
-  pTimerCfg.BurstMode = HRTIM_TIMERBURSTMODE_MAINTAINCLOCK;
-  pTimerCfg.RepetitionUpdate = HRTIM_UPDATEONREPETITION_DISABLED;
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_MASTER,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_A,
-                               &pTimeBaseCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  pTimerCfg.InterruptRequests = HRTIM_TIM_IT_NONE;
-  pTimerCfg.DMARequests = HRTIM_TIM_DMA_NONE;
-  pTimerCfg.PushPull = HRTIM_TIMPUSHPULLMODE_DISABLED;
-  pTimerCfg.FaultEnable = HRTIM_TIMFAULTENABLE_NONE;
-  pTimerCfg.FaultLock = HRTIM_TIMFAULTLOCK_READWRITE;
-  pTimerCfg.DeadTimeInsertion = HRTIM_TIMDEADTIMEINSERTION_DISABLED;
-  pTimerCfg.DelayedProtectionMode =
-      HRTIM_TIMER_A_B_C_DELAYEDPROTECTION_DISABLED;
-  pTimerCfg.UpdateTrigger = HRTIM_TIMUPDATETRIGGER_NONE;
-  pTimerCfg.ResetTrigger = HRTIM_TIMRESETTRIGGER_NONE;
-  pTimerCfg.ResetUpdate = HRTIM_TIMUPDATEONRESET_DISABLED;
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_A,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_B,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_C,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  pTimerCfg.DelayedProtectionMode = HRTIM_TIMER_D_E_DELAYEDPROTECTION_DISABLED;
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_D,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformTimerConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_E,
-                                    &pTimerCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  pOutputCfg.Polarity = HRTIM_OUTPUTPOLARITY_HIGH;
-  pOutputCfg.SetSource = HRTIM_OUTPUTSET_NONE;
-  pOutputCfg.ResetSource = HRTIM_OUTPUTRESET_NONE;
-  pOutputCfg.IdleMode = HRTIM_OUTPUTIDLEMODE_NONE;
-  pOutputCfg.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
-  pOutputCfg.FaultLevel = HRTIM_OUTPUTFAULTLEVEL_NONE;
-  pOutputCfg.ChopperModeEnable = HRTIM_OUTPUTCHOPPERMODE_DISABLED;
-  pOutputCfg.BurstModeEntryDelayed = HRTIM_OUTPUTBURSTMODEENTRY_REGULAR;
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_A,
-                                     HRTIM_OUTPUT_TA1, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_B,
-                                     HRTIM_OUTPUT_TB1, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_C,
-                                     HRTIM_OUTPUT_TC1, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_D,
-                                     HRTIM_OUTPUT_TD1, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_E,
-                                     HRTIM_OUTPUT_TE1, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_A,
-                                     HRTIM_OUTPUT_TA2, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_B,
-                                     HRTIM_OUTPUT_TB2, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_C,
-                                     HRTIM_OUTPUT_TC2, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_D,
-                                     HRTIM_OUTPUT_TD2, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_WaveformOutputConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_E,
-                                     HRTIM_OUTPUT_TE2, &pOutputCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_B,
-                               &pTimeBaseCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_C,
-                               &pTimeBaseCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_D,
-                               &pTimeBaseCfg) != HAL_OK) {
-    Error_Handler();
-  }
-  if (HAL_HRTIM_TimeBaseConfig(&hhrtim, HRTIM_TIMERINDEX_TIMER_E,
-                               &pTimeBaseCfg) != HAL_OK) {
     Error_Handler();
   }
   HAL_HRTIM_MspPostInit(&hhrtim);
