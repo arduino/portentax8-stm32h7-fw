@@ -225,6 +225,20 @@ struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint32_t period: 32;
 };
 
+enum UARTParity {
+  PARITY_EVEN = 0,
+  PARITY_ODD,
+  PARITY_NONE,
+};
+
+struct __attribute__((packed, aligned(4))) uartPacket {
+  uint32_t baud: 23;
+  uint8_t bits: 4;
+  uint8_t stop_bits: 2;
+  uint8_t parity: 2;
+  uint8_t flow_control: 1;
+};
+
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
 	// don't feed data in the middle of a transmission
@@ -411,6 +425,65 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
 			polarity? "high": "low", duty_ns, period_ns);
 }
 
+void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bits, bool flow_control) {
+
+  //HAL_UART_DeInit(&huart2);
+
+  uint32_t WordLength;
+  uint32_t Parity;
+  uint32_t StopBits;
+
+  switch (bits) {
+    case 7:
+      WordLength = UART_WORDLENGTH_7B;
+      break;
+    case 8:
+      WordLength = UART_WORDLENGTH_8B;
+      break;
+    case 9:
+      WordLength = UART_WORDLENGTH_9B;
+      break;
+  }
+
+  switch (parity) {
+    case PARITY_EVEN:
+      Parity = UART_PARITY_EVEN;
+      break;
+    case PARITY_ODD:
+      Parity = UART_PARITY_ODD;
+      break;
+    case PARITY_NONE:
+      Parity = UART_PARITY_NONE;
+      break;
+  }
+
+  switch (stop_bits) {
+    case 0:
+      StopBits = UART_STOPBITS_0_5;
+      break;
+    case 1:
+      StopBits = UART_STOPBITS_1;
+      break;
+    case 2:
+      StopBits = UART_STOPBITS_1;
+      break;
+  }
+
+  huart2.Init.BaudRate = baud;
+  huart2.Init.WordLength = WordLength;
+  huart2.Init.StopBits = StopBits;
+  huart2.Init.Parity = Parity;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = flow_control == false ? UART_HWCONTROL_NONE : UART_HWCONTROL_RTS_CTS;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK) {
+    Error_Handler();
+  }
+}
+
 uint16_t adc_sample_rate = 0;
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
@@ -438,6 +511,16 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
   }
   case PERIPH_RTC: {
     doRTCStuff(opcode, (struct rtc_time*)data);
+  }
+  case PERIPH_UART: {
+    if (opcode == CONFIGURE) {
+      struct uartPacket config = *((struct uartPacket*)data);
+      configureUart(config.baud, config.bits, config.parity, config.stop_bits, config.flow_control);
+    } else {
+      // can only write(), read() is irq driven
+      HAL_UART_Transmit(&huart2, data, size, 0xFFFFFFFF);
+    }
+    break;
   }
   case PERIPH_H7: {
     if (opcode == FW_VERSION) {
@@ -567,6 +650,8 @@ int main(void) {
 #endif
 
   while (1) {
+
+    __WFI();
 
     if (transferState == TRANSFER_COMPLETE) {
 
@@ -1195,9 +1280,16 @@ static void MX_USART2_UART_Init(void) {
       HAL_OK) {
     Error_Handler();
   }
-  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK) {
+  if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK) {
     Error_Handler();
   }
+
+  UART_WakeUpTypeDef event = 
+    { .WakeUpEvent = UART_WAKEUP_ON_STARTBIT };
+  HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2, event);
+  HAL_UARTEx_EnableStopMode(&huart2);
+
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
 }
 
 static void MX_DMA_Init(void) {
