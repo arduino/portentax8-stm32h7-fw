@@ -248,6 +248,14 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 cleanup:
 	__enable_irq();
 
+  dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
+      to_peripheral_string(peripheral), opcode, size);
+
+  for (int i = 0; i < size; i++) {
+    dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
+  }
+  dbg_printf("\n");
+
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
 }
@@ -587,6 +595,13 @@ int main(void) {
       }
       transferState = TRANSFER_WAIT;
     }
+
+    if (transferState == TRANSFER_ERROR) {
+        dbg_printf("got transfer error, recovering\n");
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+        transferState = TRANSFER_WAIT;
+    }
   }
 }
 
@@ -664,8 +679,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
   transferState = TRANSFER_ERROR;
-  printf("HAL_SPI_ErrorCallback\n");
 
+#ifndef PORTENTA_DEBUG_WIRED
+  HAL_SPI_Abort(&hspi3);
+#else
+  HAL_SPI_Abort(&hspi2);
+#endif
+
+/*
   // Restart DMA
   #ifndef PORTENTA_DEBUG_WIRED
   HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t *)TX_Buffer,
@@ -674,6 +695,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
   HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
                                   (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
   #endif
+*/
 }
 
 
