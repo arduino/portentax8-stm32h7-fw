@@ -451,27 +451,19 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
   pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
 
-  sConfig_Channel.Polarity = HRTIM_OUTPUTPOLARITY_LOW;
+  sConfig_Channel.Polarity = polarity ? HRTIM_OUTPUTPOLARITY_HIGH : HRTIM_OUTPUTPOLARITY_LOW;
   sConfig_Channel.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
   sConfig_Channel.Pulse = duty_ns / 5;
 
-  HAL_StatusTypeDef ret;
-
-  ret = HAL_HRTIM_TimeBaseConfig(&hhrtim, PWM_pinmap[channel].index, &pTimeBaseCfg);
-  dbg_printf("HAL_HRTIM_TimeBaseConfig: %d\n", ret);
-  
-  ret = HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel);
-  dbg_printf("HAL_HRTIM_SimplePWMChannelConfig: %d\n", ret);
-
+  HAL_HRTIM_TimeBaseConfig(&hhrtim, PWM_pinmap[channel].index, &pTimeBaseCfg);
+  HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel);
   HAL_HRTIM_SoftwareUpdate(&hhrtim,HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C
       | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E);
 
   if (enable) {
-    ret = HAL_HRTIM_SimplePWMStart(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-    dbg_printf("HAL_HRTIM_SimplePWMStart: %d\n", ret);
+    HAL_HRTIM_SimplePWMStart(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
   } else {
-    ret = HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-    dbg_printf("HAL_HRTIM_SimplePWMStop: %d\n", ret);
+    HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
   }
 }
 
