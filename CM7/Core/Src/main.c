@@ -43,7 +43,6 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 
-#define DEBUG
 //#undef DEBUG
 
 //#define PORTENTA_DEBUG_WIRED
@@ -251,11 +250,11 @@ enum UARTParity {
 };
 
 struct __attribute__((packed, aligned(4))) uartPacket {
-  uint32_t baud: 23;
   uint8_t bits: 4;
   uint8_t stop_bits: 2;
   uint8_t parity: 2;
   uint8_t flow_control: 1;
+  uint32_t baud: 23;
 };
 
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
@@ -278,8 +277,6 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
 	tx_pkt->size += 4 + size;
 	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
-cleanup:
-	__enable_irq();
 
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
       to_peripheral_string(peripheral), opcode, size);
@@ -288,6 +285,9 @@ cleanup:
     dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
   }
   dbg_printf("\n");
+
+cleanup:
+	__enable_irq();
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
@@ -430,13 +430,9 @@ void doRTCStuff(uint8_t opcode, struct rtc_time *tm) {
 
 }
 
-void write_CAN_packet(const char* data) {
-  enqueue_packet(PERIPH_FDCAN1, DATA, strlen(data), data);
-}
-
 void writeVersion() {
   const char* version = "v0.1";
-  enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), version);
+  enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
 }
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
