@@ -1231,7 +1231,7 @@ static void MX_SPI3_Init(void) {
 static uint8_t uart_rxbuf[1024];
 
 void UART2_enable_rx_irq() {
-  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
+  //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
   //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
 
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
