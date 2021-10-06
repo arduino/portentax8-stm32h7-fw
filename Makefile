@@ -46,6 +46,7 @@ INCLUDES = \
 OBJS = \
 	Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
 	CM7/Core/Src/main.o \
+	CM7/Core/Src/ringbuffer.o \
 	CM7/Core/Src/stm32h7xx_hal_msp.o \
 	CM7/Core/Src/stm32h7xx_it.o \
 	CM7/Core/Src/syscalls.o \

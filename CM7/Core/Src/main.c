@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include "ringbuffer.h"
 
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
@@ -257,12 +258,23 @@ struct __attribute__((packed, aligned(4))) uartPacket {
   uint32_t baud: 23;
 };
 
+volatile bool trigger_irq = false;
+
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
+/*
+  int timeout = 100000;
 	// don't feed data in the middle of a transmission
-	while (get_data_amount == false) {
+	while (get_data_amount == false && timeout > 0) {
 		// wait for the DMA interrupt to be over
+    timeout--;
 	}
+*/
+
+  while (get_data_amount == false) {
+    // wait for the DMA interrupt to be over
+  }
+
 	__disable_irq();
 	struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 	uint16_t offset = tx_pkt->size;
@@ -291,6 +303,8 @@ cleanup:
 
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+
+  //trigger_irq = true;
 }
 
 uint16_t get_ADC_value(enum AnalogPins name) {
@@ -579,6 +593,7 @@ int _write(int file, char *ptr, int len) {
 }
 
 long adc_sample_rate_last_tick = 0;
+ring_buffer_t ring_buffer;
 
 int main(void) {
 
@@ -591,6 +606,8 @@ int main(void) {
   SystemClock_Config();
 
   PeriphCommonClock_Config();
+
+  ring_buffer_init(&ring_buffer);
 
 /*
   __HAL_RCC_HSEM_CLK_ENABLE();
@@ -691,6 +708,12 @@ int main(void) {
 
     __WFI();
 
+    if (!ring_buffer_is_empty(&ring_buffer)) {
+        uint8_t temp_buf[1024];
+        int cnt = ring_buffer_dequeue_arr(&ring_buffer, temp_buf, ring_buffer_num_items(&ring_buffer));
+        enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
+    }
+
     if (transferState == TRANSFER_COMPLETE) {
 
 #ifdef PORTENTA_DEBUG_WIRED
@@ -725,6 +748,14 @@ int main(void) {
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
         transferState = TRANSFER_WAIT;
     }
+
+/*
+    if (trigger_irq) {
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+      trigger_irq = false;
+    }
+*/
   }
 }
 
@@ -1169,6 +1200,13 @@ static void MX_SPI3_Init(void) {
   }
 }
 
+static uint8_t uart_rxbuf[1024];
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+  ring_buffer_queue_arr(&ring_buffer, uart_rxbuf, Size);
+  HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
+}
+
 static void MX_USART2_UART_Init(void) {
 
   huart2.Instance = USART2;
@@ -1185,11 +1223,12 @@ static void MX_USART2_UART_Init(void) {
   if (HAL_UART_Init(&huart2) != HAL_OK) {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) !=
+
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_2) !=
       HAL_OK) {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) !=
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_2) !=
       HAL_OK) {
     Error_Handler();
   }
@@ -1197,12 +1236,17 @@ static void MX_USART2_UART_Init(void) {
     Error_Handler();
   }
 
+/*
   UART_WakeUpTypeDef event = 
     { .WakeUpEvent = UART_WAKEUP_ON_STARTBIT };
   HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2, event);
   HAL_UARTEx_EnableStopMode(&huart2);
+*/
 
   __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
+  //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+
+  HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
 }
 
 static void MX_DMA_Init(void) {
