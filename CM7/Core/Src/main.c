@@ -734,7 +734,7 @@ int main(void) {
 
   while (1) {
 
-    __WFI();
+    //__WFI();
 
     if (!ring_buffer_is_empty(&ring_buffer)) {
         uint8_t temp_buf[1024];
