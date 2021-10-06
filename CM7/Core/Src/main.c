@@ -552,7 +552,7 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
-  printf("Reconfiguring UART with %d baud, %d%c%d , %s flow control\n",
+  dbg_printf("Reconfiguring UART with %d baud, %d%c%d , %s flow control\n",
     baud, bits, parity_str, stop_bits, flow_control ? "" : "no");
 
   HAL_UART_DeInit(&huart2);
