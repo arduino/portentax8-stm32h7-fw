@@ -65,6 +65,7 @@ OBJS = \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
+	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \

@@ -29,6 +29,8 @@ DMA_HandleTypeDef hdma_spi2_rx;
 
 UART_HandleTypeDef huart2;
 
+IWDG_HandleTypeDef watchdog;
+
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -728,6 +730,14 @@ int main(void) {
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
 
+  watchdog.Instance = IWDG1;
+  watchdog.Init.Prescaler = IWDG_PRESCALER_16;
+  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
+  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
+
+  HAL_IWDG_Init(&watchdog);
+
+
 #ifdef PORTENTA_DEBUG_WIRED
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
 #endif
@@ -735,6 +745,7 @@ int main(void) {
   while (1) {
 
     //__WFI();
+    HAL_IWDG_Refresh(&watchdog);
 
     if (!ring_buffer_is_empty(&ring_buffer)) {
         uint8_t temp_buf[1024];
