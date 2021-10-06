@@ -477,6 +477,8 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   }
 }
 
+void UART2_enable_rx_irq();
+
 void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bits, bool flow_control) {
 
   //HAL_UART_DeInit(&huart2);
@@ -484,6 +486,7 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
   uint32_t WordLength;
   uint32_t Parity;
   uint32_t StopBits;
+  uint32_t HwFlowCtl = UART_HWCONTROL_NONE;
 
   switch (bits) {
     case 7:
@@ -497,15 +500,20 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
       break;
   }
 
+  char parity_str;
+
   switch (parity) {
     case PARITY_EVEN:
       Parity = UART_PARITY_EVEN;
+      parity_str = 'E';
       break;
     case PARITY_ODD:
       Parity = UART_PARITY_ODD;
+      parity_str = 'O';
       break;
     case PARITY_NONE:
       Parity = UART_PARITY_NONE;
+      parity_str = 'N';
       break;
   }
 
@@ -521,19 +529,39 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
       break;
   }
 
+  if (flow_control) {
+    HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  }
+
+  if (huart2.Init.BaudRate == baud &&
+      huart2.Init.WordLength == WordLength &&
+      huart2.Init.StopBits == StopBits &&
+      huart2.Init.Parity == Parity &&
+      huart2.Init.HwFlowCtl == HwFlowCtl) {
+      return;
+  }
+
   huart2.Init.BaudRate = baud;
   huart2.Init.WordLength = WordLength;
   huart2.Init.StopBits = StopBits;
   huart2.Init.Parity = Parity;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = flow_control == false ? UART_HWCONTROL_NONE : UART_HWCONTROL_RTS_CTS;
+  huart2.Init.HwFlowCtl = HwFlowCtl;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+  printf("Reconfiguring UART with %d baud, %d%c%d , %s flow control\n",
+    baud, bits, parity_str, stop_bits, flow_control ? "" : "no");
+
+  HAL_UART_DeInit(&huart2);
+
   if (HAL_UART_Init(&huart2) != HAL_OK) {
     Error_Handler();
   }
+
+  UART2_enable_rx_irq();
 }
 
 uint16_t adc_sample_rate = 0;
@@ -558,7 +586,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		break;
 	}
   case PERIPH_GPIO: {
-    configureGPIO(opcode, *((uint16_t*)data));
+      configureGPIO(opcode, *((uint16_t*)data));
     break;
   }
   case PERIPH_RTC: {
@@ -1202,6 +1230,13 @@ static void MX_SPI3_Init(void) {
 
 static uint8_t uart_rxbuf[1024];
 
+void UART2_enable_rx_irq() {
+  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
+  //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+
+  HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
+}
+
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
   ring_buffer_queue_arr(&ring_buffer, uart_rxbuf, Size);
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
@@ -1242,11 +1277,7 @@ static void MX_USART2_UART_Init(void) {
   HAL_UARTEx_StopModeWakeUpSourceConfig(&huart2, event);
   HAL_UARTEx_EnableStopMode(&huart2);
 */
-
-  __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
-  //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
-
-  HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
+  UART2_enable_rx_irq();
 }
 
 static void MX_DMA_Init(void) {
