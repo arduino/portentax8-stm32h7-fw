@@ -583,7 +583,8 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 uint16_t adc_sample_rate = 0;
 
 void configureFDCAN(uint8_t peripheral, void* data) {
-
+  //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
+  //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
 }
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
