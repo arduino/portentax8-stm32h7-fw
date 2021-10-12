@@ -566,7 +566,25 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
   UART2_enable_rx_irq();
 }
 
+volatile bool can1_rx_irq = false;
+volatile bool can2_rx_irq = false;
+
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
+  if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
+    if (hfdcan == &hfdcan1) {
+      can1_rx_irq = true;
+    }
+    if (hfdcan == &hfdcan2) {
+      can2_rx_irq = true;
+    }
+  }
+}
+
 uint16_t adc_sample_rate = 0;
+
+void configureFDCAN(uint8_t peripheral, void* data) {
+
+}
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
 	switch (peripheral) {
@@ -591,8 +609,23 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
       configureGPIO(opcode, *((uint16_t*)data));
     break;
   }
+  case PERIPH_FDCAN1:
+  case PERIPH_FDCAN2: {
+      if (opcode == CONFIGURE) {
+        configureFDCAN(peripheral, data);
+        break;
+      }
+      if (peripheral == PERIPH_FDCAN1) {
+        HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, (FDCAN_TxHeaderTypeDef*)data, data + sizeof(FDCAN_TxHeaderTypeDef));
+      }
+      if (peripheral == PERIPH_FDCAN2) {
+        HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, (FDCAN_TxHeaderTypeDef*)data, data + sizeof(FDCAN_TxHeaderTypeDef));
+      }
+    break;
+  }
   case PERIPH_RTC: {
     doRTCStuff(opcode, (struct rtc_time*)data);
+    break;
   }
   case PERIPH_UART: {
     if (opcode == CONFIGURE) {
@@ -601,6 +634,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
     } else {
       // can only write(), read() is irq driven
       HAL_UART_Transmit(&huart2, data, size, 0xFFFFFFFF);
+      //HAL_UART_Transmit_IT(&huart2, data, size);
     }
     break;
   }
@@ -623,7 +657,7 @@ int _write(int file, char *ptr, int len) {
 }
 
 long adc_sample_rate_last_tick = 0;
-ring_buffer_t ring_buffer;
+ring_buffer_t uart_ring_buffer;
 
 int main(void) {
 
@@ -637,7 +671,7 @@ int main(void) {
 
   PeriphCommonClock_Config();
 
-  ring_buffer_init(&ring_buffer);
+  ring_buffer_init(&uart_ring_buffer);
 
 /*
   __HAL_RCC_HSEM_CLK_ENABLE();
@@ -671,6 +705,12 @@ int main(void) {
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
+
+  HAL_FDCAN_Start(&hfdcan1);
+  HAL_FDCAN_Start(&hfdcan2);
+
+  HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+  HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
 
   memset((uint8_t*)TX_Buffer, 0, sizeof(TX_Buffer));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
@@ -747,10 +787,23 @@ int main(void) {
     //__WFI();
     HAL_IWDG_Refresh(&watchdog);
 
-    if (!ring_buffer_is_empty(&ring_buffer)) {
+    if (!ring_buffer_is_empty(&uart_ring_buffer)) {
         uint8_t temp_buf[1024];
-        int cnt = ring_buffer_dequeue_arr(&ring_buffer, temp_buf, ring_buffer_num_items(&ring_buffer));
+        int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, temp_buf, ring_buffer_num_items(&uart_ring_buffer));
         enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
+    }
+
+    if (can1_rx_irq) {
+      FDCAN_RxHeaderTypeDef _rxHeader;
+      uint8_t _rxData[64 + sizeof(_rxHeader)];
+      HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
+      enqueue_packet(PERIPH_FDCAN1, DATA, _rxHeader.DataLength + sizeof(_rxHeader), _rxData);
+    }
+    if (can2_rx_irq) {
+      FDCAN_RxHeaderTypeDef _rxHeader;
+      uint8_t _rxData[64 + sizeof(_rxHeader)];
+      HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
+      enqueue_packet(PERIPH_FDCAN1, DATA, _rxHeader.DataLength + sizeof(_rxHeader), _rxData);
     }
 
     if (transferState == TRANSFER_COMPLETE) {
@@ -1249,7 +1302,7 @@ void UART2_enable_rx_irq() {
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-  ring_buffer_queue_arr(&ring_buffer, uart_rxbuf, Size);
+  ring_buffer_queue_arr(&uart_ring_buffer, uart_rxbuf, Size);
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
 }
 
