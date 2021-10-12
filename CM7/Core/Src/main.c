@@ -566,6 +566,7 @@ void configureUart(uint32_t baud, uint8_t bits, uint8_t parity, uint8_t stop_bit
   UART2_enable_rx_irq();
 }
 
+/*
 volatile bool can1_rx_irq = false;
 volatile bool can2_rx_irq = false;
 
@@ -579,6 +580,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     }
   }
 }
+*/
 
 uint16_t adc_sample_rate = 0;
 
@@ -794,13 +796,13 @@ int main(void) {
         enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
     }
 
-    if (can1_rx_irq) {
+    if (HAL_FDCAN_IsRxBufferMessageAvailable(&hfdcan1, 0)) {
       FDCAN_RxHeaderTypeDef _rxHeader;
       uint8_t _rxData[64 + sizeof(_rxHeader)];
       HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
       enqueue_packet(PERIPH_FDCAN1, DATA, _rxHeader.DataLength + sizeof(_rxHeader), _rxData);
     }
-    if (can2_rx_irq) {
+    if (HAL_FDCAN_IsRxBufferMessageAvailable(&hfdcan2, 0)) {
       FDCAN_RxHeaderTypeDef _rxHeader;
       uint8_t _rxData[64 + sizeof(_rxHeader)];
       HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
