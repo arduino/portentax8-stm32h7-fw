@@ -270,10 +270,13 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan) {
 
     /* USER CODE END FDCAN1_MspInit 0 */
     /* Peripheral clock enable */
+
+    /*
     HAL_RCC_FDCAN_CLK_ENABLED++;
     if (HAL_RCC_FDCAN_CLK_ENABLED == 1) {
       __HAL_RCC_FDCAN_CLK_ENABLE();
     }
+    */
 
     __HAL_RCC_GPIOD_CLK_ENABLE();
     /**FDCAN1 GPIO Configuration
@@ -283,7 +286,7 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan) {
     GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_FDCAN1;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
@@ -298,10 +301,12 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan) {
 
     /* USER CODE END FDCAN2_MspInit 0 */
     /* Peripheral clock enable */
+    #if 0
     HAL_RCC_FDCAN_CLK_ENABLED++;
     if (HAL_RCC_FDCAN_CLK_ENABLED == 1) {
       __HAL_RCC_FDCAN_CLK_ENABLE();
     }
+    #endif
 
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**FDCAN2 GPIO Configuration
@@ -311,7 +316,7 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan) {
     GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF9_FDCAN2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 

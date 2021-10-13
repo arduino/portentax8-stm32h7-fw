@@ -663,6 +663,9 @@ int _write(int file, char *ptr, int len) {
 long adc_sample_rate_last_tick = 0;
 ring_buffer_t uart_ring_buffer;
 
+can_t fdcan_1;
+can_t fdcan_2;
+
 int main(void) {
 
   int32_t timeout;
@@ -692,8 +695,8 @@ int main(void) {
   MX_GPIO_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
-  MX_FDCAN1_Init();
-  MX_FDCAN2_Init();
+  //MX_FDCAN1_Init();
+  //MX_FDCAN2_Init();
   MX_DMA_Init();
   MX_ADC3_Init();
   MX_HRTIM_Init();
@@ -710,16 +713,16 @@ int main(void) {
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
 
-  can_t fdcan_1;
-  can_t fdcan_2;
   can_init_freq_direct(&fdcan_1, CAN_1, 500000);
   can_init_freq_direct(&fdcan_2, CAN_2, 500000);
 
+/*
   HAL_FDCAN_Start(&hfdcan1);
   HAL_FDCAN_Start(&hfdcan2);
 
   HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
   HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+*/
 
   memset((uint8_t*)TX_Buffer, 0, sizeof(TX_Buffer));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
@@ -802,17 +805,32 @@ int main(void) {
         enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
     }
 
-    if (HAL_FDCAN_IsRxBufferMessageAvailable(&hfdcan1, 0)) {
-      FDCAN_RxHeaderTypeDef _rxHeader;
-      uint8_t _rxData[64 + sizeof(_rxHeader)];
-      HAL_FDCAN_GetRxMessage(&hfdcan1, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
-      enqueue_packet(PERIPH_FDCAN1, DATA, _rxHeader.DataLength + sizeof(_rxHeader), _rxData);
+    CAN_Message msg;
+
+    msg.id = 12;
+    msg.format = CANStandard;
+    msg.type = CANData;
+    msg.len = 5;
+    msg.data[0] = 0x77;
+    msg.data[1] = 0x88;
+    msg.data[2] = 0xAA;
+    msg.data[3] = 0x93;
+    msg.data[4] = 0x12;
+    int ret = can_write(&fdcan_1, msg, msg.data);
+    printf("sending can message fdcan1 %d\n", ret);
+    ret = can_write(&fdcan_2, msg, msg.data);
+    printf("sending can message fdcan2 %d\n", ret);
+
+    HAL_Delay(1000);
+
+    if (can_read(&fdcan_1, &msg, 0)) {
+      can_write(&fdcan_1, msg, msg.data);
+      printf("got message on fdcan1\n");
     }
-    if (HAL_FDCAN_IsRxBufferMessageAvailable(&hfdcan2, 0)) {
-      FDCAN_RxHeaderTypeDef _rxHeader;
-      uint8_t _rxData[64 + sizeof(_rxHeader)];
-      HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &_rxHeader, _rxData + sizeof(_rxHeader));
-      enqueue_packet(PERIPH_FDCAN1, DATA, _rxHeader.DataLength + sizeof(_rxHeader), _rxData);
+
+    if (can_read(&fdcan_2, &msg, 0)) {
+      can_write(&fdcan_2, msg, msg.data);
+      printf("got message on fdcan2\n");
     }
 
     if (transferState == TRANSFER_COMPLETE) {
@@ -1014,10 +1032,10 @@ void PeriphCommonClock_Config(void) {
 
   PeriphClkInitStruct.PeriphClockSelection =
       RCC_PERIPHCLK_ADC | RCC_PERIPHCLK_FDCAN;
-  PeriphClkInitStruct.PLL2.PLL2M = 4;
-  PeriphClkInitStruct.PLL2.PLL2N = 10;
-  PeriphClkInitStruct.PLL2.PLL2P = 2;
-  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2M = 8;
+  PeriphClkInitStruct.PLL2.PLL2N = 100;
+  PeriphClkInitStruct.PLL2.PLL2P = 10;
+  PeriphClkInitStruct.PLL2.PLL2Q = 8;
   PeriphClkInitStruct.PLL2.PLL2R = 2;
   PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
   PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOMEDIUM;

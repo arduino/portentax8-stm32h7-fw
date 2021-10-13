@@ -24,6 +24,7 @@
 
 #define TARGET_STM32H7      1
 #define CFG_HW_RCC_SEMID    3
+#undef DUAL_CORE
 
 static uintptr_t can_irq_contexts[2] = {0};
 static can_irq_handler irq_handler;
@@ -81,14 +82,15 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
     }
 #endif
 
-    // Select PLL1Q as source of FDCAN clock
+#if 0
+    // Select PLL2Q as source of FDCAN clock
     RCC_PeriphCLKInitTypeDef RCC_PeriphClkInit;
 #if (defined RCC_PERIPHCLK_FDCAN1)
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_FDCAN1;
     RCC_PeriphClkInit.Fdcan1ClockSelection = RCC_FDCAN1CLKSOURCE_PLL1;
 #else
     RCC_PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
-    RCC_PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL;
+    RCC_PeriphClkInit.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
 #endif
 #if defined(DUAL_CORE) && (TARGET_STM32H7)
     while (LL_HSEM_1StepLock(HSEM, CFG_HW_RCC_SEMID)) {
@@ -100,6 +102,8 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
 #if defined(DUAL_CORE) && (TARGET_STM32H7)
     LL_HSEM_ReleaseLock(HSEM, CFG_HW_RCC_SEMID, HSEM_CR_COREID_CURRENT);
 #endif /* DUAL_CORE */
+
+#endif
 
     // Default values
     obj->CanHandle.Instance = (FDCAN_GlobalTypeDef *)peripheral;
@@ -117,22 +121,13 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
     Synchronization_Jump_width | 30 tq          | <nsjw> = <nts2>
     */
 
-    // !Attention Not all bitrates can be covered with all fdcan-core-clk values. When a clk
-    // does not work for the desired bitrate, change system_clock settings for FDCAN_CLK
-    // (default FDCAN_CLK is PLLQ)
-#if (defined TARGET_STM32H7)
-    // STM32H7 doesn't support yet HAL_RCCEx_GetPeriphCLKFreq for FDCAN
-    // We use PLL1.Q clock right now so get its frequency
-    PLL1_ClocksTypeDef pll1_clocks;
-    HAL_RCCEx_GetPLL1ClockFreq(&pll1_clocks);
-    int ntq = pll1_clocks.PLL1_Q_Frequency / hz;
-#else
 #if (defined RCC_PERIPHCLK_FDCAN1)
     int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN1) / hz;
 #else
     int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / hz;
 #endif
-#endif
+
+    printf("freq: %d %d\n", HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN), ntq);
 
     int nominalPrescaler = 1;
     // !When the sample point should be lower than 50%, this must be changed to
@@ -190,6 +185,13 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
 #ifdef TARGET_STM32H7
     obj->CanHandle.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
 #endif
+
+    printf("%d %d %d %d\n",     
+    obj->CanHandle.Init.NominalPrescaler,
+    obj->CanHandle.Init.NominalTimeSeg1,
+    obj->CanHandle.Init.NominalTimeSeg2,
+    obj->CanHandle.Init.NominalSyncJumpWidth);
+        
     can_internal_init(obj);
 }
 
@@ -276,17 +278,11 @@ int can_frequency(can_t *obj, int f)
      * does not work for the desired bitrate, change system_clock settings for FDCAN_CLK
      * (default FDCAN_CLK is PLLQ)
      */
-#if (defined TARGET_STM32H7)
-    // STM32H7 doesn't support yet HAL_RCCEx_GetPeriphCLKFreq for FDCAN
-    PLL1_ClocksTypeDef pll1_clocks;
-    HAL_RCCEx_GetPLL1ClockFreq(&pll1_clocks);
-    int ntq = pll1_clocks.PLL1_Q_Frequency / f;
-#else
+
 #if (defined RCC_PERIPHCLK_FDCAN1)
     int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN1) / f;
 #else
     int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / f;
-#endif
 #endif
 
     int nominalPrescaler = 1;
@@ -376,6 +372,7 @@ int can_write(can_t *obj, CAN_Message msg, int cc)
 
     if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, msg.data) != HAL_OK) {
         // Note for debug: you can get the error code calling HAL_FDCAN_GetError(&obj->CanHandle)
+        printf("error: %d\n", HAL_FDCAN_GetError(&obj->CanHandle));
         return 0;
     }
 
@@ -541,6 +538,7 @@ static void can_irq(CANName name, int id)
     }
 }
 
+#if 0
 void FDCAN1_IT0_IRQHandler(void)
 {
     can_irq(CAN_1, 0);
@@ -574,7 +572,7 @@ void FDCAN3_IT1_IRQHandler(void)
     can_irq(CAN_3, 2);
 }
 #endif //FDCAN3_BASE
-
+#endif
 
 // TODO Add other interrupts ?
 void can_irq_set(can_t *obj, CanIrqType type, uint32_t enable)
@@ -619,6 +617,7 @@ void can_irq_set(can_t *obj, CanIrqType type, uint32_t enable)
         HAL_FDCAN_DeactivateNotification(&obj->CanHandle, interrupts);
     }
 
+#if 0
     NVIC_SetVector(FDCAN1_IT0_IRQn, (uint32_t)&FDCAN1_IT0_IRQHandler);
     NVIC_EnableIRQ(FDCAN1_IT0_IRQn);
     NVIC_SetVector(FDCAN1_IT1_IRQn, (uint32_t)&FDCAN1_IT1_IRQHandler);
@@ -634,5 +633,6 @@ void can_irq_set(can_t *obj, CanIrqType type, uint32_t enable)
     NVIC_EnableIRQ(FDCAN3_IT0_IRQn);
     NVIC_SetVector(FDCAN3_IT1_IRQn, (uint32_t)&FDCAN3_IT1_IRQHandler);
     NVIC_EnableIRQ(FDCAN3_IT1_IRQn);
+#endif
 #endif
 }
