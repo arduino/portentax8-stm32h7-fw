@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "ringbuffer.h"
+#include "can_api.h"
 
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
@@ -708,6 +709,11 @@ int main(void) {
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
+
+  can_t fdcan_1;
+  can_t fdcan_2;
+  can_init_freq_direct(&fdcan_1, CAN_1, 500000);
+  can_init_freq_direct(&fdcan_2, CAN_2, 500000);
 
   HAL_FDCAN_Start(&hfdcan1);
   HAL_FDCAN_Start(&hfdcan2);

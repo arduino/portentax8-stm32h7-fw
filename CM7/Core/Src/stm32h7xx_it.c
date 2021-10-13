@@ -244,6 +244,8 @@ void DMA1_Stream3_IRQHandler(void) {
 /**
  * @brief This function handles FDCAN1 interrupt 0.
  */
+
+#if 0
 void FDCAN1_IT0_IRQHandler(void) {
   /* USER CODE BEGIN FDCAN1_IT0_IRQn 0 */
 
@@ -266,6 +268,7 @@ void FDCAN2_IT0_IRQHandler(void) {
 
   /* USER CODE END FDCAN2_IT0_IRQn 1 */
 }
+#endif
 
 /**
  * @brief This function handles USART2 global interrupt.
