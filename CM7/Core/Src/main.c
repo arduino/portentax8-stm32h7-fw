@@ -589,6 +589,15 @@ can_t fdcan_1;
 can_t fdcan_2;
 
 void configureFDCAN(uint8_t peripheral, void* data) {
+
+  if (peripheral == PERIPH_FDCAN1) {
+    can_frequency(&fdcan_1, *((uint32_t*)data));
+  } else {
+    can_frequency(&fdcan_2, *((uint32_t*)data));
+  }
+
+  dbg_printf("Configuring fdcan%d with frequency %d\n", peripheral == PERIPH_FDCAN1 ? 1 : 2, *((uint32_t*)data));
+
   //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
   //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
 }
@@ -613,31 +622,37 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
 		break;
 	}
   case PERIPH_GPIO: {
-      configureGPIO(opcode, *((uint16_t*)data));
+    configureGPIO(opcode, *((uint16_t*)data));
     break;
   }
   case PERIPH_FDCAN1:
   case PERIPH_FDCAN2: {
-      if (opcode == CONFIGURE) {
-        configureFDCAN(peripheral, data);
-        break;
+    if (opcode == CONFIGURE) {
+      configureFDCAN(peripheral, data);
+      break;
+    }
+
+    CAN_Message msg;
+    msg.type = CANData;
+    msg.format = CANStandard;
+    memcpy(&msg, data, size);
+
+    if (msg.id > 0x7FF) {
+      msg.format = CANExtended;
+    }
+
+    if (peripheral == PERIPH_FDCAN1) {
+      int ret = can_write(&fdcan_1, msg, 0);
+      if (ret == 0) {
+        can_reset(&fdcan_1);
       }
-      if (peripheral == PERIPH_FDCAN1) {
-        CAN_Message msg;
-        memcpy(&msg, data, size);
-        int ret = can_write(&fdcan_1, msg, 0);
-        if (ret == 0) {
-            can_reset(&fdcan_1);
-          }
+    }
+    if (peripheral == PERIPH_FDCAN2) {
+      int ret = can_write(&fdcan_1, msg, 0);
+      if (ret == 0) {
+          can_reset(&fdcan_1);
         }
-      if (peripheral == PERIPH_FDCAN2) {
-        CAN_Message msg;
-        memcpy(&msg, data, size);
-        int ret = can_write(&fdcan_1, msg, 0);
-        if (ret == 0) {
-              can_reset(&fdcan_1);
-          }
-        }
+    }
     break;
   }
   case PERIPH_RTC: {
