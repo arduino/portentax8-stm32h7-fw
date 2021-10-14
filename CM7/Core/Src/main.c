@@ -713,8 +713,8 @@ int main(void) {
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
 
-  can_init_freq_direct(&fdcan_1, CAN_1, 500000);
-  can_init_freq_direct(&fdcan_2, CAN_2, 500000);
+  can_init_freq_direct(&fdcan_1, CAN_1, 800000);
+  can_init_freq_direct(&fdcan_2, CAN_2, 800000);
 
 /*
   HAL_FDCAN_Start(&hfdcan1);
@@ -807,19 +807,25 @@ int main(void) {
 
     CAN_Message msg;
 
-    msg.id = 12;
+    msg.id = 13;
     msg.format = CANStandard;
     msg.type = CANData;
-    msg.len = 5;
+    msg.len = 8;
     msg.data[0] = 0x77;
     msg.data[1] = 0x88;
     msg.data[2] = 0xAA;
     msg.data[3] = 0x93;
     msg.data[4] = 0x12;
-    int ret = can_write(&fdcan_1, msg, msg.data);
-    printf("sending can message fdcan1 %d\n", ret);
-    ret = can_write(&fdcan_2, msg, msg.data);
+    int ret = can_write(&fdcan_2, msg, msg.data);
     printf("sending can message fdcan2 %d\n", ret);
+    if (ret == 0) {
+      can_reset(&fdcan_2);
+    }
+    ret = can_write(&fdcan_1, msg, msg.data);
+    printf("sending can message fdcan1 %d\n", ret);
+    if (ret == 0) {
+      can_reset(&fdcan_1);
+    }
 
     HAL_Delay(1000);
 
