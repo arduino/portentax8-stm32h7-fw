@@ -585,6 +585,9 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
 uint16_t adc_sample_rate = 0;
 
+can_t fdcan_1;
+can_t fdcan_2;
+
 void configureFDCAN(uint8_t peripheral, void* data) {
   //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
   //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
@@ -620,11 +623,21 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
         break;
       }
       if (peripheral == PERIPH_FDCAN1) {
-        HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan1, (FDCAN_TxHeaderTypeDef*)data, data + sizeof(FDCAN_TxHeaderTypeDef));
-      }
+        CAN_Message msg;
+        memcpy(&msg, data, size);
+        int ret = can_write(&fdcan_1, msg, 0);
+        if (ret == 0) {
+            can_reset(&fdcan_1);
+          }
+        }
       if (peripheral == PERIPH_FDCAN2) {
-        HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, (FDCAN_TxHeaderTypeDef*)data, data + sizeof(FDCAN_TxHeaderTypeDef));
-      }
+        CAN_Message msg;
+        memcpy(&msg, data, size);
+        int ret = can_write(&fdcan_1, msg, 0);
+        if (ret == 0) {
+              can_reset(&fdcan_1);
+          }
+        }
     break;
   }
   case PERIPH_RTC: {
@@ -662,9 +675,6 @@ int _write(int file, char *ptr, int len) {
 
 long adc_sample_rate_last_tick = 0;
 ring_buffer_t uart_ring_buffer;
-
-can_t fdcan_1;
-can_t fdcan_2;
 
 int main(void) {
 
@@ -806,37 +816,12 @@ int main(void) {
     }
 
     CAN_Message msg;
-
-    msg.id = 13;
-    msg.format = CANStandard;
-    msg.type = CANData;
-    msg.len = 8;
-    msg.data[0] = 0x77;
-    msg.data[1] = 0x88;
-    msg.data[2] = 0xAA;
-    msg.data[3] = 0x93;
-    msg.data[4] = 0x12;
-    int ret = can_write(&fdcan_2, msg, msg.data);
-    printf("sending can message fdcan2 %d\n", ret);
-    if (ret == 0) {
-      can_reset(&fdcan_2);
-    }
-    ret = can_write(&fdcan_1, msg, msg.data);
-    printf("sending can message fdcan1 %d\n", ret);
-    if (ret == 0) {
-      can_reset(&fdcan_1);
-    }
-
-    HAL_Delay(1000);
-
     if (can_read(&fdcan_1, &msg, 0)) {
-      can_write(&fdcan_1, msg, msg.data);
-      printf("got message on fdcan1\n");
+      enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg), &msg);
     }
 
     if (can_read(&fdcan_2, &msg, 0)) {
-      can_write(&fdcan_2, msg, msg.data);
-      printf("got message on fdcan2\n");
+      enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(msg), &msg);
     }
 
     if (transferState == TRANSFER_COMPLETE) {
