@@ -47,7 +47,8 @@ MEMORY
 {
   RAM_D1 (xrw)   : ORIGIN = 0x24000000, LENGTH =  512K
   FLASH   (rx)   : ORIGIN = 0x08000000, LENGTH = 1024K    /* Memory is divided. Actual start is 0x08000000 and actual length is 2048K */
-  DTCMRAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 128K
+  DTCMRAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 0x1000
+  DTCMRAM_BUFFERS (xrw)  : ORIGIN = 0x20001000, LENGTH = 128K - 0x1000
   RAM_D2 (xrw)   : ORIGIN = 0x30000000, LENGTH = 288K
   RAM_D3 (xrw)   : ORIGIN = 0x38000000, LENGTH = 64K
   ITCMRAM (xrw)  : ORIGIN = 0x00000000, LENGTH = 64K
@@ -62,7 +63,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >DTCMRAM  AT > FLASH
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :
@@ -87,7 +88,7 @@ SECTIONS
     *(.dma)
     *(.dma*)
     . = ALIGN(4);
-  } > DTCMRAM
+  } > DTCMRAM_BUFFERS
 
   /* Constant data into "FLASH" Rom type memory */
   .rodata :

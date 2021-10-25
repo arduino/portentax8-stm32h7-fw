@@ -34,7 +34,8 @@ DEFINES = \
 	  -DDEBUG \
 	  -DCORE_CM7 \
 	  -DUSE_HAL_DRIVER \
-	  -DSTM32H747xx
+	  -DSTM32H747xx \
+	  -DVECT_TAB_SRAM \
 
 INCLUDES = \
 	   -ICM7/Core/Inc \

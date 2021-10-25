@@ -929,8 +929,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  //SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
-  //SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
+  SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
+  SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
 
   if (get_data_amount) {
 
@@ -1051,6 +1051,10 @@ void SystemClock_Config(void) {
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
     Error_Handler();
   }
+
+  __HAL_RCC_D2SRAM1_CLK_ENABLE();
+  __HAL_RCC_D2SRAM2_CLK_ENABLE();
+  __HAL_RCC_D2SRAM3_CLK_ENABLE();
 }
 
 void PeriphCommonClock_Config(void) {
