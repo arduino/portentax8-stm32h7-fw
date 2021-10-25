@@ -140,6 +140,10 @@ enum Opcodes_RTC {
 	GET_ALARM = 0x12,
 };
 
+enum Opcodes_CAN {
+  CAN_FILTER = 0x50,
+};
+
 enum Opcodes_GPIO {
 	DIRECTION = 0x10,
 	WRITE = 0x20,
@@ -632,10 +636,26 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
       break;
     }
 
+    if (opcode == CAN_FILTER) {
+      uint32_t* info = (uint32_t*)data;
+      CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
+
+      if (peripheral == PERIPH_FDCAN1) {
+        can_filter(&fdcan_1, info[1], info[2], format, info[0]);
+      }
+      if (peripheral == PERIPH_FDCAN1) {
+        can_filter(&fdcan_2, info[1], info[2], format, info[0]);
+      }
+      break;
+    }
+
     CAN_Message msg;
     msg.type = CANData;
     msg.format = CANStandard;
     memcpy(&msg, data, size);
+
+    dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
+      msg.id, msg.len, msg.data[0]);
 
     if (msg.id > 0x7FF) {
       msg.format = CANExtended;
@@ -648,9 +668,9 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
       }
     }
     if (peripheral == PERIPH_FDCAN2) {
-      int ret = can_write(&fdcan_1, msg, 0);
+      int ret = can_write(&fdcan_2, msg, 0);
       if (ret == 0) {
-          can_reset(&fdcan_1);
+          can_reset(&fdcan_2);
         }
     }
     break;
