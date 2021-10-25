@@ -73,10 +73,10 @@ __attribute__((packed, aligned(4))) struct complete_packet {
   // ... other subpackets will follow
 };
 
-__attribute__((section("dma"))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
-__attribute__((section("dma"))) volatile uint8_t RX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer[SPI_DMA_BUFFER_SIZE];
 
-__attribute__((section("dma"))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -711,12 +711,47 @@ int _write(int file, char *ptr, int len) {
 long adc_sample_rate_last_tick = 0;
 ring_buffer_t uart_ring_buffer;
 
+static void MPU_Config (void)
+{
+  MPU_Region_InitTypeDef MPU_InitStruct;
+
+  /* Do MPU */
+  HAL_MPU_Disable ();
+
+  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+  MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_2KB;    
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.SubRegionDisable = 0x00;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer_userspace;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /* Enable MPU */
+  HAL_MPU_Enable (MPU_PRIVILEGED_DEFAULT);
+}
+
+
 int main(void) {
 
   int32_t timeout;
 
+  MPU_Config();
+
   SCB_EnableICache();
-  //SCB_EnableDCache();
+  SCB_EnableDCache();
 
   HAL_Init();
   SystemClock_Config();
@@ -841,7 +876,7 @@ int main(void) {
 
   while (1) {
 
-    //__WFI();
+    __WFI();
     HAL_IWDG_Refresh(&watchdog);
 
     if (!ring_buffer_is_empty(&uart_ring_buffer)) {
@@ -928,9 +963,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
-
-  SCB_InvalidateDCache_by_Addr((uint32_t *)RX_Buffer, SPI_DMA_BUFFER_SIZE);
-  SCB_InvalidateDCache_by_Addr((uint32_t *)TX_Buffer, SPI_DMA_BUFFER_SIZE);
 
   if (get_data_amount) {
 
