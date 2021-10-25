@@ -54,6 +54,9 @@ MEMORY
   ITCMRAM (xrw)  : ORIGIN = 0x00000000, LENGTH = 64K
 }
 
+__OPENAMP_region_start__  = 0x38000400;
+__OPENAMP_region_end__ = 0x38000400 + LENGTH(RAM_D3) - 1K;
+
 /* Sections */
 SECTIONS
 {
@@ -89,6 +92,11 @@ SECTIONS
     *(.dma*)
     . = ALIGN(4);
   } > DTCMRAM_BUFFERS
+
+  .openamp_section (NOLOAD) : {
+       . = ABSOLUTE(0x38000000);
+       *(.resource_table)
+   } >RAM_D3  AT > FLASH
 
   /* Constant data into "FLASH" Rom type memory */
   .rodata :

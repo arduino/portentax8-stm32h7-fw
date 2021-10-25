@@ -50,6 +50,7 @@
 
 #include "stm32h7xx.h"
 #include <math.h>
+#include <string.h>
 
 #if !defined  (HSE_VALUE)
 #define HSE_VALUE    ((uint32_t)25000000) /*!< Value of the External oscillator in Hz */

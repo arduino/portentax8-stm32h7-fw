@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include "ringbuffer.h"
 #include "can_api.h"
+#include "rpc.h"
+#include "stm32h7xx_ll_rcc.h"
 
 #ifndef HSEM_ID_0
 #define HSEM_ID_0 (0U) /* HW semaphore 0*/
@@ -100,6 +102,7 @@ enum Peripherals {
 	PERIPH_UART = 0x05,
 	PERIPH_RTC = 0x06,
   PERIPH_GPIO = 0x07,
+  PERIPH_M4 = 0x08,
 };
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
@@ -126,7 +129,11 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
 enum Opcodes {
 	CONFIGURE = 0x10,
 	DATA = 0x01,
+};
+
+enum Opcodes_H7 {
   FW_VERSION = 0x10,
+  BOOT_M4 = 0x77,
 };
 
 enum Opcodes_UART {
@@ -716,7 +723,7 @@ static void MPU_Config (void)
   MPU_Region_InitTypeDef MPU_InitStruct;
 
   /* Do MPU */
-  HAL_MPU_Disable ();
+  HAL_MPU_Disable();
 
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer;
@@ -739,8 +746,20 @@ static void MPU_Config (void)
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
+  MPU_InitStruct.BaseAddress = D3_SRAM_BASE;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.SubRegionDisable = 0x00;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
   /* Enable MPU */
-  HAL_MPU_Enable (MPU_PRIVILEGED_DEFAULT);
+  HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
 
@@ -862,13 +881,21 @@ int main(void) {
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
 
+  int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x24000000)
+         || (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x30000000)
+         || (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x38000000);
+
+  if (m4_app_valid) {
+    LL_RCC_ForceCM4Boot();
+    //rpc_begin();
+  }
+
   watchdog.Instance = IWDG1;
   watchdog.Init.Prescaler = IWDG_PRESCALER_16;
   watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
   watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
 
   HAL_IWDG_Init(&watchdog);
-
 
 #ifdef PORTENTA_DEBUG_WIRED
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
