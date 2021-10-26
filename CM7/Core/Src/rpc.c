@@ -1,6 +1,7 @@
 #include "openamp.h"
 #include "arduino_openamp.h"
 #include "stm32h7xx_hal.h"
+#include "ringbuffer.h"
 
 enum endpoints_t {
 	ENDPOINT_CM7TOCM4 = 0,
@@ -9,26 +10,34 @@ enum endpoints_t {
 };
 
 static struct rpmsg_endpoint rp_endpoints[4];
+extern ring_buffer_t virtual_uart_ring_buffer;
 
 int rpmsg_recv_cm4tocm7_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
+/*
 	printf("4to7: received %d bytes from M4, content:", len);
 	for (int i = 0; i<len; i++) {
 		printf("%x ", ((uint8_t*)data)[i]);
 	}
 	printf("\n");
+*/
+	ring_buffer_queue_arr(&virtual_uart_ring_buffer, (uint8_t*)data, len);
+	OPENAMP_send(ept, data, len);
 	return 0;
 }
 
 int rpmsg_recv_cm7tocm4_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
+/*
 	printf("7to4: received %d bytes from M4, content:", len);
 	for (int i = 0; i<len; i++) {
 		printf("%x ", ((uint8_t*)data)[i]);
 	}
 	printf("\n");
+*/
+	OPENAMP_send(ept, data, len);
 	return 0;
 }
 
@@ -46,11 +55,12 @@ int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
 void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)
 {
 	int idx = -1;
+
 	if (strcmp(name, "cm7tocm4") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM7TOCM4], name, dest, rpmsg_recv_cm4tocm7_callback, NULL);
+		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM7TOCM4], name, dest, rpmsg_recv_cm7tocm4_callback, NULL);
 	}
 	if (strcmp(name, "cm4tocm7") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM4TOCM7], name, dest, rpmsg_recv_cm7tocm4_callback, NULL);
+		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM4TOCM7], name, dest, rpmsg_recv_cm4tocm7_callback, NULL);
 	}
 	if (strcmp(name, "raw") == 0) {
 		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RAW], name, dest, rpmsg_recv_raw_callback, NULL);
@@ -96,6 +106,6 @@ void serial_rpc_write(uint8_t* buf, size_t len) {
 
 void HSEM1_IRQHandler(void)
 {
-	OPENAMP_check_for_message();
 	HAL_HSEM_IRQHandler();
+	OPENAMP_check_for_message();
 }

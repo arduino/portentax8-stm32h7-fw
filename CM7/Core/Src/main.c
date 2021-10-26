@@ -90,7 +90,6 @@ volatile uint16_t data_amount = 0;
   })
 
 enum Peripherals {
-  PERIPH_H7 = 0x00,
   PERIPH_ADC = 0x01,
 	PERIPH_PWM = 0x02,
 	PERIPH_FDCAN1 = 0x03,
@@ -99,6 +98,8 @@ enum Peripherals {
 	PERIPH_RTC = 0x06,
   PERIPH_GPIO = 0x07,
   PERIPH_M4 = 0x08,
+  PERIPH_H7 = 0x09,
+  PERIPH_VIRTUAL_UART = 0x0A,
 };
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
@@ -485,6 +486,8 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   } else {
     HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
   }
+
+  // If capture is needed, use code from https://github.com/kongr45gpen/stm32h7-freqcounter/blob/master/Src/main.c
 }
 
 void UART2_enable_rx_irq();
@@ -713,8 +716,9 @@ int _write(int file, char *ptr, int len) {
 
 long adc_sample_rate_last_tick = 0;
 ring_buffer_t uart_ring_buffer;
+ring_buffer_t virtual_uart_ring_buffer;
 
-static void MPU_Config (void)
+static void MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct;
 
@@ -726,8 +730,8 @@ static void MPU_Config (void)
   MPU_InitStruct.Size = MPU_REGION_SIZE_2KB;    
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
-  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
   MPU_InitStruct.Number = MPU_REGION_NUMBER0;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
   MPU_InitStruct.SubRegionDisable = 0x00;
@@ -799,6 +803,7 @@ int main(void) {
   PeriphCommonClock_Config();
 
   ring_buffer_init(&uart_ring_buffer);
+  ring_buffer_init(&virtual_uart_ring_buffer);
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -916,12 +921,20 @@ int main(void) {
   while (1) {
 
     __WFI();
+
+    //serial_rpc_available();
     HAL_IWDG_Refresh(&watchdog);
 
     if (!ring_buffer_is_empty(&uart_ring_buffer)) {
         uint8_t temp_buf[1024];
         int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, temp_buf, ring_buffer_num_items(&uart_ring_buffer));
         enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
+    }
+
+    if (!ring_buffer_is_empty(&virtual_uart_ring_buffer)) {
+        uint8_t temp_buf[1024];
+        int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+        enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
     }
 
     CAN_Message msg;
