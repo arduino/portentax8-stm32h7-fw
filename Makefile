@@ -44,18 +44,43 @@ INCLUDES = \
 	   -IDrivers/STM32H7xx_HAL_Driver/Inc \
 	   -IDrivers/STM32H7xx_HAL_Driver/Inc/Legacy \
 	   -IDrivers/CMSIS/Device/ST/STM32H7xx/Include \
-	   -IDrivers/CMSIS/Include
+	   -IDrivers/CMSIS/Include \
+	   -Ilibraries/openamp_arduino/src \
+	   -Ilibraries/openamp_arduino/src \
+	   -Ilibraries/openamp_arduino/openamp \
+	   -Ilibraries/openamp_arduino/metal \
 
 OBJS = \
 	Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
 	CM7/Core/Src/main.o \
 	CM7/Core/Src/can.o \
 	CM7/Core/Src/ringbuffer.o \
+	CM7/Core/Src/rpc.o \
 	CM7/Core/Src/stm32h7xx_hal_msp.o \
 	CM7/Core/Src/stm32h7xx_it.o \
 	CM7/Core/Src/syscalls.o \
 	CM7/Core/Src/sysmem.o \
 	CM7/Core/Startup/startup_stm32h747aiix.o \
+	libraries/openamp_arduino/src/condition.o \
+	libraries/openamp_arduino/src/device.o \
+	libraries/openamp_arduino/src/generic_device.o \
+	libraries/openamp_arduino/src/generic_init.o \
+	libraries/openamp_arduino/src/generic_io.o \
+	libraries/openamp_arduino/src/init.o \
+	libraries/openamp_arduino/src/io.o \
+	libraries/openamp_arduino/src/irq.o \
+	libraries/openamp_arduino/src/log.o \
+	libraries/openamp_arduino/src/mailbox_hsem_if.o \
+	libraries/openamp_arduino/src/openamp.o \
+	libraries/openamp_arduino/src/remoteproc_virtio.o \
+	libraries/openamp_arduino/src/rpmsg.o \
+	libraries/openamp_arduino/src/rpmsg_virtio.o \
+	libraries/openamp_arduino/src/rsc_table.o \
+	libraries/openamp_arduino/src/shmem.o \
+	libraries/openamp_arduino/src/sys.o \
+	libraries/openamp_arduino/src/time.o \
+	libraries/openamp_arduino/src/virtio.o \
+	libraries/openamp_arduino/src/virtqueue.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
 	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \

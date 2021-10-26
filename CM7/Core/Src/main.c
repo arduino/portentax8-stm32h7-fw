@@ -870,7 +870,7 @@ int main(void) {
 
   if (m4_app_valid) {
     LL_RCC_ForceCM4Boot();
-    //rpc_begin();
+    serial_rpc_begin();
   }
 
   watchdog.Instance = IWDG1;
