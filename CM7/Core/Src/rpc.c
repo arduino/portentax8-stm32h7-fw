@@ -13,7 +13,7 @@ static struct rpmsg_endpoint rp_endpoints[4];
 int rpmsg_recv_cm4tocm7_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
-	printf("received %d bytes from M4, content:", len);
+	printf("4to7: received %d bytes from M4, content:", len);
 	for (int i = 0; i<len; i++) {
 		printf("%x ", ((uint8_t*)data)[i]);
 	}
@@ -24,13 +24,23 @@ int rpmsg_recv_cm4tocm7_callback(struct rpmsg_endpoint *ept, void *data,
 int rpmsg_recv_cm7tocm4_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
-
+	printf("7to4: received %d bytes from M4, content:", len);
+	for (int i = 0; i<len; i++) {
+		printf("%x ", ((uint8_t*)data)[i]);
+	}
+	printf("\n");
+	return 0;
 }
 
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
-
+	printf("raw: received %d bytes from M4, content:", len);
+	for (int i = 0; i<len; i++) {
+		printf("%x ", ((uint8_t*)data)[i]);
+	}
+	printf("\n");
+	return 0;
 }
 
 void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)

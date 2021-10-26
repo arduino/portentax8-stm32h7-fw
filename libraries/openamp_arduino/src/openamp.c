@@ -59,11 +59,13 @@ static int OPENAMP_shmem_init(int RPMsgRole)
 
   status = metal_register_generic_device(&shm_device);
   if (status != 0) {
+    printf("metal_register_generic_device failed\n");
     return status;
   }
 
   status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
   if (status != 0) {
+    printf("metal_device_open failed\n");
     return status;
   }
 
@@ -72,6 +74,7 @@ static int OPENAMP_shmem_init(int RPMsgRole)
 
   shm_io = metal_device_io_region(device, 0);
   if (shm_io == NULL) {
+    printf("metal_device_io_region failed\n");
     return -1;
   }
 
@@ -80,6 +83,7 @@ static int OPENAMP_shmem_init(int RPMsgRole)
   rsc_table = (struct shared_resource_table *)rsc_tab_addr;
   if (!rsc_table)
   {
+    printf("resource_table_init failed\n");
     return -1;
   }
 
@@ -89,6 +93,7 @@ static int OPENAMP_shmem_init(int RPMsgRole)
   rsc_io = metal_device_io_region(device, 1);
 
   if (rsc_io == NULL) {
+    printf("metal_device_io_region 2 failed\n");
     return -1;
   }
 

@@ -758,6 +758,33 @@ static void MPU_Config (void)
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 }
 
+static FLASH_OBProgramInitTypeDef OBInit;
+
+void disableCM4Autoboot() {
+  OBInit.Banks     = FLASH_BANK_1;
+  HAL_FLASHEx_OBGetConfig(&OBInit);
+  dbg_printf("OBInit.USERConfig: %X\n", OBInit.USERConfig);
+  if (OBInit.USERConfig & FLASH_OPTSR_BCM4) {
+    dbg_printf("Changing option bytes\n");
+    OBInit.OptionType = OPTIONBYTE_USER;
+    OBInit.USERType = OB_USER_BCM4;
+    OBInit.USERConfig = 0;
+    if (HAL_FLASH_OB_Unlock() == HAL_OK)
+      if (HAL_FLASH_Unlock() == HAL_OK)
+        if (HAL_FLASHEx_OBProgram(&OBInit) == HAL_OK)
+          if (HAL_FLASH_OB_Launch() == HAL_OK)
+            if (HAL_FLASH_OB_Lock() == HAL_OK)
+              if (HAL_FLASH_Lock() == HAL_OK)
+              {
+                dbg_printf("Option bytes changed\n");
+                dbg_printf("Requires rebooting\n");
+                NVIC_SystemReset();
+                return;
+              }
+    dbg_printf("Failed changing option bytes");
+  }
+}
+
 
 int main(void) {
 
@@ -797,6 +824,8 @@ int main(void) {
 
   can_init_freq_direct(&fdcan_1, CAN_1, 800000);
   can_init_freq_direct(&fdcan_2, CAN_2, 800000);
+
+  disableCM4Autoboot();
 
 /*
   HAL_FDCAN_Start(&hfdcan1);
@@ -864,13 +893,13 @@ int main(void) {
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
 
-  int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x24000000)
-         || (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x30000000)
-         || (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x38000000);
+  int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x10000000);
 
   if (m4_app_valid) {
+    printf("Boot CM4\n");
     LL_RCC_ForceCM4Boot();
-    serial_rpc_begin();
+    int ret = serial_rpc_begin();
+    printf("CM4 booted: %d\n", ret);
   }
 
   watchdog.Instance = IWDG1;
@@ -1090,7 +1119,7 @@ void SystemClock_Config(void) {
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
   RCC_ClkInitStruct.APB4CLKDivider = RCC_APB4_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) {
     Error_Handler();
   }
 
