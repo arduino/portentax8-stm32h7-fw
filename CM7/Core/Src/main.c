@@ -7,9 +7,7 @@
 #include "rpc.h"
 #include "stm32h7xx_ll_rcc.h"
 
-#ifndef HSEM_ID_0
-#define HSEM_ID_0 (0U) /* HW semaphore 0*/
-#endif
+//#define PORTENTA_DEBUG_WIRED
 
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
@@ -49,9 +47,7 @@ static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_USART2_UART_Init(void);
 
-//#undef DEBUG
-
-//#define PORTENTA_DEBUG_WIRED
+#undef DEBUG
 
 #ifdef DEBUG
 #define dbg_printf(...)	printf(__VA_ARGS__)
@@ -765,8 +761,6 @@ static void MPU_Config (void)
 
 int main(void) {
 
-  int32_t timeout;
-
   MPU_Config();
 
   SCB_EnableICache();
@@ -778,17 +772,6 @@ int main(void) {
   PeriphCommonClock_Config();
 
   ring_buffer_init(&uart_ring_buffer);
-
-/*
-  __HAL_RCC_HSEM_CLK_ENABLE();
-  HAL_HSEM_FastTake(HSEM_ID_0);
-  HAL_HSEM_Release(HSEM_ID_0, 0);
-  timeout = 0xFFFF;
-  while ((__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) && (timeout-- > 0));
-  if (timeout < 0) {
-    Error_Handler();
-  }
-*/
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
