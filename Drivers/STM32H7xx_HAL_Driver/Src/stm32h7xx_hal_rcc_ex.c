@@ -2696,7 +2696,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
          if (HAL_IS_BIT_SET(RCC->CR, RCC_CR_PLL2RDY))
          {
           HAL_RCCEx_GetPLL2ClockFreq(&pll2_clocks);
-          printf("%d\n", pll2_clocks.PLL2_Q_Frequency);
           frequency = pll2_clocks.PLL2_Q_Frequency;
          }
          else

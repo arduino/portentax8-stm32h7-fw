@@ -127,8 +127,6 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
     int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / hz;
 #endif
 
-    printf("freq: %d %d\n", HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN), ntq);
-
     int nominalPrescaler = 1;
     // !When the sample point should be lower than 50%, this must be changed to
     // !IS_FDCAN_NOMINAL_TSEG2(ntq/nominalPrescaler), since
@@ -186,12 +184,6 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
     obj->CanHandle.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
 #endif
 
-    printf("%d %d %d %d\n",     
-    obj->CanHandle.Init.NominalPrescaler,
-    obj->CanHandle.Init.NominalTimeSeg1,
-    obj->CanHandle.Init.NominalTimeSeg2,
-    obj->CanHandle.Init.NominalSyncJumpWidth);
-        
     can_internal_init(obj);
 }
 
