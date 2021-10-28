@@ -4,42 +4,13 @@
 #include "ringbuffer.h"
 
 enum endpoints_t {
-	ENDPOINT_CM7TOCM4 = 0,
-	ENDPOINT_CM4TOCM7,
+	ENDPOINT_RPC_SERVER = 0,
+	ENDPOINT_RPC_CLIENT,
 	ENDPOINT_RAW
 };
 
 static struct rpmsg_endpoint rp_endpoints[4];
 extern ring_buffer_t virtual_uart_ring_buffer;
-
-int rpmsg_recv_cm4tocm7_callback(struct rpmsg_endpoint *ept, void *data,
-                                       size_t len, uint32_t src, void *priv)
-{
-/*
-	printf("4to7: received %d bytes from M4, content:", len);
-	for (int i = 0; i<len; i++) {
-		printf("%x ", ((uint8_t*)data)[i]);
-	}
-	printf("\n");
-*/
-	ring_buffer_queue_arr(&virtual_uart_ring_buffer, (uint8_t*)data, len);
-	OPENAMP_send(ept, data, len);
-	return 0;
-}
-
-int rpmsg_recv_cm7tocm4_callback(struct rpmsg_endpoint *ept, void *data,
-                                       size_t len, uint32_t src, void *priv)
-{
-/*
-	printf("7to4: received %d bytes from M4, content:", len);
-	for (int i = 0; i<len; i++) {
-		printf("%x ", ((uint8_t*)data)[i]);
-	}
-	printf("\n");
-*/
-	OPENAMP_send(ept, data, len);
-	return 0;
-}
 
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
@@ -49,6 +20,8 @@ int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
 		printf("%x ", ((uint8_t*)data)[i]);
 	}
 	printf("\n");
+	ring_buffer_queue_arr(&virtual_uart_ring_buffer, (uint8_t*)data, len);
+
 	return 0;
 }
 
@@ -56,11 +29,11 @@ void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)
 {
 	int idx = -1;
 
-	if (strcmp(name, "cm7tocm4") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM7TOCM4], name, dest, rpmsg_recv_cm7tocm4_callback, NULL);
+	if (strcmp(name, "cm4_rpc_server") == 0) {
+		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RPC_SERVER], name, dest, rpmsg_recv_raw_callback, NULL);
 	}
-	if (strcmp(name, "cm4tocm7") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_CM4TOCM7], name, dest, rpmsg_recv_cm4tocm7_callback, NULL);
+	if (strcmp(name, "cm4_rpc_server") == 0) {
+		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RPC_CLIENT], name, dest, rpmsg_recv_raw_callback, NULL);
 	}
 	if (strcmp(name, "raw") == 0) {
 		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RAW], name, dest, rpmsg_recv_raw_callback, NULL);
@@ -75,8 +48,8 @@ int serial_rpc_begin() {
 	}
 
 	/* Initialize the rpmsg endpoint to set default addresses to RPMSG_ADDR_ANY */
-	rpmsg_init_ept(&rp_endpoints[0], "cm7tocm4", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
-	rpmsg_init_ept(&rp_endpoints[1], "cm4tocm7", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+	rpmsg_init_ept(&rp_endpoints[0], "cm4_rpc_client", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+	rpmsg_init_ept(&rp_endpoints[1], "cm4_rpc_server", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
 	rpmsg_init_ept(&rp_endpoints[2], "raw", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
 
 	/*
