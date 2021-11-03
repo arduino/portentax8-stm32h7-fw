@@ -798,7 +798,10 @@ int main(void) {
   SCB_EnableDCache();
 
   HAL_Init();
+
   SystemClock_Config();
+
+  MX_USART2_UART_Init();
 
   PeriphCommonClock_Config();
 
@@ -816,7 +819,6 @@ int main(void) {
   MX_HRTIM_Init();
   MX_RTC_Init();
   MX_SPI3_Init();
-  MX_USART2_UART_Init();
 
 #ifdef PORTENTA_DEBUG_WIRED
   // Enable SPI2 (Portenta only)
