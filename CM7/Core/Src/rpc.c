@@ -4,9 +4,8 @@
 #include "ringbuffer.h"
 
 enum endpoints_t {
-	ENDPOINT_RPC_SERVER = 0,
-	ENDPOINT_RPC_CLIENT,
-	ENDPOINT_RAW
+	ENDPOINT_RAW = 0,
+	ENDPOINT_RESPONSE
 };
 
 static struct rpmsg_endpoint rp_endpoints[4];
@@ -29,14 +28,11 @@ void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)
 {
 	int idx = -1;
 
-	if (strcmp(name, "cm4_rpc_server") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RPC_SERVER], name, dest, rpmsg_recv_raw_callback, NULL);
-	}
-	if (strcmp(name, "cm4_rpc_server") == 0) {
-		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RPC_CLIENT], name, dest, rpmsg_recv_raw_callback, NULL);
-	}
 	if (strcmp(name, "raw") == 0) {
 		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RAW], name, dest, rpmsg_recv_raw_callback, NULL);
+	}
+	if (strcmp(name, "response") == 0) {
+		OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RESPONSE], name, dest, rpmsg_recv_raw_callback, NULL);
 	}
 }
 
@@ -48,9 +44,8 @@ int serial_rpc_begin() {
 	}
 
 	/* Initialize the rpmsg endpoint to set default addresses to RPMSG_ADDR_ANY */
-	rpmsg_init_ept(&rp_endpoints[0], "cm4_rpc_client", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
-	rpmsg_init_ept(&rp_endpoints[1], "cm4_rpc_server", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
-	rpmsg_init_ept(&rp_endpoints[2], "raw", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+	rpmsg_init_ept(&rp_endpoints[0], "raw", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+	rpmsg_init_ept(&rp_endpoints[1], "response", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
 
 	/*
 	* The rpmsg service is initiate by the remote processor, on H7 new_service_cb
@@ -58,13 +53,11 @@ int serial_rpc_begin() {
 	*/
 	OPENAMP_Wait_EndPointready(&rp_endpoints[0], HAL_GetTick() + 500);
 	OPENAMP_Wait_EndPointready(&rp_endpoints[1], HAL_GetTick() + 500);
-	OPENAMP_Wait_EndPointready(&rp_endpoints[2], HAL_GetTick() + 500);
 
 	// Send first dummy message to enable the channel
 	int message = 0x00;
 	OPENAMP_send(&rp_endpoints[0], &message, sizeof(message));
 	OPENAMP_send(&rp_endpoints[1], &message, sizeof(message));
-	OPENAMP_send(&rp_endpoints[2], &message, sizeof(message));
 
 	return 1;
 }
