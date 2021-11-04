@@ -116,8 +116,10 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
 			return "UART";
 		case PERIPH_RTC:
 			return "RTC";
-		case PERIPH_GPIO:
-			return "GPIO";
+    case PERIPH_GPIO:
+      return "GPIO";
+    case PERIPH_VIRTUAL_UART:
+      return "VIRTUAL_UART";
 		default:
 			return "UNKNOWN";
 	}
@@ -702,6 +704,9 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
     }
     break;
   }
+  case PERIPH_VIRTUAL_UART: {
+    serial_rpc_write((uint8_t*)data, size);
+  }
 	}
 }
 
@@ -929,13 +934,18 @@ int main(void) {
 
     if (!ring_buffer_is_empty(&uart_ring_buffer)) {
         uint8_t temp_buf[1024];
+        __disable_irq();
         int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, temp_buf, ring_buffer_num_items(&uart_ring_buffer));
+				__enable_irq();
         enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
     }
 
     if (!ring_buffer_is_empty(&virtual_uart_ring_buffer)) {
+    		printf("ring_buffer_num_items: %d\n", ring_buffer_num_items(&virtual_uart_ring_buffer));
         uint8_t temp_buf[1024];
+        __disable_irq();
         int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+        __enable_irq();
         enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
     }
 

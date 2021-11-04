@@ -14,11 +14,13 @@ extern ring_buffer_t virtual_uart_ring_buffer;
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
+/*
 	printf("raw: received %d bytes from M4, content:", len);
 	for (int i = 0; i<len; i++) {
 		printf("%x ", ((uint8_t*)data)[i]);
 	}
 	printf("\n");
+*/
 	ring_buffer_queue_arr(&virtual_uart_ring_buffer, (uint8_t*)data, len);
 
 	return 0;
