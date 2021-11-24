@@ -21,17 +21,178 @@
 #include <stdio.h>
 #include "can_api.h"
 #include "stm32h7xx_ll_hsem.h"
+#include "peripherals.h"
 
 #define TARGET_STM32H7      1
 #define CFG_HW_RCC_SEMID    3
 #undef DUAL_CORE
 
+FDCAN_HandleTypeDef hfdcan1;
+FDCAN_HandleTypeDef hfdcan2;
+
+can_t fdcan_1;
+can_t fdcan_2;
+
 static uintptr_t can_irq_contexts[2] = {0};
 static can_irq_handler irq_handler;
+
+
+static void MX_FDCAN1_Init(void) {
+
+  hfdcan1.Instance = FDCAN1;
+  hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
+  hfdcan1.Init.AutoRetransmission = DISABLE;
+  hfdcan1.Init.TransmitPause = DISABLE;
+  hfdcan1.Init.ProtocolException = DISABLE;
+  hfdcan1.Init.NominalPrescaler = 1;
+  hfdcan1.Init.NominalSyncJumpWidth = 1;
+  hfdcan1.Init.NominalTimeSeg1 = 2;
+  hfdcan1.Init.NominalTimeSeg2 = 2;
+  hfdcan1.Init.DataPrescaler = 1;
+  hfdcan1.Init.DataSyncJumpWidth = 1;
+  hfdcan1.Init.DataTimeSeg1 = 1;
+  hfdcan1.Init.DataTimeSeg2 = 1;
+  hfdcan1.Init.MessageRAMOffset = 0;
+  hfdcan1.Init.StdFiltersNbr = 0;
+  hfdcan1.Init.ExtFiltersNbr = 0;
+  hfdcan1.Init.RxFifo0ElmtsNbr = 0;
+  hfdcan1.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan1.Init.RxFifo1ElmtsNbr = 0;
+  hfdcan1.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan1.Init.RxBuffersNbr = 0;
+  hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
+  hfdcan1.Init.TxEventsNbr = 0;
+  hfdcan1.Init.TxBuffersNbr = 0;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 0;
+  hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+  hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
+  if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK) {
+    Error_Handler();
+  }
+}
+
+static void MX_FDCAN2_Init(void) {
+
+  hfdcan2.Instance = FDCAN2;
+  hfdcan2.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+  hfdcan2.Init.Mode = FDCAN_MODE_NORMAL;
+  hfdcan2.Init.AutoRetransmission = DISABLE;
+  hfdcan2.Init.TransmitPause = DISABLE;
+  hfdcan2.Init.ProtocolException = DISABLE;
+  hfdcan2.Init.NominalPrescaler = 1;
+  hfdcan2.Init.NominalSyncJumpWidth = 1;
+  hfdcan2.Init.NominalTimeSeg1 = 2;
+  hfdcan2.Init.NominalTimeSeg2 = 2;
+  hfdcan2.Init.DataPrescaler = 1;
+  hfdcan2.Init.DataSyncJumpWidth = 1;
+  hfdcan2.Init.DataTimeSeg1 = 1;
+  hfdcan2.Init.DataTimeSeg2 = 1;
+  hfdcan2.Init.MessageRAMOffset = 0;
+  hfdcan2.Init.StdFiltersNbr = 0;
+  hfdcan2.Init.ExtFiltersNbr = 0;
+  hfdcan2.Init.RxFifo0ElmtsNbr = 0;
+  hfdcan2.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan2.Init.RxFifo1ElmtsNbr = 0;
+  hfdcan2.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
+  hfdcan2.Init.RxBuffersNbr = 0;
+  hfdcan2.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
+  hfdcan2.Init.TxEventsNbr = 0;
+  hfdcan2.Init.TxBuffersNbr = 0;
+  hfdcan2.Init.TxFifoQueueElmtsNbr = 0;
+  hfdcan2.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+  hfdcan2.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
+  if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK) {
+    Error_Handler();
+  }
+}
 
 static void error(char* string) {
     printf(string);
     while (1);
+}
+
+
+void canInit()
+{
+    can_init_freq_direct(&fdcan_1, CAN_1, 800000);
+    can_init_freq_direct(&fdcan_2, CAN_2, 800000);
+
+/*
+    HAL_FDCAN_Start(&hfdcan1);
+    HAL_FDCAN_Start(&hfdcan2);
+
+    HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+    HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+  */
+}
+
+int canWrite(uint8_t peripheral, CAN_Message msg, int cc)
+{
+    if (peripheral == PERIPH_FDCAN1) {
+        return can_write(&fdcan_1, msg, cc);
+    }
+    if (peripheral == PERIPH_FDCAN2) {
+        return can_write(&fdcan_2, msg, cc);
+    }
+    return 0;
+}
+
+int canRead(uint8_t peripheral, CAN_Message *msg, int handle)
+{
+    if (peripheral == PERIPH_FDCAN1) {
+        return can_read(&fdcan_1, msg, handle);
+    }
+    if (peripheral == PERIPH_FDCAN2) {
+        return can_read(&fdcan_2, msg, handle);
+    }
+    return 0;
+}
+
+int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle)
+{
+    if (peripheral == PERIPH_FDCAN1) {
+        return can_filter(&fdcan_1, id, mask, format, handle);
+    }
+    if (peripheral == PERIPH_FDCAN2) {
+        return can_filter(&fdcan_2, id, mask, format, handle);
+    }
+    return 0;
+}
+
+void canReset(uint8_t peripheral)
+{
+    if (peripheral == PERIPH_FDCAN1) {
+        can_reset(&fdcan_1);
+    }
+    if (peripheral == PERIPH_FDCAN2) {
+        can_reset(&fdcan_2);
+    }
+}
+
+void can_handle_data() {
+    CAN_Message msg;
+    if (can_read(&fdcan_1, &msg, 0)) {
+      enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg), &msg);
+    }
+
+    if (can_read(&fdcan_2, &msg, 0)) {
+      enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(msg), &msg);
+    }
+}
+
+void configureFDCAN(uint8_t peripheral, void* data) {
+
+  if (peripheral == PERIPH_FDCAN1) {
+    can_frequency(&fdcan_1, *((uint32_t*)data));
+  } else {
+    can_frequency(&fdcan_2, *((uint32_t*)data));
+  }
+
+  dbg_printf("Configuring fdcan%d with frequency %d\n", peripheral == PERIPH_FDCAN1 ? 1 : 2, *((uint32_t*)data));
+
+  //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
+  //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
 }
 
 /** Call all the init functions

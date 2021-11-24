@@ -141,7 +141,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
     if (opcode == CAN_FILTER) {
       uint32_t* info = (uint32_t*)data;
       CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-      return can_filter(getCanObj(peripheral), info[1], info[2], format, info[0]);
+      return canFilter(peripheral, info[1], info[2], format, info[0])
       break;
     }
 
@@ -157,9 +157,9 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
       msg.format = CANExtended;
     }
 
-    int ret = can_write(getCanObj(peripheral), msg, 0);
+    int ret = canWrite(peripheral, msg, 0);
     if (ret == 0) {
-      can_reset(getCanObj(peripheral));
+      canReset(peripheral);
     }
     break;
   }

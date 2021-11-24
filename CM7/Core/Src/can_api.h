@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#include <inttypes.h>
+
 /**
  *
  * \enum    CANFormat
@@ -102,6 +104,14 @@ struct can_s {
 
 typedef struct can_s can_t;
 
+void          canInit();
+int           canWrite(uint8_t peripheral, CAN_Message, int cc);
+int           canRead(uint8_t peripheral, CAN_Message *msg, int handle);
+int           canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
+void          canReset(uint8_t peripheral);
+void          can_handle_data();
+void          configureFDCAN(uint8_t peripheral, void* data);
+
 void          can_init(can_t *obj);
 void          can_init_direct(can_t *obj);
 void          can_init_freq(can_t *obj, int hz);
@@ -112,6 +122,7 @@ int           can_frequency(can_t *obj, int hz);
 void          can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t id);
 void          can_irq_free(can_t *obj);
 void          can_irq_set(can_t *obj, CanIrqType irq, uint32_t enable);
+
 
 int           can_write(can_t *obj, CAN_Message, int cc);
 int           can_read(can_t *obj, CAN_Message *msg, int handle);
