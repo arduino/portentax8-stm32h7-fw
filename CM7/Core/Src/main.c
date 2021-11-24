@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include "peripherals.h"
 #include "ringbuffer.h"
 #include "can_api.h"
 #include "rpc.h"
@@ -83,18 +84,6 @@ volatile uint16_t data_amount = 0;
     _a > _b ? _a : _b;                                                         \
   })
 
-enum Peripherals {
-  PERIPH_ADC = 0x01,
-	PERIPH_PWM = 0x02,
-	PERIPH_FDCAN1 = 0x03,
-	PERIPH_FDCAN2 = 0x04,
-	PERIPH_UART = 0x05,
-	PERIPH_RTC = 0x06,
-  PERIPH_GPIO = 0x07,
-  PERIPH_M4 = 0x08,
-  PERIPH_H7 = 0x09,
-  PERIPH_VIRTUAL_UART = 0x0A,
-};
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
 	switch (peripheral) {
