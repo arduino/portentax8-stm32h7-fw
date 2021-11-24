@@ -9,12 +9,10 @@
 #include "stm32h7xx_ll_rcc.h"
 #include "adc.h"
 #include "gpio.h"
+#include "timer.h"
+#include "rtc.h"
 
 //#define PORTENTA_DEBUG_WIRED
-
-HRTIM_HandleTypeDef hhrtim;
-
-RTC_HandleTypeDef hrtc;
 
 SPI_HandleTypeDef hspi3;
 DMA_HandleTypeDef hdma_spi3_tx;
@@ -30,8 +28,6 @@ void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_HRTIM_Init(void);
-static void MX_RTC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_SPI3_Init(void);
 
@@ -72,90 +68,6 @@ volatile uint16_t data_amount = 0;
   })
 
 volatile bool trigger_irq = false;
-
-struct rtc_time {
-  uint8_t tm_sec;
-  uint8_t tm_min;
-  uint8_t tm_hour;
-  uint8_t tm_mday;
-  uint8_t tm_mon;
-  uint8_t tm_year;
-  uint8_t tm_wday;
-};
-
-void doRTCStuff(uint8_t opcode, struct rtc_time *tm) {
-  RTC_TimeTypeDef sTime = {0};
-  RTC_DateTypeDef sDate = {0};
-  RTC_AlarmTypeDef sAlarm = {0};
-
-  if (opcode == SET_DATE) {
-    sTime.Hours = tm->tm_hour;
-    sTime.Minutes = tm->tm_min;
-    sTime.Seconds = tm->tm_sec;
-    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-    sDate.WeekDay = tm->tm_wday;
-    sDate.Month = tm->tm_mon;
-    sDate.Date = tm->tm_mday;
-    sDate.Year = tm->tm_year;
-    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-  }
-
-  if (opcode == GET_DATE) {
-
-    struct rtc_time now;
-
-    if (HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-    if (HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-
-    now.tm_hour = sTime.Hours;
-    now.tm_min = sTime.Minutes;
-    now.tm_sec = sTime.Seconds;
-    now.tm_wday = sDate.WeekDay;
-    now.tm_mon = sDate.Month;
-    now.tm_mday = sDate.Date;
-    now.tm_year = sDate.Year;
-
-    enqueue_packet(PERIPH_RTC, opcode, sizeof(now), &now);
-  }
-
-/*
-  sAlarm.AlarmTime.Hours = 0;
-  sAlarm.AlarmTime.Minutes = 0;
-  sAlarm.AlarmTime.Seconds = 0;
-  sAlarm.AlarmTime.SubSeconds = 0;
-  sAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-  sAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-  sAlarm.AlarmMask = RTC_ALARMMASK_NONE;
-  sAlarm.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_ALL;
-  sAlarm.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
-  sAlarm.AlarmDateWeekDay = 1;
-  sAlarm.Alarm = RTC_ALARM_A;
-  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-
-  sAlarm.Alarm = RTC_ALARM_B;
-  if (HAL_RTC_SetAlarm(&hrtc, &sAlarm, RTC_FORMAT_BIN) != HAL_OK) {
-    Error_Handler();
-  }
-
-  if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) !=
-      HAL_OK) {
-    Error_Handler();
-  }
-*/
-
-}
 
 void writeVersion() {
   const char* version = "v0.1";
@@ -272,8 +184,10 @@ int main(void) {
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_HRTIM_Init();
-  MX_RTC_Init();
+
+  timer_init();
+  rtc_init();
+
   MX_SPI3_Init();
 
   //Initialize and start the ADCs
@@ -529,37 +443,6 @@ void SystemClock_Config(void) {
   __HAL_RCC_D2SRAM1_CLK_ENABLE();
   __HAL_RCC_D2SRAM2_CLK_ENABLE();
   __HAL_RCC_D2SRAM3_CLK_ENABLE();
-}
-
-static void MX_HRTIM_Init(void) {
-
-  HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
-  HRTIM_TimerCfgTypeDef pTimerCfg = {0};
-  HRTIM_OutputCfgTypeDef pOutputCfg = {0};
-
-  hhrtim.Instance = HRTIM1;
-  hhrtim.Init.HRTIMInterruptResquests = HRTIM_IT_NONE;
-  hhrtim.Init.SyncOptions = HRTIM_SYNCOPTION_NONE;
-  if (HAL_HRTIM_Init(&hhrtim) != HAL_OK) {
-    Error_Handler();
-  }
-  HAL_HRTIM_MspPostInit(&hhrtim);
-}
-
-static void MX_RTC_Init(void) {
-
-  hrtc.Instance = RTC;
-  hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-  hrtc.Init.AsynchPrediv = 127;
-  hrtc.Init.SynchPrediv = 255;
-  hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-  hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-  hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-  hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
-  if (HAL_RTC_Init(&hrtc) != HAL_OK) {
-    Error_Handler();
-  }
-
 }
 
 static void MX_SPI2_Init(void) {

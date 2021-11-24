@@ -5,6 +5,7 @@
 #include "pwm.h"
 #include "main.h"
 #include "gpio.h"
+#include "rtc.h"
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
 	switch (peripheral) {
@@ -134,7 +135,7 @@ void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* 
     break;
   }
   case PERIPH_RTC: {
-    doRTCStuff(opcode, (struct rtc_time*)data);
+    handle_rtc_operation(opcode, (struct rtc_time*)data);
     break;
   }
   case PERIPH_UART: {
