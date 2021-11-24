@@ -53,11 +53,6 @@ struct GPIO_numbers {
   uint16_t pin;
 };
 
-struct PWM_numbers {
-  uint32_t index;
-  uint32_t channel;
-};
-
 struct GPIO_numbers GPIO_pinmap[] = {
   // GPIOs
   { GPIOF, GPIO_PIN_8 },
@@ -98,20 +93,6 @@ struct GPIO_numbers GPIO_pinmap[] = {
   { GPIOC, GPIO_PIN_6 },
   { GPIOA, GPIO_PIN_12 },
   { GPIOC, GPIO_PIN_8 },
-};
-
-struct PWM_numbers PWM_pinmap[] = {
-  // GPIOs
-  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA2 },
-  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC1 },
-  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC2 },
-  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE2 },
-  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD1 },
-  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE1 },
-  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB2 },
-  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1 },
-  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD2 },
-  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1 },
 };
 
 const char* to_peripheral_string(enum Peripherals peripheral);

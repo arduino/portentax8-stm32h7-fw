@@ -68,6 +68,7 @@ OBJS = \
 	CM7/Core/Src/sysmem.o \
 	CM7/Core/Src/adc.o \
 	CM7/Core/Src/uart.o \
+	CM7/Core/Src/pwm.o \
 	CM7/Core/Startup/startup_stm32h747aiix.o \
 	libraries/openamp_arduino/src/condition.o \
 	libraries/openamp_arduino/src/device.o \

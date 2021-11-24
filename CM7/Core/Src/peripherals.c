@@ -2,6 +2,7 @@
 #include "stm32h7xx_hal.h"
 #include "can_api.h"
 #include "uart.h"
+#include "pwm.h"
 #include "main.h"
 
 const char* to_peripheral_string(enum Peripherals peripheral) {

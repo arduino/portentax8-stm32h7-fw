@@ -70,13 +70,6 @@ volatile uint16_t data_amount = 0;
     _a > _b ? _a : _b;                                                         \
   })
 
-struct __attribute__((packed, aligned(4))) pwmPacket {
-	uint8_t enable: 1;
-	uint8_t polarity: 1;
-	uint32_t duty: 30;
-	uint32_t period: 32;
-};
-
 volatile bool trigger_irq = false;
 
 struct rtc_time {
@@ -166,36 +159,6 @@ void doRTCStuff(uint8_t opcode, struct rtc_time *tm) {
 void writeVersion() {
   const char* version = "v0.1";
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
-}
-
-void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
-	dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
-			polarity? "high": "low", duty_ns, period_ns);
-
-  HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
-  HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
-
-  pTimeBaseCfg.Period = period_ns / 5;
-  pTimeBaseCfg.RepetitionCounter = 0x00;
-  pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
-  pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
-
-  sConfig_Channel.Polarity = polarity ? HRTIM_OUTPUTPOLARITY_HIGH : HRTIM_OUTPUTPOLARITY_LOW;
-  sConfig_Channel.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
-  sConfig_Channel.Pulse = duty_ns / 5;
-
-  HAL_HRTIM_TimeBaseConfig(&hhrtim, PWM_pinmap[channel].index, &pTimeBaseCfg);
-  HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel);
-  HAL_HRTIM_SoftwareUpdate(&hhrtim,HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C
-      | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E);
-
-  if (enable) {
-    HAL_HRTIM_SimplePWMStart(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-  } else {
-    HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-  }
-
-  // If capture is needed, use code from https://github.com/kongr45gpen/stm32h7-freqcounter/blob/master/Src/main.c
 }
 
 /*
