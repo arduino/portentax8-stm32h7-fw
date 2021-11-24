@@ -4,6 +4,7 @@
 #include "uart.h"
 #include "pwm.h"
 #include "main.h"
+#include "gpio.h"
 
 const char* to_peripheral_string(enum Peripherals peripheral) {
 	switch (peripheral) {
@@ -26,38 +27,6 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
 		default:
 			return "UNKNOWN";
 	}
-}
-
-
-void configureGPIO(uint8_t opcode, uint16_t data) {
-  enum Opcodes_GPIO action = opcode;
-
-  uint8_t value = (data & 0xFF00) >> 8;
-  uint8_t index = data & 0xFF;
-
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  uint8_t response[2];
-
-  switch (action) {
-    case CONFIGURE:
-      GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
-      GPIO_InitStruct.Mode = value;
-      GPIO_InitStruct.Pull = GPIO_PULLUP;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-      HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
-      dbg_printf("GPIO%d: CONFIGURE %d\n", index, value);
-      break;
-    case WRITE:
-      HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
-      dbg_printf("GPIO%d: WRITE %d\n", index, value);
-      break;
-    case READ:
-      response[0] = index;
-      response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
-      enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
-      dbg_printf("GPIO%d: READ %d\n", index, response[1]);
-      break;
-  }
 }
 
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {

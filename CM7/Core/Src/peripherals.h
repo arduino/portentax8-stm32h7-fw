@@ -48,56 +48,7 @@ enum Opcodes_GPIO {
 	READ = 0x30,
 };
 
-struct GPIO_numbers {
-  GPIO_TypeDef * port;
-  uint16_t pin;
-};
-
-struct GPIO_numbers GPIO_pinmap[] = {
-  // GPIOs
-  { GPIOF, GPIO_PIN_8 },
-  { GPIOF, GPIO_PIN_6 },
-  { GPIOF, GPIO_PIN_3 },
-  { GPIOF, GPIO_PIN_4 },
-  { GPIOF, GPIO_PIN_12 },
-  { GPIOE, GPIO_PIN_10 },
-  { GPIOE, GPIO_PIN_11 },
-  // ADCs
-  { GPIOF, GPIO_PIN_11 },
-  { GPIOA, GPIO_PIN_6 },
-  { GPIOF, GPIO_PIN_13 },
-  { GPIOB, GPIO_PIN_1 },
-  { GPIOC, GPIO_PIN_4 },
-  { GPIOF, GPIO_PIN_7 },
-  { GPIOF, GPIO_PIN_9 },
-  { GPIOF, GPIO_PIN_5 },
-  // FDCAN1
-  { GPIOD, GPIO_PIN_1 },
-  { GPIOD, GPIO_PIN_0 },
-  // FDCAN1
-  { GPIOB, GPIO_PIN_6 },
-  { GPIOB, GPIO_PIN_5 },
-  // USART2
-  { GPIOD, GPIO_PIN_5 },
-  { GPIOD, GPIO_PIN_6 },
-  { GPIOD, GPIO_PIN_4 },
-  { GPIOD, GPIO_PIN_3 },
-  // PWM
-  { GPIOC, GPIO_PIN_7 },
-  { GPIOA, GPIO_PIN_9 },
-  { GPIOA, GPIO_PIN_10 },
-  { GPIOB, GPIO_PIN_10 },
-  { GPIOA, GPIO_PIN_11 },
-  { GPIOD, GPIO_PIN_15 },
-  { GPIOA, GPIO_PIN_8 },
-  { GPIOC, GPIO_PIN_6 },
-  { GPIOA, GPIO_PIN_12 },
-  { GPIOC, GPIO_PIN_8 },
-};
-
 const char* to_peripheral_string(enum Peripherals peripheral);
-
-void configureGPIO(uint8_t opcode, uint16_t data);
 
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data);
 

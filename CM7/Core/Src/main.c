@@ -8,6 +8,7 @@
 #include "rpc.h"
 #include "stm32h7xx_ll_rcc.h"
 #include "adc.h"
+#include "gpio.h"
 
 //#define PORTENTA_DEBUG_WIRED
 
@@ -293,52 +294,7 @@ int main(void) {
 
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  // IRQ PIN from H7 to M8
-  // TODO: changeme when final HW is ready
-
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-
-#ifndef PORTENTA_DEBUG_WIRED
-
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-
-  // Interrupt on CS LOW
-  GPIO_InitStruct.Pin = GPIO_PIN_15;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-
-#else
-
-  // Enable LEDs (Portenta only)
-  __HAL_RCC_GPIOK_CLK_ENABLE();
-  GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOK, &GPIO_InitStruct);
-
-  // Interrupt on CS LOW
-  GPIO_InitStruct.Pin = GPIO_PIN_0;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOI, &GPIO_InitStruct);
-
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 3, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-#endif
+  gpio_set_initial_config();
 
   // Start DMA on SPI
   //HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
