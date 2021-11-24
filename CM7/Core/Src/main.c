@@ -349,9 +349,11 @@ void configureGPIO(uint8_t opcode, uint16_t data) {
   uint8_t value = (data & 0xFF00) >> 8;
   uint8_t index = data & 0xFF;
 
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  uint8_t response[2];
+
   switch (action) {
     case CONFIGURE:
-      GPIO_InitTypeDef GPIO_InitStruct = {0};
       GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
       GPIO_InitStruct.Mode = value;
       GPIO_InitStruct.Pull = GPIO_PULLUP;
@@ -364,11 +366,10 @@ void configureGPIO(uint8_t opcode, uint16_t data) {
       dbg_printf("GPIO%d: WRITE %d\n", index, value);
       break;
     case READ:
-      uint8_t value[2];
-      value[0] = index;
-      value[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
-      enqueue_packet(PERIPH_GPIO, opcode, sizeof(value), &value);
-      dbg_printf("GPIO%d: READ %d\n", index, value[1]);
+      response[0] = index;
+      response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
+      enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
+      dbg_printf("GPIO%d: READ %d\n", index, response[1]);
       break;
   }
 }
