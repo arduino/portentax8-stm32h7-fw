@@ -78,127 +78,6 @@ volatile uint16_t data_amount = 0;
     _a > _b ? _a : _b;                                                         \
   })
 
-
-const char* to_peripheral_string(enum Peripherals peripheral) {
-	switch (peripheral) {
-		case PERIPH_ADC:
-			return "ADC";
-		case PERIPH_PWM:
-			return "PWM";
-		case PERIPH_FDCAN1:
-			return "FDCAN1";
-		case PERIPH_FDCAN2:
-			return "FDCAN2";
-		case PERIPH_UART:
-			return "UART";
-		case PERIPH_RTC:
-			return "RTC";
-    case PERIPH_GPIO:
-      return "GPIO";
-    case PERIPH_VIRTUAL_UART:
-      return "VIRTUAL_UART";
-		default:
-			return "UNKNOWN";
-	}
-}
-
-enum Opcodes {
-	CONFIGURE = 0x10,
-	DATA = 0x01,
-};
-
-enum Opcodes_H7 {
-  FW_VERSION = 0x10,
-  BOOT_M4 = 0x77,
-};
-
-enum Opcodes_UART {
-	GET_LINESTATE = 0x20,
-};
-
-enum Opcodes_RTC {
-	SET_DATE = 0x01,
-	GET_DATE = 0x02,
-	SET_ALARM = 0x11,
-	GET_ALARM = 0x12,
-};
-
-enum Opcodes_CAN {
-  CAN_FILTER = 0x50,
-};
-
-enum Opcodes_GPIO {
-	DIRECTION = 0x10,
-	WRITE = 0x20,
-	READ = 0x30,
-};
-
-struct GPIO_numbers {
-  GPIO_TypeDef * port;
-  uint16_t pin;
-};
-
-struct PWM_numbers {
-  uint32_t index;
-  uint32_t channel;
-};
-
-struct GPIO_numbers GPIO_pinmap[] = {
-  // GPIOs
-  { GPIOF, GPIO_PIN_8 },
-  { GPIOF, GPIO_PIN_6 },
-  { GPIOF, GPIO_PIN_3 },
-  { GPIOF, GPIO_PIN_4 },
-  { GPIOF, GPIO_PIN_12 },
-  { GPIOE, GPIO_PIN_10 },
-  { GPIOE, GPIO_PIN_11 },
-  // ADCs
-  { GPIOF, GPIO_PIN_11 },
-  { GPIOA, GPIO_PIN_6 },
-  { GPIOF, GPIO_PIN_13 },
-  { GPIOB, GPIO_PIN_1 },
-  { GPIOC, GPIO_PIN_4 },
-  { GPIOF, GPIO_PIN_7 },
-  { GPIOF, GPIO_PIN_9 },
-  { GPIOF, GPIO_PIN_5 },
-  // FDCAN1
-  { GPIOD, GPIO_PIN_1 },
-  { GPIOD, GPIO_PIN_0 },
-  // FDCAN1
-  { GPIOB, GPIO_PIN_6 },
-  { GPIOB, GPIO_PIN_5 },
-  // USART2
-  { GPIOD, GPIO_PIN_5 },
-  { GPIOD, GPIO_PIN_6 },
-  { GPIOD, GPIO_PIN_4 },
-  { GPIOD, GPIO_PIN_3 },
-  // PWM
-  { GPIOC, GPIO_PIN_7 },
-  { GPIOA, GPIO_PIN_9 },
-  { GPIOA, GPIO_PIN_10 },
-  { GPIOB, GPIO_PIN_10 },
-  { GPIOA, GPIO_PIN_11 },
-  { GPIOD, GPIO_PIN_15 },
-  { GPIOA, GPIO_PIN_8 },
-  { GPIOC, GPIO_PIN_6 },
-  { GPIOA, GPIO_PIN_12 },
-  { GPIOC, GPIO_PIN_8 },
-};
-
-struct PWM_numbers PWM_pinmap[] = {
-  // GPIOs
-  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA2 },
-  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC1 },
-  { HRTIM_TIMERINDEX_TIMER_C, HRTIM_OUTPUT_TC2 },
-  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE2 },
-  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD1 },
-  { HRTIM_TIMERINDEX_TIMER_E, HRTIM_OUTPUT_TE1 },
-  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB2 },
-  { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1 },
-  { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD2 },
-  { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1 },
-};
-
 struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint8_t enable: 1;
 	uint8_t polarity: 1;
@@ -221,84 +100,6 @@ struct __attribute__((packed, aligned(4))) uartPacket {
 };
 
 volatile bool trigger_irq = false;
-
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
-
-/*
-  int timeout = 100000;
-	// don't feed data in the middle of a transmission
-	while (get_data_amount == false && timeout > 0) {
-		// wait for the DMA interrupt to be over
-    timeout--;
-	}
-*/
-
-  while (get_data_amount == false) {
-    // wait for the DMA interrupt to be over
-  }
-
-	__disable_irq();
-	struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
-	uint16_t offset = tx_pkt->size;
-	if (offset + size > sizeof(TX_Buffer)) {
-		goto cleanup;
-	}
-	struct subpacket pkt;
-	pkt.peripheral = peripheral;
-	pkt.opcode = opcode;
-	pkt.size = size;
-	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
-	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
-	tx_pkt->size += 4 + size;
-	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
-
-  dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
-      to_peripheral_string(peripheral), opcode, size);
-
-  for (int i = 0; i < size; i++) {
-    dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
-  }
-  dbg_printf("\n");
-
-cleanup:
-	__enable_irq();
-
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-
-  //trigger_irq = true;
-}
-
-void configureGPIO(uint8_t opcode, uint16_t data) {
-  enum Opcodes_GPIO action = opcode;
-
-  uint8_t value = (data & 0xFF00) >> 8;
-  uint8_t index = data & 0xFF;
-
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  uint8_t response[2];
-
-  switch (action) {
-    case CONFIGURE:
-      GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
-      GPIO_InitStruct.Mode = value;
-      GPIO_InitStruct.Pull = GPIO_PULLUP;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-      HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
-      dbg_printf("GPIO%d: CONFIGURE %d\n", index, value);
-      break;
-    case WRITE:
-      HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
-      dbg_printf("GPIO%d: WRITE %d\n", index, value);
-      break;
-    case READ:
-      response[0] = index;
-      response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
-      enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
-      dbg_printf("GPIO%d: READ %d\n", index, response[1]);
-      break;
-  }
-}
 
 struct rtc_time {
   uint8_t tm_sec;
@@ -522,8 +323,6 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 }
 */
 
-uint16_t adc_sample_rate = 0;
-
 can_t fdcan_1;
 can_t fdcan_2;
 
@@ -541,102 +340,6 @@ void configureFDCAN(uint8_t peripheral, void* data) {
   //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
 }
 
-void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
-	switch (peripheral) {
-	case PERIPH_ADC: {
-		if (opcode == CONFIGURE) {
-			adc_sample_rate = *((uint16_t*)data);
-			dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
-      return;
-		} else {
-      // opcode == channel
-      get_ADC_value(opcode);
-    }
-		break;
-	}
-	case PERIPH_PWM: {
-		uint8_t channel = opcode;
-		struct pwmPacket config = *((struct pwmPacket*)data);
-		configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
-		break;
-	}
-  case PERIPH_GPIO: {
-    configureGPIO(opcode, *((uint16_t*)data));
-    break;
-  }
-  case PERIPH_FDCAN1:
-  case PERIPH_FDCAN2: {
-    if (opcode == CONFIGURE) {
-      configureFDCAN(peripheral, data);
-      break;
-    }
-
-    if (opcode == CAN_FILTER) {
-      uint32_t* info = (uint32_t*)data;
-      CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-
-      if (peripheral == PERIPH_FDCAN1) {
-        can_filter(&fdcan_1, info[1], info[2], format, info[0]);
-      }
-      if (peripheral == PERIPH_FDCAN1) {
-        can_filter(&fdcan_2, info[1], info[2], format, info[0]);
-      }
-      break;
-    }
-
-    CAN_Message msg;
-    msg.type = CANData;
-    msg.format = CANStandard;
-    memcpy(&msg, data, size);
-
-    dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
-      msg.id, msg.len, msg.data[0]);
-
-    if (msg.id > 0x7FF) {
-      msg.format = CANExtended;
-    }
-
-    if (peripheral == PERIPH_FDCAN1) {
-      int ret = can_write(&fdcan_1, msg, 0);
-      if (ret == 0) {
-        can_reset(&fdcan_1);
-      }
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-      int ret = can_write(&fdcan_2, msg, 0);
-      if (ret == 0) {
-          can_reset(&fdcan_2);
-        }
-    }
-    break;
-  }
-  case PERIPH_RTC: {
-    doRTCStuff(opcode, (struct rtc_time*)data);
-    break;
-  }
-  case PERIPH_UART: {
-    if (opcode == CONFIGURE) {
-      struct uartPacket config = *((struct uartPacket*)data);
-      configureUart(config.baud, config.bits, config.parity, config.stop_bits, config.flow_control);
-    } else {
-      // can only write(), read() is irq driven
-      HAL_UART_Transmit(&huart2, data, size, 0xFFFFFFFF);
-      //HAL_UART_Transmit_IT(&huart2, data, size);
-    }
-    break;
-  }
-  case PERIPH_H7: {
-    if (opcode == FW_VERSION) {
-      writeVersion();
-    }
-    break;
-  }
-  case PERIPH_VIRTUAL_UART: {
-    serial_rpc_write((uint8_t*)data, size);
-  }
-	}
-}
-
 int _read(int file, char *ptr, int len) {
 
 }
@@ -646,7 +349,6 @@ int _write(int file, char *ptr, int len) {
   return len;
 }
 
-long adc_sample_rate_last_tick = 0;
 ring_buffer_t uart_ring_buffer;
 ring_buffer_t virtual_uart_ring_buffer;
 
@@ -1071,26 +773,6 @@ void SystemClock_Config(void) {
   __HAL_RCC_D2SRAM1_CLK_ENABLE();
   __HAL_RCC_D2SRAM2_CLK_ENABLE();
   __HAL_RCC_D2SRAM3_CLK_ENABLE();
-}
-
-void PeriphCommonClock_Config(void) {
-  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-
-  PeriphClkInitStruct.PeriphClockSelection =
-      RCC_PERIPHCLK_ADC | RCC_PERIPHCLK_FDCAN;
-  PeriphClkInitStruct.PLL2.PLL2M = 8;
-  PeriphClkInitStruct.PLL2.PLL2N = 100;
-  PeriphClkInitStruct.PLL2.PLL2P = 10;
-  PeriphClkInitStruct.PLL2.PLL2Q = 8;
-  PeriphClkInitStruct.PLL2.PLL2R = 128;
-  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_3;
-  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
-  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
-  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
-  PeriphClkInitStruct.AdcClockSelection = RCC_ADCCLKSOURCE_PLL2;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-    Error_Handler();
-  }
 }
 
 static void MX_FDCAN1_Init(void) {

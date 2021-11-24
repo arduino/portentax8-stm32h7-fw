@@ -199,27 +199,6 @@ enum Peripherals {
 	PERIPH_MAX,
 };
 
-const char* to_peripheral_string(enum Peripherals peripheral) {
-	switch (peripheral) {
-		case PERIPH_ADC:
-			return "ADC";
-		case PERIPH_PWM:
-			return "PWM";
-		case PERIPH_FDCAN1:
-			return "FDCAN1";
-		case PERIPH_FDCAN2:
-			return "FDCAN2";
-		case PERIPH_UART:
-			return "UART";
-		case PERIPH_RTC:
-			return "RTC";
-		case PERIPH_GPIO:
-			return "GPIO";
-		default:
-			return "UNKNOWN";
-	}
-}
-
 enum Opcodes {
 	CONFIGURE = 0x10,
 	DATA = 0x01,
@@ -261,23 +240,6 @@ struct __attribute__((packed, aligned(4))) pwmPacket {
 };
 
 uint8_t samplebuffer[UINT16_MAX];
-
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
-
-	struct complete_packet *tx_pkt = (struct complete_packet *)samplebuffer;
-	uint16_t offset = tx_pkt->size;
-	if (offset + size > sizeof(samplebuffer)) {
-		return;
-	}
-	struct subpacket pkt;
-	pkt.peripheral = peripheral;
-	pkt.opcode = opcode;
-	pkt.size = size;
-	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
-	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
-	tx_pkt->size += 4 + size;
-	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
-}
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
 	switch (peripheral) {
