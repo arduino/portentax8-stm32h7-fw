@@ -49,12 +49,6 @@ static void MX_USART2_UART_Init(void);
 
 #undef DEBUG
 
-#ifdef DEBUG
-#define dbg_printf(...)	printf(__VA_ARGS__)
-#else
-#define dbg_printf(...)
-#endif
-
 #define SPI_DMA_BUFFER_SIZE 	2048
 
 __attribute__((packed, aligned(4))) struct subpacket {

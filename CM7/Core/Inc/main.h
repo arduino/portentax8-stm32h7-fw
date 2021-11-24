@@ -29,6 +29,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
+#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -56,6 +57,12 @@ void HAL_HRTIM_MspPostInit(HRTIM_HandleTypeDef *hhrtim);
 void Error_Handler_Name(const char *name);
 
 #define Error_Handler() Error_Handler_Name(__func__)
+
+#ifdef DEBUG
+#define dbg_printf(...)	printf(__VA_ARGS__)
+#else
+#define dbg_printf(...)
+#endif
 
 /* USER CODE BEGIN EFP */
 
