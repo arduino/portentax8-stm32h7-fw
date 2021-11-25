@@ -74,6 +74,7 @@ OBJS = \
 	CM7/Core/Src/spi.o \
 	CM7/Core/Src/system.o \
 	CM7/Core/Src/watchdog.o \
+	CM7/Core/Src/m4_utilities.o \
 	CM7/Core/Startup/startup_stm32h747aiix.o \
 	libraries/openamp_arduino/src/condition.o \
 	libraries/openamp_arduino/src/device.o \
