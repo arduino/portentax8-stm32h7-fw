@@ -3,6 +3,7 @@
 #include "peripherals.h"
 #include "main.h"
 #include "ringbuffer.h"
+#include "rpc.h"
 
 UART_HandleTypeDef huart2;
 
@@ -149,15 +150,35 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
   }
 }
 
+void uart_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  if (opcode == CONFIGURE) {
+    uart_configure(data);
+  }
+  if (opcode == DATA) {
+    uart_write(data, size);
+  }
+}
+
+void virtual_uart_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  serial_rpc_write(data, size);
+}
+
 
 void uart_init() {
   MX_USART2_UART_Init();
 
   ring_buffer_init(&uart_ring_buffer);
   ring_buffer_init(&virtual_uart_ring_buffer);
+
+  register_peripheral_callback(PERIPH_UART, &uart_handler);
+  register_peripheral_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 }
 
-int uart_write(uint8_t *data, uint16_t size, uint32_t timeout) {
+int uart_write(uint8_t *data, uint16_t size) {
+  return uart_write_with_timeout(data, size, 0xFFFFFFFF);
+}
+
+int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout) {
   return HAL_UART_Transmit(&huart2, data, size, timeout);
 }
 

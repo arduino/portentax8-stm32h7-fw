@@ -69,54 +69,73 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc) {
   }
 }
 
-void rtc_init() {
-  MX_RTC_Init();
+void rtc_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  if (opcode == SET_DATE) {
+    rtc_set_date(data);
+  }
+  if (opcode == GET_DATE) {
+    rtc_get_date(data);
+  }
 }
 
-void handle_rtc_operation(uint8_t opcode, struct rtc_time *tm) {
+void rtc_init() {
+  MX_RTC_Init();
+
+  /*
+  register_peripheral_callback(PERIPH_RTC, SET_DATE, &rtc_set_date);
+  register_peripheral_callback(PERIPH_RTC, GET_DATE, &rtc_get_date);
+  */
+
+  register_peripheral_callback(PERIPH_RTC, &rtc_handler);
+
+}
+
+void rtc_set_date(uint8_t *data) {
+  struct rtc_time *tm = (struct rtc_time*)data;
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef sDate = {0};
+
+  sTime.Hours = tm->tm_hour;
+  sTime.Minutes = tm->tm_min;
+  sTime.Seconds = tm->tm_sec;
+  sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+  sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
+  }
+  sDate.WeekDay = tm->tm_wday;
+  sDate.Month = tm->tm_mon;
+  sDate.Date = tm->tm_mday;
+  sDate.Year = tm->tm_year;
+  if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
+  }
+}
+
+void rtc_get_date(uint8_t *data) {
+  struct rtc_time *tm = (struct rtc_time*)data;
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
   RTC_AlarmTypeDef sAlarm = {0};
 
-  if (opcode == SET_DATE) {
-    sTime.Hours = tm->tm_hour;
-    sTime.Minutes = tm->tm_min;
-    sTime.Seconds = tm->tm_sec;
-    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
-    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
-    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-    sDate.WeekDay = tm->tm_wday;
-    sDate.Month = tm->tm_mon;
-    sDate.Date = tm->tm_mday;
-    sDate.Year = tm->tm_year;
-    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
+  struct rtc_time now;
+
+  if (HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
+  }
+  if (HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+    Error_Handler();
   }
 
-  if (opcode == GET_DATE) {
+  now.tm_hour = sTime.Hours;
+  now.tm_min = sTime.Minutes;
+  now.tm_sec = sTime.Seconds;
+  now.tm_wday = sDate.WeekDay;
+  now.tm_mon = sDate.Month;
+  now.tm_mday = sDate.Date;
+  now.tm_year = sDate.Year;
 
-    struct rtc_time now;
-
-    if (HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-    if (HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
-      Error_Handler();
-    }
-
-    now.tm_hour = sTime.Hours;
-    now.tm_min = sTime.Minutes;
-    now.tm_sec = sTime.Seconds;
-    now.tm_wday = sDate.WeekDay;
-    now.tm_mon = sDate.Month;
-    now.tm_mday = sDate.Date;
-    now.tm_year = sDate.Year;
-
-    enqueue_packet(PERIPH_RTC, opcode, sizeof(now), &now);
-  }
+  enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now);
 
 /*
   sAlarm.AlarmTime.Hours = 0;

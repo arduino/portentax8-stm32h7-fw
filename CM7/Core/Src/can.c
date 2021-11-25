@@ -240,11 +240,68 @@ static void error(char* string) {
     while (1);
 }
 
+void fdcan1_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+    if (opcode == CONFIGURE) {
+        configureFDCAN(PERIPH_FDCAN1, data);
+    } else if (opcode == CAN_FILTER) {
+        uint32_t* info = (uint32_t*)data;
+        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
+        canFilter(PERIPH_FDCAN1, info[1], info[2], format, info[0]);
+    } else {
+        CAN_Message msg;
+        msg.type = CANData;
+        msg.format = CANStandard;
+        memcpy(&msg, data, size);
+
+        dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
+        msg.id, msg.len, msg.data[0]);
+
+        if (msg.id > 0x7FF) {
+        msg.format = CANExtended;
+        }
+
+        int ret = canWrite(PERIPH_FDCAN1, msg, 0);
+        if (ret == 0) {
+        canReset(PERIPH_FDCAN1);
+        }
+    }
+}
+
+void fdcan2_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+    if (opcode == CONFIGURE) {
+        configureFDCAN(PERIPH_FDCAN2, data);
+    } else if (opcode == CAN_FILTER) {
+        uint32_t* info = (uint32_t*)data;
+        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
+        canFilter(PERIPH_FDCAN2, info[1], info[2], format, info[0]);
+    } else {
+        CAN_Message msg;
+        msg.type = CANData;
+        msg.format = CANStandard;
+        memcpy(&msg, data, size);
+
+        dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
+        msg.id, msg.len, msg.data[0]);
+
+        if (msg.id > 0x7FF) {
+        msg.format = CANExtended;
+        }
+
+        int ret = canWrite(PERIPH_FDCAN2, msg, 0);
+        if (ret == 0) {
+        canReset(PERIPH_FDCAN2);
+        }
+    }
+}
+
 
 void canInit()
 {
     can_init_freq_direct(&fdcan_1, CAN_1, 800000);
     can_init_freq_direct(&fdcan_2, CAN_2, 800000);
+
+    register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
+    register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 
 /*
     HAL_FDCAN_Start(&hfdcan1);

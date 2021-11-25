@@ -45,6 +45,8 @@ void peripheral_init() {
 
   gpio_init();
 
+  pwm_init();
+
   dma_init();
 
   timer_init();

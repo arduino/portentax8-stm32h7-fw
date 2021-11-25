@@ -19,6 +19,8 @@ DMA_HandleTypeDef hdma_spi2_tx;
 DMA_HandleTypeDef hdma_spi2_rx;
 */
 
+void (*PeriphCallbacks[20]) (uint8_t opcode, uint8_t *data, uint8_t size); //[100];
+
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
 __IO uint32_t transferState = TRANSFER_WAIT;
@@ -177,26 +179,6 @@ void clean_dma_buffer() {
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
 }
 
-void system_init() {
-
-  MPU_Config();
-
-  SCB_EnableICache();
-  SCB_EnableDCache();
-
-  HAL_Init();
-
-  SystemClock_Config();
-
-  PeriphCommonClock_Config();
-}
-
-void dma_init() {
-  MX_DMA_Init();
-
-  clean_dma_buffer();
-}
-
 void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
 
 /*
@@ -249,87 +231,37 @@ void writeVersion() {
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
 }
 
-uint16_t adc_sample_rate = 0;
+void h7_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  if (opcode == FW_VERSION) {
+    writeVersion();
+  }
+}
+
+void system_init() {
+
+  MPU_Config();
+
+  SCB_EnableICache();
+  SCB_EnableDCache();
+
+  HAL_Init();
+
+  SystemClock_Config();
+
+  PeriphCommonClock_Config();
+
+  register_peripheral_callback(PERIPH_H7, &h7_handler);
+}
+
+void dma_init() {
+  MX_DMA_Init();
+
+  clean_dma_buffer();
+}
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
-	switch (peripheral) {
-	case PERIPH_ADC: {
-		if (opcode == CONFIGURE) {
-			adc_sample_rate = *((uint16_t*)data);
-			dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
-      return;
-		} else {
-      // opcode == channel
-      get_ADC_value(opcode);
-    }
-		break;
-	}
-	case PERIPH_PWM: {
-		uint8_t channel = opcode;
-		struct pwmPacket config = *((struct pwmPacket*)data);
-		configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
-		break;
-	}
-  case PERIPH_GPIO: {
-    configureGPIO(opcode, *((uint16_t*)data));
-    break;
-  }
-  case PERIPH_FDCAN1:
-  case PERIPH_FDCAN2: {
-    if (opcode == CONFIGURE) {
-      configureFDCAN(peripheral, data);
-      break;
-    }
-
-    if (opcode == CAN_FILTER) {
-      uint32_t* info = (uint32_t*)data;
-      CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-      canFilter(peripheral, info[1], info[2], format, info[0]);
-      break;
-    }
-
-    CAN_Message msg;
-    msg.type = CANData;
-    msg.format = CANStandard;
-    memcpy(&msg, data, size);
-
-    dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
-      msg.id, msg.len, msg.data[0]);
-
-    if (msg.id > 0x7FF) {
-      msg.format = CANExtended;
-    }
-
-    int ret = canWrite(peripheral, msg, 0);
-    if (ret == 0) {
-      canReset(peripheral);
-    }
-    break;
-  }
-  case PERIPH_RTC: {
-    handle_rtc_operation(opcode, (struct rtc_time*)data);
-    break;
-  }
-  case PERIPH_UART: {
-    if (opcode == CONFIGURE) {
-      uart_configure(data);
-    } else {
-      // can only write(), read() is irq driven
-      uart_write(data, size, 0xFFFFFFFF);
-      //HAL_UART_Transmit_IT(&huart2, data, size);
-    }
-    break;
-  }
-  case PERIPH_H7: {
-    if (opcode == FW_VERSION) {
-      writeVersion();
-    }
-    break;
-  }
-  case PERIPH_VIRTUAL_UART: {
-    serial_rpc_write((uint8_t*)data, size);
-  }
-	}
+  //Get function callback from LUT (peripherals vs opcodes)
+  (*PeriphCallbacks[peripheral])(opcode, data, size);
 }
 
 struct complete_packet* get_dma_packet() {
@@ -467,6 +399,10 @@ void dma_handle_data() {
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
       transferState = TRANSFER_WAIT;
   }
+}
+
+void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ void* func) {
+  PeriphCallbacks[peripheral]/*[opcode]*/ = func;
 }
 
 void Error_Handler_Name(const char* name) {

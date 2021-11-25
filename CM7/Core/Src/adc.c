@@ -30,6 +30,16 @@ static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 
 
+void adc_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  if (opcode == CONFIGURE) {
+    uint16_t adc_sample_rate = *((uint16_t*)data);
+    dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
+  } else {
+    // opcode == channel
+    get_ADC_value(opcode);
+  }
+}
+
 void adc_init() {
   MX_ADC1_Init();
   MX_ADC2_Init();
@@ -38,6 +48,8 @@ void adc_init() {
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start(&hadc2);
   HAL_ADC_Start(&hadc3);
+
+  register_peripheral_callback(PERIPH_ADC, &adc_handler);
 }
 
 uint16_t get_ADC_value(enum AnalogPins name) {

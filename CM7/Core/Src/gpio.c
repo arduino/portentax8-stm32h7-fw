@@ -62,11 +62,8 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOF_CLK_ENABLE();
 }
 
-void gpio_init() {
-  MX_GPIO_Init();
-}
-
-void configureGPIO(uint8_t opcode, uint16_t data) {
+void gpio_handler(uint8_t opcode, uint8_t *pdata, uint8_t size) {
+  uint16_t data = *((uint16_t*)pdata);
   enum Opcodes_GPIO action = opcode;
 
   uint8_t value = (data & 0xFF00) >> 8;
@@ -95,6 +92,12 @@ void configureGPIO(uint8_t opcode, uint16_t data) {
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
       break;
   }
+}
+
+void gpio_init() {
+  MX_GPIO_Init();
+
+  register_peripheral_callback(PERIPH_GPIO, &gpio_handler);
 }
 
 void gpio_set_initial_config() {

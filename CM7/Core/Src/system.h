@@ -41,4 +41,6 @@ int get_dma_packet_size();
 
 void dma_handle_data();
 
+void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ void* func);
+
 #endif //SYSTEM_H

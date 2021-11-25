@@ -24,6 +24,16 @@ struct PWM_numbers PWM_pinmap[] = {
   { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1 },
 };
 
+void pwm_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+  uint8_t channel = opcode;
+  struct pwmPacket config = *((struct pwmPacket*)data);
+  configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
+}
+
+void pwm_init() {
+  register_peripheral_callback(PERIPH_PWM, &pwm_handler);
+}
+
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
 	dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
 			polarity? "high": "low", duty_ns, period_ns);

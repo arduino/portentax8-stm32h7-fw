@@ -11,6 +11,8 @@ struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint32_t period: 32;
 };
 
+void pwm_init();
+
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns);
 
 #endif  //PWM_H
