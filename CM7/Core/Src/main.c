@@ -125,10 +125,6 @@ int main(void) {
 
   gpio_set_initial_config();
 
-  // Start DMA on SPI
-  //HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-  //                            (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
 
   int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x10000000);

@@ -70,21 +70,11 @@ void spi_init() {
 
   MX_SPI3_Init();
 
-#ifdef PORTENTA_DEBUG_WIRED
-  // Enable SPI2 (Portenta only)
-  MX_SPI2_Init();
-#endif
-
 }
 
 void spi_end() {
 
   HAL_SPI_Abort(&hspi3);
-
-#ifdef PORTENTA_DEBUG_WIRED
-  HAL_SPI_Abort(&hspi2);
-#endif
-
 }
 
 
