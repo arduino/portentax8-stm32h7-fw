@@ -62,7 +62,6 @@ OBJS = \
 	CM7/Core/Src/peripherals.o \
 	CM7/Core/Src/ringbuffer.o \
 	CM7/Core/Src/rpc.o \
-	CM7/Core/Src/stm32h7xx_hal_msp.o \
 	CM7/Core/Src/stm32h7xx_it.o \
 	CM7/Core/Src/syscalls.o \
 	CM7/Core/Src/sysmem.o \

@@ -11,12 +11,13 @@
 #include "uart.h"
 #include "rpc.h"
 #include "spi.h"
-
+/*
 DMA_HandleTypeDef hdma_spi3_tx;
 DMA_HandleTypeDef hdma_spi3_rx;
 
 DMA_HandleTypeDef hdma_spi2_tx;
 DMA_HandleTypeDef hdma_spi2_rx;
+*/
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -31,6 +32,9 @@ volatile bool get_data_amount = true;
 volatile uint16_t data_amount = 0;
 
 static void SystemClock_Config(void) {
+
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
