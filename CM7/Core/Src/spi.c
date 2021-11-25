@@ -285,7 +285,7 @@ void spi_end() {
 }
 
 
-void spi_transmit_receive(uint8_t peripheral, uint8_t *tx_buf, uint8_t *rx_buf, uint8_t size) {
+inline void spi_transmit_receive(uint8_t peripheral, uint8_t *tx_buf, uint8_t *rx_buf, uint8_t size) {
 
   if (peripheral == PERIPH_SPI2) {
     HAL_SPI_TransmitReceive_DMA(&hspi2, tx_buf, rx_buf, size);
