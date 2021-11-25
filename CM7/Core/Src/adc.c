@@ -1,5 +1,6 @@
 #include "adc.h"
 #include "main.h"
+#include "system.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 

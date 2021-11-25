@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "can_api.h"
 #include "stm32h7xx_ll_hsem.h"
+#include "system.h"
 #include "peripherals.h"
 
 #define TARGET_STM32H7      1

@@ -1,6 +1,9 @@
 #include "pwm.h"
+#include "system.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
+#include "main.h"
+#include "timer.h"
 
 struct PWM_numbers {
   uint32_t index;
@@ -37,16 +40,7 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   sConfig_Channel.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
   sConfig_Channel.Pulse = duty_ns / 5;
 
-  HAL_HRTIM_TimeBaseConfig(&hhrtim, PWM_pinmap[channel].index, &pTimeBaseCfg);
-  HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel);
-  HAL_HRTIM_SoftwareUpdate(&hhrtim,HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C
-      | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E);
+  uint32_t timers = HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E;
 
-  if (enable) {
-    HAL_HRTIM_SimplePWMStart(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-  } else {
-    HAL_HRTIM_SimplePWMStop(&hhrtim, PWM_pinmap[channel].index, PWM_pinmap[channel].channel);
-  }
-
-  // If capture is needed, use code from https://github.com/kongr45gpen/stm32h7-freqcounter/blob/master/Src/main.c
+  pwm_timer_config(PWM_pinmap[channel].index, PWM_pinmap[channel].channel, &sConfig_Channel, &pTimeBaseCfg, timers, enable);
 }

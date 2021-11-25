@@ -14,6 +14,8 @@ enum Peripherals {
   PERIPH_M4 = 0x08,
   PERIPH_H7 = 0x09,
   PERIPH_VIRTUAL_UART = 0x0A,
+  PERIPH_SPI2 = 0x0B,
+  PERIPH_SPI3 = 0x0C,
 };
 
 
@@ -49,11 +51,5 @@ enum Opcodes_GPIO {
 };
 
 const char* to_peripheral_string(enum Peripherals peripheral);
-
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data);
-
-void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data);
-
-void PeriphCommonClock_Config(void);
 
 #endif //PERIPHERALS_H

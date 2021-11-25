@@ -1,7 +1,7 @@
 #include "timer.h"
+#include "system.h"
 #include "peripherals.h"
 #include "main.h"
-#include "stm32h7xx_hal.h"
 
 HRTIM_HandleTypeDef hhrtim;
 
@@ -22,4 +22,21 @@ static void MX_HRTIM_Init(void) {
 
 void timer_init() {
   MX_HRTIM_Init();
+}
+
+void pwm_timer_config(uint32_t index, uint32_t channel,
+                      HRTIM_SimplePWMChannelCfgTypeDef* pSimplePWMChannelCfg,
+                      HRTIM_TimeBaseCfgTypeDef * pTimeBaseCfg,
+                      uint32_t timers, bool enable) {
+
+  HAL_HRTIM_TimeBaseConfig(&hhrtim, index, pTimeBaseCfg);
+  HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, index, channel, pSimplePWMChannelCfg);
+  HAL_HRTIM_SoftwareUpdate(&hhrtim, timers);
+
+  if (enable) {
+    HAL_HRTIM_SimplePWMStart(&hhrtim, index, channel);
+  } else {
+    HAL_HRTIM_SimplePWMStop(&hhrtim, index, channel);
+  }
+
 }
