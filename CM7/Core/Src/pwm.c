@@ -10,6 +10,11 @@ struct PWM_numbers {
   uint32_t channel;
 };
 
+struct CAPTURE_numbers {
+  TIM_TypeDef * timer_instance;
+  uint32_t channel;
+};
+
 struct PWM_numbers PWM_pinmap[] = {
   // GPIOs
   { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA2 },
@@ -22,6 +27,20 @@ struct PWM_numbers PWM_pinmap[] = {
   { HRTIM_TIMERINDEX_TIMER_A, HRTIM_OUTPUT_TA1 },
   { HRTIM_TIMERINDEX_TIMER_D, HRTIM_OUTPUT_TD2 },
   { HRTIM_TIMERINDEX_TIMER_B, HRTIM_OUTPUT_TB1 },
+};
+
+struct CAPTURE_numbers CAPTURE_pinmap[] = {
+  // GPIOs
+  { TIM3, TIM_CHANNEL_2 },   // PC7
+  { TIM1, TIM_CHANNEL_2 },   // PA9
+  { TIM1, TIM_CHANNEL_3 },   // PA10
+  { TIM2, TIM_CHANNEL_3 },   // PG10
+  { TIM1, TIM_CHANNEL_4 },   // PA11
+  { TIM4, TIM_CHANNEL_4 },   // PD15
+  { TIM1, TIM_CHANNEL_1 },   // PA8
+  { TIM3, TIM_CHANNEL_1 },   // PC6
+  { TIM3, TIM_CHANNEL_4 },   // PC9
+  { TIM3, TIM_CHANNEL_3 },   // PC8
 };
 
 void pwm_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
