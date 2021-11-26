@@ -50,6 +50,10 @@ enum Opcodes_GPIO {
 	READ = 0x30,
 };
 
+enum Opcodes_PWM {
+	CAPTURE = 0x60,
+};
+
 const char* to_peripheral_string(enum Peripherals peripheral);
 
 #endif //PERIPHERALS_H
