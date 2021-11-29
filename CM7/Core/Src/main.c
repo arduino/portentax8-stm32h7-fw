@@ -110,14 +110,6 @@ int main(void) {
   HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
 #endif
 
-  configurePwm(0, 1, true, 10000, 20000);
-
-  captureFreq(6);
-
-  captureFreq(6);
-
-  //pwm_capture_read_data();
-
   while (1) {
 
     handle_data();

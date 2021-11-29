@@ -18,10 +18,8 @@ struct __attribute__((packed, aligned(4))) pwmCapture {
 
 void pwm_init();
 
-void captureFreq(uint8_t channel);
+void capturePwm(uint8_t channel);
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns);
-
-void pwm_capture_read_data();
 
 #endif  //PWM_H
