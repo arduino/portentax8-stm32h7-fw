@@ -12,7 +12,9 @@ struct __attribute__((packed, aligned(4))) pwmPacket {
 };
 
 struct __attribute__((packed, aligned(4))) pwmCapture {
-	uint32_t duty: 32;
+	uint8_t enable: 1;
+	uint8_t polarity: 1;
+	uint32_t duty: 30;
 	uint32_t period: 32;
 };
 
