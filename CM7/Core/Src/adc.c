@@ -41,13 +41,10 @@ void adc_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
 }
 
 void adc_init() {
+
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_ADC3_Init();
-
-  HAL_ADC_Start(&hadc1);
-  HAL_ADC_Start(&hadc2);
-  HAL_ADC_Start(&hadc3);
 
   register_peripheral_callback(PERIPH_ADC, &adc_handler);
 }
@@ -80,6 +77,7 @@ static void MX_ADC1_Init(void) {
   ADC_MultiModeTypeDef multimode = {0};
   ADC_ChannelConfTypeDef sConfig = {0};
 
+  hadc1.State = HAL_ADC_STATE_RESET;
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc1.Init.Resolution = ADC_RESOLUTION_16B;
@@ -114,12 +112,15 @@ static void MX_ADC1_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
     Error_Handler();
   }
+
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 }
 
 static void MX_ADC2_Init(void) {
 
   ADC_ChannelConfTypeDef sConfig = {0};
 
+  hadc2.State = HAL_ADC_STATE_RESET;
   hadc2.Instance = ADC2;
   hadc2.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc2.Init.Resolution = ADC_RESOLUTION_16B;
@@ -149,12 +150,15 @@ static void MX_ADC2_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
     Error_Handler();
   }
+
+  HAL_ADCEx_Calibration_Start(&hadc2, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 }
 
 static void MX_ADC3_Init(void) {
 
   ADC_ChannelConfTypeDef sConfig = {0};
 
+  hadc3.State = HAL_ADC_STATE_RESET;
   hadc3.Instance = ADC3;
   hadc3.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV6;
   hadc3.Init.Resolution = ADC_RESOLUTION_16B;
@@ -184,6 +188,8 @@ static void MX_ADC3_Init(void) {
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
     Error_Handler();
   }
+
+  HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
 }
 
 static uint32_t HAL_RCC_ADC12_CLK_ENABLED = 0;
