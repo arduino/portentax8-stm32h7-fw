@@ -33,7 +33,6 @@ ASFLAGS = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -c -x asse
 LDFLAGS = --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -T$(LINKER_SCRIPT) -Wl,--start-group -lc -lm -Wl,--end-group
 
 DEFINES = \
-	  -DDEBUG \
 	  -DCORE_CM7 \
 	  -DUSE_HAL_DRIVER \
 	  -DSTM32H747xx \
@@ -152,6 +151,10 @@ endif
 .PHONY:		all clean
 
 all:		$(NAME).bin $(NAME).hex
+
+debug:		CFLAGS += -DDEBUG
+debug:		CXXFLAGS += -DDEBUG
+debug:		$(NAME).bin $(NAME).hex
 
 $(NAME).elf: $(OBJS)
 	$(CC) -o $@ $(OBJS) $(DEFINES) $(CFLAGS) $(LDFLAGS)

@@ -19,8 +19,6 @@
 
 //#define PORTENTA_DEBUG_WIRED
 
-#undef DEBUG
-
 volatile bool trigger_irq = false;
 
 /*
