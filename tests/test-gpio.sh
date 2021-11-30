@@ -35,7 +35,7 @@ fi
 echo 161 > /sys/class/gpio/unexport
 echo 162 > /sys/class/gpio/unexport
 
-if [ $fail==1 ]; then
+if [ $fail == 1 ]; then
    echo "FAIL :("
    exit 0
 else
