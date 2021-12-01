@@ -38,6 +38,11 @@ struct CAPTURE_numbers {
   uint32_t active_ch;
 };
 
+uint32_t hrtim_frequency = 0;
+uint32_t pwm_config_timer_unit_ns = 0;
+uint32_t apb_timer_frequency = 0;
+uint32_t pwm_capture_timer_unit_ns = 0;
+
 uint32_t capture_first = 0;
 uint32_t capture_second = 0;
 uint32_t capture_last = 0;
@@ -45,8 +50,6 @@ uint32_t capture_last = 0;
 //uint32_t capture_value = 0;
 uint32_t capture_duty = 0;
 uint32_t capture_period = 0;
-
-uint32_t capture_frequency = 0;
 
 TIM_HandleTypeDef    htim1;
 TIM_HandleTypeDef    htim2;
@@ -96,6 +99,28 @@ void pwm_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
 
 void pwm_init() {
   register_peripheral_callback(PERIPH_PWM, &pwm_handler);
+
+  uint32_t clocksource = __HAL_RCC_GET_HRTIM1_SOURCE();
+  switch (clocksource) {
+    case RCC_HRTIM1CLK_TIMCLK:
+      hrtim_frequency = HAL_RCC_GetHCLKFreq();
+      dbg_printf("HRTIM clock source = RCC_HRTIM1CLK_TIMCLK\n");
+      break;
+    case RCC_HRTIM1CLK_CPUCLK:
+      hrtim_frequency = HAL_RCC_GetSysClockFreq();
+      dbg_printf("HRTIM clock source = RCC_HRTIM1CLK_CPUCLK\n");
+      break;
+  }
+  pwm_config_timer_unit_ns = 1000000000 / hrtim_frequency;
+  dbg_printf("HRTIM clock frequency = %d\n", pwm_config_timer_unit_ns);
+  dbg_printf("Config timer unit value = %d ns\n", pwm_config_timer_unit_ns);
+
+  apb_timer_frequency = 2*HAL_RCC_GetPCLK2Freq();
+  pwm_capture_timer_unit_ns = 1000000000 / apb_timer_frequency;
+  dbg_printf("APB clock frequency = %d\n", apb_timer_frequency);
+  dbg_printf("Capture timer unit value = %d ns\n", pwm_capture_timer_unit_ns);
+
+
 }
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
@@ -105,14 +130,14 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
   HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
 
-  pTimeBaseCfg.Period = period_ns / 5;
+  pTimeBaseCfg.Period = period_ns / pwm_config_timer_unit_ns;
   pTimeBaseCfg.RepetitionCounter = 0x00;
   pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
   pTimeBaseCfg.Mode = HRTIM_MODE_CONTINUOUS;
 
   sConfig_Channel.Polarity = polarity ? HRTIM_OUTPUTPOLARITY_HIGH : HRTIM_OUTPUTPOLARITY_LOW;
   sConfig_Channel.IdleLevel = HRTIM_OUTPUTIDLELEVEL_INACTIVE;
-  sConfig_Channel.Pulse = duty_ns / 5;
+  sConfig_Channel.Pulse = duty_ns / pwm_config_timer_unit_ns;
 
   uint32_t timers = HRTIM_TIMERUPDATE_A | HRTIM_TIMERUPDATE_B | HRTIM_TIMERUPDATE_C | HRTIM_TIMERUPDATE_D | HRTIM_TIMERUPDATE_E;
 
@@ -337,18 +362,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
           Error_Handler();
         }
       }
-      
-      /* Frequency computation: for this example TIMx (TIM1) is clocked by
-         2*APB2Clk as APB2CLKDivider are set to RCC_APB2_DIV2 */      
-      capture_frequency = 2*HAL_RCC_GetPCLK2Freq() / capture_period;
-
-      uint32_t ns_factor = 5; //(1000000000 / (2*HAL_RCC_GetPCLK2Freq()));
 
       //Period in ns
-      capture_period = ns_factor * capture_period;
+      capture_period = pwm_capture_timer_unit_ns * capture_period;
 
       //Duty in ns
-      capture_duty = ns_factor * capture_duty;
+      capture_duty = pwm_capture_timer_unit_ns * capture_duty;
 
       interrupt_count = 0;
 
