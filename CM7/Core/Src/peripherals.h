@@ -46,8 +46,12 @@ enum Opcodes_CAN {
 
 enum Opcodes_GPIO {
 	DIRECTION = 0x10,
+	IRQ_TYPE = 0x11,
 	WRITE = 0x20,
 	READ = 0x30,
+	IRQ_ENABLE = 0x40,
+	IRQ_SIGNAL = 0x50,
+	IRQ_ACK = 0x60,
 };
 
 enum Opcodes_PWM {

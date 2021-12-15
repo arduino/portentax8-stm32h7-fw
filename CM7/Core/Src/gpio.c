@@ -9,6 +9,10 @@ struct GPIO_numbers {
   uint16_t pin;
 };
 
+struct IRQ_numbers {
+  uint16_t pin;
+};
+
 struct GPIO_numbers GPIO_pinmap[] = {
   // GPIOs
   { GPIOF, GPIO_PIN_8 },
@@ -51,6 +55,8 @@ struct GPIO_numbers GPIO_pinmap[] = {
   { GPIOC, GPIO_PIN_8 },
 };
 
+struct IRQ_numbers IRQ_pinmap[16];
+
 static void MX_GPIO_Init(void) {
 
   /* GPIO Ports Clock Enable */
@@ -60,6 +66,82 @@ static void MX_GPIO_Init(void) {
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
+}
+
+#define GPIO_MODE_IN_RE         0x01   /*!< Input interrupt rising edge */
+#define GPIO_MODE_IN_FE         0x02   /*!< Input interrupt falling edge */
+#define GPIO_MODE_IN_AH         0x04   /*!< Input interrupt active high */
+#define GPIO_MODE_IN_AL         0x08   /*!< Input interrupt active low */
+
+static void handle_irq() {
+  uint32_t pr = EXTI->PR1;
+  uint8_t index = 0;
+  while (pr != 0) {
+    if (pr & 0x1) {
+      uint8_t irq = IRQ_pinmap[index].pin;
+      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq), &irq);
+      HAL_GPIO_EXTI_IRQHandler(1 << index);
+    }
+    pr >>= 1;
+    index++;
+  }
+}
+
+static void disable_irq(uint8_t pin) {
+  if (pin == GPIO_PIN_0) {
+    HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+  }
+  else if (pin == GPIO_PIN_1) {
+    HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+  }
+  else if (pin == GPIO_PIN_2) {
+    HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+  }
+  else if (pin == GPIO_PIN_3) {
+    HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+  }
+  else if (pin == GPIO_PIN_4) {
+    HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+  }
+  else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
+    HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+  }
+  else {
+    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+  }
+}
+
+static void enable_irq(uint8_t pin) {
+  if (pin == GPIO_PIN_0) {
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+    NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_1) {
+    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+    NVIC_SetVector(EXTI1_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_2) {
+    HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+    NVIC_SetVector(EXTI2_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_3) {
+    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+    NVIC_SetVector(EXTI3_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_4) {
+    HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+    NVIC_SetVector(EXTI4_IRQn, (uint32_t)&handle_irq);
+  } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+    NVIC_SetVector(EXTI9_5_IRQn, (uint32_t)&handle_irq);
+  } else {
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+    NVIC_SetVector(EXTI15_10_IRQn, (uint32_t)&handle_irq);
+  }
+}
+
+static uint8_t GPIO_PIN_to_index(uint32_t pin) {
+  uint8_t index = 0;
+  while (pin >>= 1) {
+    index++;
+  }
+  return index;
 }
 
 void gpio_handler(uint8_t opcode, uint8_t *pdata, uint8_t size) {
@@ -81,6 +163,21 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint8_t size) {
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
       dbg_printf("GPIO%d: CONFIGURE %d\n", index, value);
       break;
+    case IRQ_TYPE:
+      GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
+      GPIO_InitStruct.Mode = (value == GPIO_MODE_IN_RE || value == GPIO_MODE_IN_AH ? GPIO_MODE_IT_RISING : GPIO_MODE_IT_FALLING) ;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+      HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
+      enable_irq(GPIO_pinmap[index].pin);
+      IRQ_pinmap[GPIO_PIN_to_index(GPIO_InitStruct.Pin)].pin = index;
+      break;
+    case IRQ_ENABLE:
+      if (value == 1) {
+        enable_irq(GPIO_pinmap[index].pin);
+      } else {
+        disable_irq(GPIO_pinmap[index].pin);
+      }
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
       dbg_printf("GPIO%d: WRITE %d\n", index, value);
@@ -90,6 +187,9 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint8_t size) {
       response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
       enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
+      break;
+    case IRQ_ACK:
+      //do nothing
       break;
   }
 }
