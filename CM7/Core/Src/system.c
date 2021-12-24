@@ -220,8 +220,8 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 cleanup:
 	__enable_irq();
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
 
   //trigger_irq = true;
 }

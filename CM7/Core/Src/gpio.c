@@ -206,14 +206,14 @@ void gpio_set_initial_config() {
   // IRQ PIN from H7 to M8
   // TODO: changeme when final HW is ready
 
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
 
 #ifndef PORTENTA_DEBUG_WIRED
 
