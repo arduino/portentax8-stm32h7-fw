@@ -18,6 +18,8 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
       return "GPIO";
     case PERIPH_VIRTUAL_UART:
       return "VIRTUAL_UART";
+    case PERIPH_H7:
+      return "FW";
 		default:
 			return "UNKNOWN";
 	}

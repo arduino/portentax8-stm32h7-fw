@@ -31,13 +31,15 @@ void disableCM4Autoboot() {
   }
 }
 
+int m4_booted_correctly = -1;
+
 void try_execute_m4_app() {
   int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x10000000);
 
   if (m4_app_valid) {
-    printf("Boot CM4\n");
+    dbg_printf("Boot CM4\n");
     LL_RCC_ForceCM4Boot();
-    int ret = serial_rpc_begin();
-    printf("CM4 booted: %d\n", ret);
+    m4_booted_correctly = serial_rpc_begin();
+    dbg_printf("CM4 booted: %d\n", m4_booted_correctly);
   }
 }

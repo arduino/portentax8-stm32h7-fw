@@ -235,9 +235,14 @@ void writeVersion() {
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
 }
 
+extern int m4_booted_correctly;
+
 void h7_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
   if (opcode == FW_VERSION) {
     writeVersion();
+  }
+  if (opcode == BOOT_M4) {
+    enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
   }
 }
 
