@@ -121,7 +121,7 @@ static void MPU_Config(void)
 
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
   MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_2KB;    
+  MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
   MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;

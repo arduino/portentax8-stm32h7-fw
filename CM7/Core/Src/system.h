@@ -4,7 +4,7 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
 
-#define SPI_DMA_BUFFER_SIZE 	2048
+#define SPI_DMA_BUFFER_SIZE 	64 * 1024
 
 __attribute__((packed, aligned(4))) struct subpacket {
   uint8_t peripheral;
