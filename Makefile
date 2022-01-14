@@ -32,6 +32,21 @@ CXXFLAGS  = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=c++
 ASFLAGS = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -c -x assembler-with-cpp -g3 
 LDFLAGS = --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -T$(LINKER_SCRIPT) -Wl,--start-group -lc -lm -Wl,--end-group
 
+TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
+TAG := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
+COMMIT := $(shell git rev-parse --short HEAD)
+DATE := $(shell git log -1 --format=%cd --date=format:"%Y%m%d")
+VERSION := $(TAG:v%=%)
+ifneq ($(COMMIT), $(TAG_COMMIT))
+    VERSION := $(VERSION)-next-$(COMMIT)-$(DATE)
+endif
+ifeq ($(VERSION),)
+    VERSION := $(COMMIT)-$(DATA)
+endif
+ifneq ($(shell git status --porcelain),)
+    VERSION := $(VERSION)-dirty
+endif
+
 DEFINES = \
 	  -DCORE_CM7 \
 	  -DUSE_HAL_DRIVER \
@@ -42,6 +57,7 @@ DEFINES = \
       -DNO_ATOMIC_64_SUPPORT \
       -DMETAL_MAX_DEVICE_REGIONS=2 \
       -DRPMSG_BUFFER_SIZE=100 \
+      -DREALVERSION=\"$(VERSION)\"
 
 INCLUDES = \
 	   -ICM7/Core/Inc \

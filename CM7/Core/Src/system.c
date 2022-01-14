@@ -226,8 +226,12 @@ cleanup:
   //trigger_irq = true;
 }
 
+#ifndef REALVERSION
+#define REALVERSION "dev " __DATE__ " " __TIME__
+#endif
+
 void writeVersion() {
-  const char* version = "v0.1";
+  const char* version = REALVERSION;
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
 }
 
