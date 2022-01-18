@@ -1,14 +1,18 @@
+#!/bin/sh
+
 # copy me to the linux board ;)
+
+# P1.10: NRST
+# P1.11: BOOT0
 
 lsmod | grep x8h7
 if [ $? == 1 ]; then
-insmod /home/fio/extra/x8h7_drv.ko
-modprobe industrialio
-insmod /home/fio/extra/x8h7_adc.ko
+    insmod /home/fio/extra/x8h7_drv.ko
+    modprobe industrialio
+    insmod /home/fio/extra/x8h7_adc.ko
 fi
 
 # Bug in stm32flash binary, RESET is not being set correctly
-# CHANGEME: on actual hardware, the GPIO will likely be different
 echo 10 > /sys/class/gpio/export
 echo out > /sys/class/gpio/gpio10/direction
 echo 1 > /sys/class/gpio/gpio10/value
