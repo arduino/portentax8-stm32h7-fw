@@ -17,8 +17,6 @@
 #include "watchdog.h"
 #include "m4_utilities.h"
 
-//#define PORTENTA_DEBUG_WIRED
-
 volatile bool trigger_irq = false;
 
 /*
@@ -103,10 +101,6 @@ int main(void) {
   try_execute_m4_app();
 
   watchdog_init(IWDG_PRESCALER_16);
-
-#ifdef PORTENTA_DEBUG_WIRED
-  HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
-#endif
 
   while (1) {
 

@@ -40,12 +40,7 @@ static void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  // ATTENTION: make sure this matches the actual hardware configuration
-#ifndef PORTENTA_DEBUG_WIRED
   HAL_PWREx_ConfigSupply(PWR_LDO_SUPPLY);
-#else
-  HAL_PWREx_ConfigSupply(PWR_SMPS_1V8_SUPPLIES_LDO);
-#endif
 
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
   while (!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {
@@ -281,17 +276,6 @@ int get_dma_packet_size() {
   return sizeof(TX_Buffer);
 }
 
-#ifdef PORTENTA_DEBUG_WIRED
-void EXTI0_IRQHandler(void)
-{
-	if (get_data_amount) {
-    spi_transmit_receive(PERIPH_SPI2, (uint8_t *)TX_Buffer,
-		                     (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-	}
-	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-}
-#endif
-
 void EXTI15_10_IRQHandler(void)
 {
   if (get_data_amount) {
@@ -308,10 +292,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
   if (get_data_amount) {
 
-#ifdef PORTENTA_DEBUG_WIRED
-    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5, 0);
-#endif
-
     data_amount = max(tx_pkt->size, rx_pkt->size);
 
     if (data_amount == 0) {
@@ -319,11 +299,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
 
     // reconfigure the DMA to actually receive the data
-#ifndef PORTENTA_DEBUG_WIRED
     spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
-#else
-    spi_transmit_receive(PERIPH_SPI2, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
-#endif
     get_data_amount = false;
 
   } else {
@@ -340,10 +316,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // clean the transfer buffer size to restart
     tx_pkt->size = 0;
 
-#ifdef PORTENTA_DEBUG_WIRED
-    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_6, 0);
-#endif
-
     get_data_amount = true;
 
     // HAL_SPI_DMAResume(&hspi1);
@@ -352,33 +324,17 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
   transferState = TRANSFER_ERROR;
-/*
-#ifndef PORTENTA_DEBUG_WIRED
-  HAL_SPI_Abort(&hspi3);
-#else
-  HAL_SPI_Abort(&hspi2);
-#endif
-*/
   spi_end();
 
 /*
   // Restart DMA
-  #ifndef PORTENTA_DEBUG_WIRED
   HAL_SPI_TransmitReceive_DMA(&hspi3, (uint8_t *)TX_Buffer,
                                   (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-  #else
-  HAL_SPI_TransmitReceive_DMA(&hspi2, (uint8_t *)TX_Buffer,
-                                  (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
-  #endif
 */
 }
 
 void dma_handle_data() {
   if (transferState == TRANSFER_COMPLETE) {
-
-#ifdef PORTENTA_DEBUG_WIRED
-    HAL_GPIO_WritePin(GPIOK, GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, 1);
-#endif
 
     struct subpacket *rx_pkt_userspace =
         (struct subpacket *)RX_Buffer_userspace;
