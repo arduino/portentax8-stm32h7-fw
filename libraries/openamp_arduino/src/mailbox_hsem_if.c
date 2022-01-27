@@ -95,13 +95,13 @@ int MAILBOX_Init(void)
 
 #ifdef CORE_CM7
   /* Enable CM7 receive irq */
-  HAL_NVIC_SetPriority(HSEM1_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(HSEM1_IRQn, 4, 0);
   HAL_NVIC_EnableIRQ(HSEM1_IRQn);
   HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_1));    
 #endif        
 #ifdef CORE_CM4
   /* Enable CM4 receive irq */
-  HAL_NVIC_SetPriority(HSEM2_IRQn, 2, 0);
+  HAL_NVIC_SetPriority(HSEM2_IRQn, 4, 0);
   HAL_NVIC_EnableIRQ(HSEM2_IRQn);
   HAL_HSEM_ActivateNotification(__HAL_HSEM_SEMID_TO_MASK(HSEM_ID_0));    
 #endif

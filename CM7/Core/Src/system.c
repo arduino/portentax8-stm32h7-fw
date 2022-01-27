@@ -59,7 +59,7 @@ static void SystemClock_Config(void) {
   RCC_OscInitStruct.PLL.PLLN = 400;
   RCC_OscInitStruct.PLL.PLLP = 2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
-  RCC_OscInitStruct.PLL.PLLR = 2;
+  RCC_OscInitStruct.PLL.PLLR = 4;
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1VCIRANGE_3;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1VCOWIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
@@ -291,6 +291,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
   if (get_data_amount) {
+
+    if (rx_pkt->checksum != rx_pkt->size ^ 0x5555) {
+      return;
+    }
 
     data_amount = max(tx_pkt->size, rx_pkt->size);
 
