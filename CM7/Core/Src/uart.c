@@ -179,7 +179,8 @@ int uart_write(uint8_t *data, uint16_t size) {
 }
 
 int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout) {
-  return HAL_UART_Transmit(&huart2, data, size, timeout);
+  return HAL_UART_Transmit_IT(&huart2, data, size);
+  //return HAL_UART_Transmit(&huart2, data, size, timeout);
 }
 
 int uart_data_available() {
