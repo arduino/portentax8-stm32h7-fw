@@ -90,11 +90,11 @@ int main(void) {
 
   system_init();
 
-  gpio_set_initial_config();
-
   peripheral_init();
 
   disableCM4Autoboot();
+
+  gpio_set_initial_config();
 
   printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
 
