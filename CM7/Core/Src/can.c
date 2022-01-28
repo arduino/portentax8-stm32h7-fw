@@ -240,7 +240,7 @@ static void error(char* string) {
     while (1);
 }
 
-void fdcan1_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     if (opcode == CONFIGURE) {
         configureFDCAN(PERIPH_FDCAN1, data);
     } else if (opcode == CAN_FILTER) {
@@ -267,7 +267,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
     }
 }
 
-void fdcan2_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     if (opcode == CONFIGURE) {
         configureFDCAN(PERIPH_FDCAN2, data);
     } else if (opcode == CAN_FILTER) {

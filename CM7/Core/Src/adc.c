@@ -30,7 +30,7 @@ static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 
 
-void adc_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void adc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == CONFIGURE) {
     uint16_t adc_sample_rate = *((uint16_t*)data);
     dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);

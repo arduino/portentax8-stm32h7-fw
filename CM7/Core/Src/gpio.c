@@ -144,7 +144,7 @@ static uint8_t GPIO_PIN_to_index(uint32_t pin) {
   return index;
 }
 
-void gpio_handler(uint8_t opcode, uint8_t *pdata, uint8_t size) {
+void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
   uint16_t data = *((uint16_t*)pdata);
   enum Opcodes_GPIO action = opcode;
 

@@ -86,7 +86,7 @@ struct CAPTURE_numbers CAPTURE_pinmap[] = {
   { TIM3, TIM_CHANNEL_3, HAL_TIM_ACTIVE_CHANNEL_3 },   // PC8
 };
 
-void pwm_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode & CAPTURE) {
     uint8_t channel = opcode & 0x0F;
     capturePwm(channel);

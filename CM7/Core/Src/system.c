@@ -19,7 +19,7 @@ DMA_HandleTypeDef hdma_spi2_tx;
 DMA_HandleTypeDef hdma_spi2_rx;
 */
 
-void (*PeriphCallbacks[20]) (uint8_t opcode, uint8_t *data, uint8_t size); //[100];
+void (*PeriphCallbacks[20]) (uint8_t opcode, uint8_t *data, uint16_t size); //[100];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -232,7 +232,7 @@ void writeVersion() {
 
 extern int m4_booted_correctly;
 
-void h7_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void h7_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == FW_VERSION) {
     writeVersion();
   }

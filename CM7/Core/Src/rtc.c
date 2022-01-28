@@ -69,7 +69,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc) {
   }
 }
 
-void rtc_handler(uint8_t opcode, uint8_t *data, uint8_t size) {
+void rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == SET_DATE) {
     rtc_set_date(data);
   }

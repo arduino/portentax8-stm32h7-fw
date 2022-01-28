@@ -150,6 +150,6 @@ void spi_end() {
 }
 
 
-inline void spi_transmit_receive(uint8_t peripheral, uint8_t *tx_buf, uint8_t *rx_buf, uint8_t size) {
+inline void spi_transmit_receive(uint8_t peripheral, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size) {
   HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, size);
 }
