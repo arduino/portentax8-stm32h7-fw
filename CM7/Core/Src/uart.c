@@ -187,7 +187,7 @@ int uart_data_available() {
 }
 
 void uart_handle_data() {
-  uint8_t temp_buf[1024];
+  uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
   int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, temp_buf, ring_buffer_num_items(&uart_ring_buffer));
   __enable_irq();
@@ -199,7 +199,7 @@ int virtual_uart_data_available() {
 }
 
 void virtual_uart_handle_data() {
-  uint8_t temp_buf[1024];
+  uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
   int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
   __enable_irq();
