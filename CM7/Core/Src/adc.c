@@ -16,20 +16,32 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include "adc.h"
 #include "main.h"
 #include "system.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-ADC_HandleTypeDef hadc3;
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
 
 struct ADC_numbers {
   ADC_HandleTypeDef* peripheral;
   uint32_t channel;
 };
+
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
+
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
+ADC_HandleTypeDef hadc3;
 
 struct ADC_numbers ADC_pinmap[] = {
   { NULL, 0 },
@@ -43,10 +55,17 @@ struct ADC_numbers ADC_pinmap[] = {
   { &hadc3, ADC_CHANNEL_4 },
 };
 
+/**************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************/
+
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
 void adc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == CONFIGURE) {

@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include "pwm.h"
 #include "system.h"
 #include "peripherals.h"
@@ -23,13 +27,36 @@
 #include "main.h"
 #include "timer.h"
 
+/**************************************************************************************
+ * DEFINE
+ **************************************************************************************/
+
 #define PWM_NUMBER    10
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
 
 struct PWM_numbers {
   GPIO_TypeDef * port;
   uint16_t pin;
   uint16_t alternate;
 };
+
+struct PWM_timers {
+  uint32_t index;
+  uint32_t channel;
+};
+
+struct CAPTURE_numbers {
+  TIM_TypeDef * timer_instance;
+  uint32_t channel;
+  uint32_t active_ch;
+};
+
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
 
 struct PWM_numbers PWM_pinmap[] = {
   // GPIOs
@@ -43,17 +70,6 @@ struct PWM_numbers PWM_pinmap[] = {
   { GPIOC, GPIO_PIN_6,  GPIO_AF2_TIM3 },
   { GPIOC, GPIO_PIN_9,  GPIO_AF2_TIM3 },
   { GPIOC, GPIO_PIN_8,  GPIO_AF2_TIM3 },
-};
-
-struct PWM_timers {
-  uint32_t index;
-  uint32_t channel;
-};
-
-struct CAPTURE_numbers {
-  TIM_TypeDef * timer_instance;
-  uint32_t channel;
-  uint32_t active_ch;
 };
 
 uint32_t hrtim_frequency = 0;
@@ -103,6 +119,10 @@ struct CAPTURE_numbers CAPTURE_pinmap[] = {
   { TIM3, TIM_CHANNEL_4, HAL_TIM_ACTIVE_CHANNEL_4 },   // PC9
   { TIM3, TIM_CHANNEL_3, HAL_TIM_ACTIVE_CHANNEL_3 },   // PC8
 };
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
 void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode & CAPTURE) {

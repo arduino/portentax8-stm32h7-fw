@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include "uart.h"
 #include "system.h"
 #include "peripherals.h"
@@ -23,12 +27,9 @@
 #include "ringbuffer.h"
 #include "rpc.h"
 
-UART_HandleTypeDef huart2;
-
-ring_buffer_t uart_ring_buffer;
-ring_buffer_t virtual_uart_ring_buffer;
-
-static uint8_t uart_rxbuf[1024];
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
 
 struct __attribute__((packed, aligned(4))) uartPacket {
   uint8_t bits: 4;
@@ -37,6 +38,21 @@ struct __attribute__((packed, aligned(4))) uartPacket {
   uint8_t flow_control: 1;
   uint32_t baud: 23;
 };
+
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
+
+UART_HandleTypeDef huart2;
+
+ring_buffer_t uart_ring_buffer;
+ring_buffer_t virtual_uart_ring_buffer;
+
+static uint8_t uart_rxbuf[1024];
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
 int _write(int file, char *ptr, int len) {
   HAL_UART_Transmit(&huart2, ptr, len, 100);

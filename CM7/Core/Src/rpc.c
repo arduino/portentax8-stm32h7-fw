@@ -16,18 +16,34 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include "openamp.h"
 #include "arduino_openamp.h"
 #include "stm32h7xx_hal.h"
 #include "ringbuffer.h"
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
 
 enum endpoints_t {
 	ENDPOINT_RAW = 0,
 	ENDPOINT_RESPONSE
 };
 
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
+
 static struct rpmsg_endpoint rp_endpoints[4];
 extern ring_buffer_t virtual_uart_ring_buffer;
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)

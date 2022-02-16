@@ -16,6 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include "system.h"
 #include "main.h"
 #include "peripherals.h"
@@ -29,6 +33,11 @@
 #include "uart.h"
 #include "rpc.h"
 #include "spi.h"
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
+
 /*
 DMA_HandleTypeDef hdma_spi3_tx;
 DMA_HandleTypeDef hdma_spi3_rx;
@@ -41,6 +50,10 @@ void (*PeriphCallbacks[20]) (uint8_t opcode, uint8_t *data, uint16_t size); //[1
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
+
 __IO uint32_t transferState = TRANSFER_WAIT;
 
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
@@ -50,6 +63,10 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_usersp
 
 volatile bool get_data_amount = true;
 volatile uint16_t data_amount = 0;
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
 
 static void SystemClock_Config(void) {
 
