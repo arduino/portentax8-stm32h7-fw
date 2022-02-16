@@ -162,8 +162,8 @@ void pwm_init() {
 }
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
-	dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
-			polarity? "high": "low", duty_ns, period_ns);
+  dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
+      polarity? "high": "low", duty_ns, period_ns);
 
   HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
   HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};

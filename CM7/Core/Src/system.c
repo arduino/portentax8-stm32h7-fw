@@ -213,31 +213,31 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
 
 /*
   int timeout = 100000;
-	// don't feed data in the middle of a transmission
-	while (get_data_amount == false && timeout > 0) {
-		// wait for the DMA interrupt to be over
+  // don't feed data in the middle of a transmission
+  while (get_data_amount == false && timeout > 0) {
+    // wait for the DMA interrupt to be over
     timeout--;
-	}
+  }
 */
 
   while (get_data_amount == false) {
     // wait for the DMA interrupt to be over
   }
 
-	__disable_irq();
-	struct complete_packet *tx_pkt = get_dma_packet();
-	uint16_t offset = tx_pkt->size;
-	if (offset + size > get_dma_packet_size()) {
-		goto cleanup;
-	}
-	struct subpacket pkt;
-	pkt.peripheral = peripheral;
-	pkt.opcode = opcode;
-	pkt.size = size;
-	memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
-	memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
-	tx_pkt->size += 4 + size;
-	tx_pkt->checksum = tx_pkt->size ^ 0x5555;
+  __disable_irq();
+  struct complete_packet *tx_pkt = get_dma_packet();
+  uint16_t offset = tx_pkt->size;
+  if (offset + size > get_dma_packet_size()) {
+    goto cleanup;
+  }
+  struct subpacket pkt;
+  pkt.peripheral = peripheral;
+  pkt.opcode = opcode;
+  pkt.size = size;
+  memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
+  memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
+  tx_pkt->size += 4 + size;
+  tx_pkt->checksum = tx_pkt->size ^ 0x5555;
 
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
       to_peripheral_string(peripheral), opcode, size);
@@ -248,7 +248,7 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
   dbg_printf("\n");
 
 cleanup:
-	__enable_irq();
+  __enable_irq();
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
@@ -315,7 +315,7 @@ void EXTI15_10_IRQHandler(void)
 {
   if (get_data_amount) {
     spi_transmit_receive(PERIPH_SPI3, (uint8_t *)TX_Buffer,
-		                     (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+                         (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
   }
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }

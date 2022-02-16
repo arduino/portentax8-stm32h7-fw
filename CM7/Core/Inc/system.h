@@ -30,7 +30,7 @@
  * DEFINE
  **************************************************************************************/
 
-#define SPI_DMA_BUFFER_SIZE 	64 * 1024
+#define SPI_DMA_BUFFER_SIZE   64 * 1024
 
 __attribute__((packed, aligned(4))) struct subpacket {
   uint8_t peripheral;

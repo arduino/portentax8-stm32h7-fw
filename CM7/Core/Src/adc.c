@@ -87,13 +87,13 @@ void adc_init() {
 }
 
 uint16_t get_ADC_value(enum AnalogPins name) {
-	ADC_ChannelConfTypeDef conf = {0};
-	ADC_HandleTypeDef* peripheral;
+  ADC_ChannelConfTypeDef conf = {0};
+  ADC_HandleTypeDef* peripheral;
 
-	conf.Rank = ADC_REGULAR_RANK_1;
-	conf.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-	conf.SingleDiff = ADC_SINGLE_ENDED;
-	conf.OffsetNumber = ADC_OFFSET_NONE;
+  conf.Rank = ADC_REGULAR_RANK_1;
+  conf.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  conf.SingleDiff = ADC_SINGLE_ENDED;
+  conf.OffsetNumber = ADC_OFFSET_NONE;
 
   conf.Channel = ADC_pinmap[name].channel;
   peripheral = ADC_pinmap[name].peripheral;
