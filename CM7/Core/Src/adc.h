@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef ADC_H
 #define ADC_H
+
+#include <inttypes.h>
 
 enum AnalogPins {
 	A0 = 0x1,

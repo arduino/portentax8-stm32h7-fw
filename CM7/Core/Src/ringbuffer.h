@@ -16,8 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 /**
  * @file
  * Prototypes and structures for the ring buffer module.
@@ -25,6 +23,8 @@
 
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
+
+#include <inttypes.h>
 
 /**
  * The size of a ring buffer.

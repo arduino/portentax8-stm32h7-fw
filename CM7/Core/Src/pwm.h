@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-#include <stdbool.h>
-
 #ifndef PWM_H
 #define PWM_H
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 struct __attribute__((packed, aligned(4))) pwmPacket {
 	uint8_t enable: 1;

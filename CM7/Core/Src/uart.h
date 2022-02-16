@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef UART_H
 #define UART_H
+
+#include <inttypes.h>
 
 enum UARTParity {
   PARITY_EVEN = 0,

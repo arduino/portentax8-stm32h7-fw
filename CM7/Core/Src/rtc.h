@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef RTC_H
 #define RTC_H
+
+#include <inttypes.h>
 
 struct rtc_time {
   uint8_t tm_sec;

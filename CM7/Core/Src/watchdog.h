@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef WATCHDOG_H
 #define WATCHDOG_H
+
+#include <inttypes.h>
 
 void watchdog_init(int prescaler);
 

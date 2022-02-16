@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef M4_UTILITIES_H
 #define M4_UTILITIES_H
+
+#include <inttypes.h>
 
 void disableCM4Autoboot();
 

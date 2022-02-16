@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef PERIPHERALS_H
 #define PERIPHERALS_H
+
+#include <inttypes.h>
 
 enum Peripherals {
   PERIPH_ADC = 0x01,

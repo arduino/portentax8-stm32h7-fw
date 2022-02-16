@@ -16,12 +16,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TIMER_H
+#define TIMER_H
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include "stm32h7xx_hal.h"
-
-#ifndef TIMER_H
-#define TIMER_H
 
 void timer_init();
 

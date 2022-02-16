@@ -16,11 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-#include <stdbool.h>
-
 #ifndef SYSTEM_H
 #define SYSTEM_H
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #define SPI_DMA_BUFFER_SIZE 	64 * 1024
 

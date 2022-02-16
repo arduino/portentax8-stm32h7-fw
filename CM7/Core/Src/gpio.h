@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef GPIO_H
 #define GPIO_H
+
+#include <inttypes.h>
 
 void gpio_init();
 

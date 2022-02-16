@@ -16,10 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <inttypes.h>
-
 #ifndef SPI_H
 #define SPI_H
+
+#include <inttypes.h>
 
 void spi_init();
 
