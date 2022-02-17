@@ -61,10 +61,10 @@ DEFINES = \
 
 INCLUDES = \
 	   -Iinclude \
-	   -IDrivers/STM32H7xx_HAL_Driver/Inc \
-	   -IDrivers/STM32H7xx_HAL_Driver/Inc/Legacy \
-	   -IDrivers/CMSIS/Device/ST/STM32H7xx/Include \
-	   -IDrivers/CMSIS/Include \
+	   -Ilibraries/STM32H7xx_HAL_Driver/Inc \
+	   -Ilibraries/STM32H7xx_HAL_Driver/Inc/Legacy \
+	   -Ilibraries/CMSIS/Device/ST/STM32H7xx/Include \
+	   -Ilibraries/CMSIS/Include \
 	   -Ilibraries/openamp_arduino/src \
 	   -Ilibraries/openamp_arduino/src \
 	   -Ilibraries/openamp_arduino/openamp \
@@ -111,35 +111,35 @@ OBJS = \
 	libraries/openamp_arduino/src/time.o \
 	libraries/openamp_arduino/src/virtio.o \
 	libraries/openamp_arduino/src/virtqueue.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.o
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.o
 
 
 # ----- Verbosity control -----------------------------------------------------
