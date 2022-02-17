@@ -1,6 +1,10 @@
 #!/bin/sh
-
-# copy me to the linux board ;)
+#
+# This script is stored within /usr/arduino/extra .
+#
+# The purpose of this script is to load the kernel
+# modules allowing to access the extended IO interfaces
+# provided by the STM32H7.
 
 modprobe industrialio
 insmod /usr/arduino/extra/x8h7_drv.ko

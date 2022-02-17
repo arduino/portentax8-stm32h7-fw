@@ -1,9 +1,12 @@
 #!/bin/sh
-
-# copy me to the linux board ;)
-
-# P1.10: NRST
-# P1.11: BOOT0
+#
+# This script is stored within /usr/arduino/extra .
+#
+# Programming the STM32H7 via stm32flash is deprecated
+# and stm32flash is no longer part of the Yocto build.
+#
+# [IMX8] GPIO1_IO10 = [STM32H7] NRST
+# [IMX8] GPIO1_IO11 = [STM32H7] BOOT0
 
 lsmod | grep x8h7
 if [ $? == 1 ]; then
