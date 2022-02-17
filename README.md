@@ -30,5 +30,5 @@ sudo ./program.sh
 ```
 ### IMX8 / H7 Interface Block Diagram
 <p align="center">
-  <img src="portenta-x8h7-interface-block-diagram.png" width="75%">
+  <img src="doc/img/portenta-x8h7-interface-block-diagram.png" width="75%">
 </p>
