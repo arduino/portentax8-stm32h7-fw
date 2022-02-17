@@ -25,7 +25,7 @@ FLASHFLAGS = --reset --format ihex
 BOOTLOADER = dfu-util
 BOOTLOADER_FLAGS = -a 0 -s 0x08000000:leave
 
-LINKER_SCRIPT = CM7/STM32H747AIIX_FLASH.ld
+LINKER_SCRIPT = linker/STM32H747AIIX_FLASH.ld
 
 CFLAGS  = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=gnu11 -g3 -ffunction-sections -fdata-sections -fstack-usage
 CXXFLAGS  = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=c++11 -g3 -ffunction-sections -fdata-sections -fstack-usage
@@ -60,7 +60,7 @@ DEFINES = \
       -DREALVERSION=\"$(VERSION)\"
 
 INCLUDES = \
-	   -ICM7/Core/Inc \
+	   -Iinclude \
 	   -IDrivers/STM32H7xx_HAL_Driver/Inc \
 	   -IDrivers/STM32H7xx_HAL_Driver/Inc/Legacy \
 	   -IDrivers/CMSIS/Device/ST/STM32H7xx/Include \
@@ -71,26 +71,26 @@ INCLUDES = \
 	   -Ilibraries/openamp_arduino/metal \
 
 OBJS = \
-	Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
-	CM7/Core/Src/main.o \
-	CM7/Core/Src/can.o \
-	CM7/Core/Src/peripherals.o \
-	CM7/Core/Src/ringbuffer.o \
-	CM7/Core/Src/rpc.o \
-	CM7/Core/Src/stm32h7xx_it.o \
-	CM7/Core/Src/syscalls.o \
-	CM7/Core/Src/sysmem.o \
-	CM7/Core/Src/adc.o \
-	CM7/Core/Src/uart.o \
-	CM7/Core/Src/pwm.o \
-	CM7/Core/Src/gpio.o \
-	CM7/Core/Src/timer.o \
-	CM7/Core/Src/rtc.o \
-	CM7/Core/Src/spi.o \
-	CM7/Core/Src/system.o \
-	CM7/Core/Src/watchdog.o \
-	CM7/Core/Src/m4_utilities.o \
-	CM7/Core/Startup/startup_stm32h747aiix.o \
+	src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
+	src/main.o \
+	src/can.o \
+	src/peripherals.o \
+	src/ringbuffer.o \
+	src/rpc.o \
+	src/stm32h7xx_it.o \
+	src/syscalls.o \
+	src/sysmem.o \
+	src/adc.o \
+	src/uart.o \
+	src/pwm.o \
+	src/gpio.o \
+	src/timer.o \
+	src/rtc.o \
+	src/spi.o \
+	src/system.o \
+	src/watchdog.o \
+	src/m4_utilities.o \
+	startup/startup_stm32h747aiix.o \
 	libraries/openamp_arduino/src/condition.o \
 	libraries/openamp_arduino/src/device.o \
 	libraries/openamp_arduino/src/generic_device.o \
