@@ -188,6 +188,7 @@ clean:
 		rm -f $(NAME).bin $(NAME).elf $(NAME).hex
 		rm -f $(NAME)_text.{bin,hex}
 		rm -f $(OBJS) $(OBJS:.o=.d)
+		rm -f $(OBJS) $(OBJS:.o=.su)
 		rm -f *~
 
 # ----- Dependencies ----------------------------------------------------------
