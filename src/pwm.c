@@ -31,7 +31,9 @@
  * CONSTANTS
  **************************************************************************************/
 
-static unsigned int const NUM_PWM_CHANNELS = 10;
+static unsigned int const NUM_PWM_CHANNELS    = 10;
+static unsigned int const MIN_PWM_CHANNEL_NUM = 0;
+static unsigned int const MAX_PWM_CHANNEL_NUM = (NUM_PWM_CHANNELS - 1);
 
 /**************************************************************************************
  * TYPEDEF
@@ -121,17 +123,25 @@ struct CAPTURE_numbers CAPTURE_pinmap[] = {
 };
 
 /**************************************************************************************
+ * INTERNAL FUNCTION DECLARATION
+ **************************************************************************************/
+
+static bool isValidPwmChannelNumber(unsigned int const channel_number);
+
+/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
 void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode & CAPTURE) {
     uint8_t channel = opcode & 0x0F;
-    capturePwm(channel);
+    if (isValidPwmChannelNumber(channel))
+      capturePwm(channel);
   } else {
     uint8_t channel = opcode;
     struct pwmPacket config = *((struct pwmPacket*)data);
-    configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
+    if (isValidPwmChannelNumber(channel))
+      configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
   }
 }
 
@@ -492,4 +502,14 @@ void TIM3_IRQHandler(void)
 void TIM4_IRQHandler(void)
 {
   HAL_TIM_IRQHandler(&htim4);
+}
+
+/**************************************************************************************
+ * INTERNAL FUNCTION DEFINITION
+ **************************************************************************************/
+
+bool isValidPwmChannelNumber(unsigned int const channel_number)
+{
+  return ((channel_number >= MIN_PWM_CHANNEL_NUM) &&
+          (channel_number <= MAX_PWM_CHANNEL_NUM));
 }
