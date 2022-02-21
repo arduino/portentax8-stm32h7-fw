@@ -29,6 +29,7 @@ cd /usr/arduino/extra
 sudo ./program.sh
 ```
 ### IMX8 / H7 Interface Block Diagram
+Every communication is initated by the IMX8 who serves as SPI controller. This happens either by the user issueing a `write` call on any of the interfaces or by the H7 requesting the start of a communication by setting `IRQ` to `1`. A detailed description of the used protocol can be found [here](doc/protocol.md).
 <p align="center">
   <img src="doc/img/portenta-x8h7-interface-block-diagram.png" width="75%">
 </p>
