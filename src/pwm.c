@@ -134,11 +134,11 @@ static bool isValidPwmChannelNumber(unsigned int const channel_number);
 
 void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode & CAPTURE) {
-    uint8_t channel = opcode & 0x0F;
+    uint8_t const channel = opcode & 0x0F;
     if (isValidPwmChannelNumber(channel))
       capturePwm(channel);
   } else {
-    uint8_t channel = opcode;
+    uint8_t const channel = opcode;
     struct pwmPacket config = *((struct pwmPacket*)data);
     if (isValidPwmChannelNumber(channel))
       configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
