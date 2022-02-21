@@ -31,7 +31,7 @@
  * CONSTANTS
  **************************************************************************************/
 
-static unsigned int const PWM_NUMBER = 10;
+static unsigned int const NUM_PWM_CHANNELS = 10;
 
 /**************************************************************************************
  * TYPEDEF
@@ -323,7 +323,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
   uint8_t pwm_idx = 0xFF;
 
-  for (int i=0; i<PWM_NUMBER; i++) {
+  for (int i=0; i<NUM_PWM_CHANNELS; i++) {
     if (htim->Instance == CAPTURE_pinmap[i].timer_instance && htim->Channel == CAPTURE_pinmap[i].active_ch) {
       tim_channel = CAPTURE_pinmap[i].channel;
       pwm_idx = i;
@@ -430,7 +430,7 @@ void HAL_TIM_IC_MspInit(TIM_HandleTypeDef *htim)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   
-  for (int i=1; i<PWM_NUMBER; i++) {
+  for (int i=1; i<NUM_PWM_CHANNELS; i++) {
     if (htim->Instance == CAPTURE_pinmap[i].timer_instance) {
       dbg_printf("Found match: index = %d\n", i);
       GPIO_InitStruct.Pin = PWM_pinmap[i].pin;
