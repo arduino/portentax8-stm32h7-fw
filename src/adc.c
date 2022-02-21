@@ -71,9 +71,10 @@ void adc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == CONFIGURE) {
     uint16_t adc_sample_rate = *((uint16_t*)data);
     dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
-  } else {
-    // opcode == channel
+  } else if ((opcode >= A0) && (opcode <= A7)) {
     get_ADC_value(opcode);
+  } else {
+    dbg_printf("Invalid ADC opcode %02x\n", opcode);
   }
 }
 
