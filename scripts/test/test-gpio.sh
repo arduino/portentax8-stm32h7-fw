@@ -10,6 +10,8 @@ if [ $? == 1 ]; then
 insmod /home/root/extra/x8h7_gpio.ko
 fi
 
+read -p "Please connect GPIO1 to GPIO2 and then press Enter to continue"
+
 fail=0
 
 echo 161 > /sys/class/gpio/export
