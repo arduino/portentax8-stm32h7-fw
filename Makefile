@@ -90,7 +90,7 @@ OBJS = \
 	src/system.o \
 	src/watchdog.o \
 	src/m4_utilities.o \
-	startup/startup_stm32h747aiix.o \
+	startup/startup_stm32h747xx.o \
 	libraries/openamp_arduino/src/condition.o \
 	libraries/openamp_arduino/src/device.o \
 	libraries/openamp_arduino/src/generic_device.o \
