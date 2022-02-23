@@ -46,6 +46,7 @@ struct __attribute__((packed, aligned(4))) uartPacket {
 UART_HandleTypeDef huart2;
 
 ring_buffer_t uart_ring_buffer;
+ring_buffer_t uart_tx_ring_buffer;
 ring_buffer_t virtual_uart_ring_buffer;
 
 static uint8_t uart_rxbuf[1024];
@@ -54,13 +55,42 @@ static uint8_t uart_rxbuf[1024];
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int _write(int file, char *ptr, int len) {
-  HAL_UART_Transmit(&huart2, ptr, len, 100);
+int _write(int file, char *ptr, int len)
+{
+  /* Try to directly transmit the data. If currently
+   * a UART transmission is ongoing, this will return
+   * HAL_BUSY.
+   */
+  if (HAL_OK == HAL_UART_Transmit_IT(&huart2, ptr, len))
+    return len;
+
+  /* Direct transmission did not work, let's store it
+   * in the ringbuffer instead. Start by disabling
+   * interrupts to avoid race conditions from accessing
+   * uart_tx_ring_buffer from both IRQ and normal context.
+   */
+  __disable_irq();
+  /* Enqueue data to write into ringbuffer. */
+  ring_buffer_queue_arr(&uart_tx_ring_buffer, ptr, len);
+  /* Reenable interrupts. */
+  __enable_irq();
   return len;
 }
 
 int _read(int file, char *ptr, int len) {
 
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (ring_buffer_is_empty(&uart_tx_ring_buffer))
+    return;
+
+  /* Dequeue the oldest data byte. */
+  char data[16] = {0};
+  uint16_t const bytes_read = ring_buffer_dequeue_arr(&uart_tx_ring_buffer, data, sizeof(data));
+  /* Transmit data. */
+  HAL_UART_Transmit_IT(&huart2, data, bytes_read);
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
@@ -202,6 +232,7 @@ void uart_init() {
   MX_USART2_UART_Init();
 
   ring_buffer_init(&uart_ring_buffer);
+  ring_buffer_init(&uart_tx_ring_buffer);
   ring_buffer_init(&virtual_uart_ring_buffer);
 
   register_peripheral_callback(PERIPH_UART, &uart_handler);
@@ -209,12 +240,7 @@ void uart_init() {
 }
 
 int uart_write(uint8_t *data, uint16_t size) {
-  return uart_write_with_timeout(data, size, 0xFFFFFFFF);
-}
-
-int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout) {
-  return HAL_UART_Transmit_IT(&huart2, data, size);
-  //return HAL_UART_Transmit(&huart2, data, size, timeout);
+  return _write(0, data, size);
 }
 
 int uart_data_available() {
