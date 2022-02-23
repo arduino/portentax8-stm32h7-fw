@@ -12,6 +12,7 @@ make
 ```bash
 bitbake linux-firmware-arduino-portenta-x8-stm32h7
 ```
+**Note**: If you want to obtain the debug messages printed via `dbg_printf` you need to `make clean` followed by `make debug` and connect a 3V3 FTDI adapter to `UART0` on the [Portenta Breakout Board](https://store.arduino.cc/products/arduino-portenta-breakout).
 #### Upload to `Portenta X8`
 You can upload files to the Portenta X8 via `adb push`. Note: adb can only push `/tmp` and `/home/fio`.
 ```bash
@@ -20,7 +21,7 @@ adb push ...
 ```
 Then open a shell to the X8 via `adb shell` and move the file from within `/home/fio` to `/usr/lib/firmware/arduino/stm32h7-fw` using `sudo mv`. Prior to that you need to remount `/usr` with read/write permissions (it's mounted read-only per default).
 ```bash
-mount -o remount,rw /usr
+sudo mount -o remount,rw /usr
 sudo mv STM32H747AII6_CM7.bin /usr/lib/firmware/arduino/stm32h7-fw/STM32H747AII6_CM7.bin
 ```
 #### Flash `STM32H747AIIX`/Cortex-M7 firmware
