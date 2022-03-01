@@ -40,8 +40,10 @@ __attribute__((packed, aligned(4))) struct subpacket {
 };
 
 __attribute__((packed, aligned(4))) struct complete_packet {
-  uint16_t size;
-  uint16_t checksum;
+  __attribute__((packed, aligned(4))) struct {
+    uint16_t size;
+    uint16_t checksum;
+  } header;
   struct subpacket data;
   // ... other subpackets will follow
 };

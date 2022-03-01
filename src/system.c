@@ -225,19 +225,31 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
   }
 
   __disable_irq();
+  /* complete_packet:
+   * - uint16_t size;      |
+   * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
+   */
   struct complete_packet *tx_pkt = get_dma_packet();
-  uint16_t offset = tx_pkt->size;
+  uint16_t offset = tx_pkt->header.size;
   if (offset + size > get_dma_packet_size()) {
     goto cleanup;
   }
+  /* subpacket:
+   * - uint8_t peripheral; |
+   * - uint8_t opcode;     |
+   * - uint16_t size;      | sizeof(subpacket.header) = 4 Bytes
+   * - uint8_t raw_data;
+   */
   struct subpacket pkt;
   pkt.peripheral = peripheral;
   pkt.opcode = opcode;
   pkt.size = size;
+  /* Copy subpacket.header at the end of the current complete_packet superframe. */
   memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
+  /* Copy subpacket.raw_data at after subpacket.header. */
   memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
-  tx_pkt->size += 4 + size;
-  tx_pkt->checksum = tx_pkt->size ^ 0x5555;
+  tx_pkt->header.size += 4 + size;
+  tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
       to_peripheral_string(peripheral), opcode, size);
@@ -333,7 +345,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
 */
 
-    data_amount = max(tx_pkt->size, rx_pkt->size);
+    data_amount = max(tx_pkt->header.size, rx_pkt->header.size);
 
     if (data_amount == 0) {
       return;
@@ -349,13 +361,13 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     transferState = TRANSFER_COMPLETE;
 
-    memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->size);
+    memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->header.size);
 
     // mark the next packet as invalid
-    *((uint32_t*)((uint8_t *)RX_Buffer_userspace + rx_pkt->size)) = 0xFFFFFFFF; // INVALID;
+    *((uint32_t*)((uint8_t *)RX_Buffer_userspace + rx_pkt->header.size)) = 0xFFFFFFFF; // INVALID;
 
     // clean the transfer buffer size to restart
-    tx_pkt->size = 0;
+    tx_pkt->header.size = 0;
 
     get_data_amount = true;
 
