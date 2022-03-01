@@ -33,9 +33,11 @@
 #define SPI_DMA_BUFFER_SIZE   64 * 1024
 
 __attribute__((packed, aligned(4))) struct subpacket {
-  uint8_t peripheral;
-  uint8_t opcode;
-  uint16_t size;
+  __attribute__((packed, aligned(4))) struct {
+    uint8_t peripheral;
+    uint8_t opcode;
+    uint16_t size;
+  } header;
   uint8_t raw_data;
 };
 

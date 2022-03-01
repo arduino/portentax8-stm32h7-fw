@@ -241,14 +241,14 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
    * - uint8_t raw_data;
    */
   struct subpacket pkt;
-  pkt.peripheral = peripheral;
-  pkt.opcode = opcode;
-  pkt.size = size;
+  pkt.header.peripheral = peripheral;
+  pkt.header.opcode = opcode;
+  pkt.header.size = size;
   /* Copy subpacket.header at the end of the current complete_packet superframe. */
-  memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, 4);
+  memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, sizeof(pkt.header));
   /* Copy subpacket.raw_data at after subpacket.header. */
-  memcpy((uint8_t*)&(tx_pkt->data) + offset + 4, data, size);
-  tx_pkt->header.size += 4 + size;
+  memcpy((uint8_t*)&(tx_pkt->data) + offset + sizeof(pkt.header), data, size);
+  tx_pkt->header.size += sizeof(pkt.header) + size;
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
@@ -392,21 +392,21 @@ void dma_handle_data() {
     struct subpacket *rx_pkt_userspace =
         (struct subpacket *)RX_Buffer_userspace;
 
-    while (rx_pkt_userspace->peripheral != 0xFF &&
-            rx_pkt_userspace->peripheral != 0x00) {
+    while (rx_pkt_userspace->header.peripheral != 0xFF &&
+            rx_pkt_userspace->header.peripheral != 0x00) {
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-          to_peripheral_string(rx_pkt_userspace->peripheral), rx_pkt_userspace->opcode,
-              rx_pkt_userspace->size);
-      for (int i = 0; i < rx_pkt_userspace->size; i++) {
+          to_peripheral_string(rx_pkt_userspace->header.peripheral), rx_pkt_userspace->header.opcode,
+              rx_pkt_userspace->header.size);
+      for (int i = 0; i < rx_pkt_userspace->header.size; i++) {
         dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
       }
       dbg_printf("\n");
 
       // do something useful with this packet
-      dispatchPacket(rx_pkt_userspace->peripheral, rx_pkt_userspace->opcode,
-          rx_pkt_userspace->size, &(rx_pkt_userspace->raw_data));
+      dispatchPacket(rx_pkt_userspace->header.peripheral, rx_pkt_userspace->header.opcode,
+          rx_pkt_userspace->header.size, &(rx_pkt_userspace->raw_data));
 
-      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->size);
+      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
     }
     transferState = TRANSFER_WAIT;
   }
