@@ -230,8 +230,7 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
   struct complete_packet *tx_pkt = get_dma_packet();
-  uint16_t offset = tx_pkt->header.size;
-  if (offset + size > get_dma_packet_size()) {
+  if ((tx_pkt->header.size + size) > get_dma_packet_size()) {
     goto cleanup;
   }
   /* subpacket:
@@ -245,10 +244,10 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
   pkt.header.opcode = opcode;
   pkt.header.size = size;
   /* Copy subpacket.header at the end of the current complete_packet superframe. */
-  memcpy((uint8_t*)&(tx_pkt->data) + offset, &pkt, sizeof(pkt.header));
+  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, &pkt, sizeof(pkt.header));
   tx_pkt->header.size += sizeof(pkt.header);
   /* Copy subpacket.raw_data at after subpacket.header. */
-  memcpy((uint8_t*)&(tx_pkt->data) + offset + sizeof(pkt.header), data, size);
+  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, data, size);
   tx_pkt->header.size += size;
   /* Calculate a simple checksum to ensure bit flips in the length field can be recognised. */
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
