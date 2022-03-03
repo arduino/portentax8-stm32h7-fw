@@ -1,5 +1,5 @@
-`portentam8-stm32h7-fw`
-=======================
+:floppy_disk: `portentam8-stm32h7-fw`
+=====================================
 This repository contains the firmware running on the `STM32H747AIIX`/Cortex-M7 core which, in combination with loadable kernel modules within the Linux distribution, provides access to various IO busses on the expansion headers of the Portenta X8.
 
 ### Developer Guide
