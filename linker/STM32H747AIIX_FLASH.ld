@@ -85,6 +85,12 @@ SECTIONS
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
+  .fw_version_block :
+  {
+    . = ABSOLUTE(0x08040000);
+    *(.fw_version_section)
+  } >FLASH
+
   .dma_buffers (NOLOAD) :
   {
     . = ALIGN(4);

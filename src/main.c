@@ -129,7 +129,8 @@ int main(void) {
 
   gpio_set_initial_config();
 
-  printf("Portenta X8 - STM32H7 companion fw - %s %s\n", __DATE__, __TIME__);
+  extern char const REAL_VERSION_FLASH[];
+  printf("Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
 
   try_execute_m4_app();
 

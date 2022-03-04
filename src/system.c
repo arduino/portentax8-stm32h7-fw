@@ -273,8 +273,10 @@ cleanup:
 #define REALVERSION "dev " __DATE__ " " __TIME__
 #endif
 
+char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
+
 void writeVersion() {
-  const char* version = REALVERSION;
+  const char* version = REAL_VERSION_FLASH;
   enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
 }
 
