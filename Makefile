@@ -25,7 +25,7 @@ FLASHFLAGS = --reset --format ihex
 BOOTLOADER = dfu-util
 BOOTLOADER_FLAGS = -a 0 -s 0x08000000:leave
 
-LINKER_SCRIPT = CM7/STM32H747AIIX_FLASH.ld
+LINKER_SCRIPT = linker/STM32H747AIIX_FLASH.ld
 
 CFLAGS  = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=gnu11 -g3 -ffunction-sections -fdata-sections -fstack-usage
 CXXFLAGS  = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=c++11 -g3 -ffunction-sections -fdata-sections -fstack-usage
@@ -60,37 +60,37 @@ DEFINES = \
       -DREALVERSION=\"$(VERSION)\"
 
 INCLUDES = \
-	   -ICM7/Core/Inc \
-	   -IDrivers/STM32H7xx_HAL_Driver/Inc \
-	   -IDrivers/STM32H7xx_HAL_Driver/Inc/Legacy \
-	   -IDrivers/CMSIS/Device/ST/STM32H7xx/Include \
-	   -IDrivers/CMSIS/Include \
+	   -Iinclude \
+	   -Ilibraries/STM32H7xx_HAL_Driver/Inc \
+	   -Ilibraries/STM32H7xx_HAL_Driver/Inc/Legacy \
+	   -Ilibraries/CMSIS/Device/ST/STM32H7xx/Include \
+	   -Ilibraries/CMSIS/Include \
 	   -Ilibraries/openamp_arduino/src \
 	   -Ilibraries/openamp_arduino/src \
 	   -Ilibraries/openamp_arduino/openamp \
 	   -Ilibraries/openamp_arduino/metal \
 
 OBJS = \
-	Common/Src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
-	CM7/Core/Src/main.o \
-	CM7/Core/Src/can.o \
-	CM7/Core/Src/peripherals.o \
-	CM7/Core/Src/ringbuffer.o \
-	CM7/Core/Src/rpc.o \
-	CM7/Core/Src/stm32h7xx_it.o \
-	CM7/Core/Src/syscalls.o \
-	CM7/Core/Src/sysmem.o \
-	CM7/Core/Src/adc.o \
-	CM7/Core/Src/uart.o \
-	CM7/Core/Src/pwm.o \
-	CM7/Core/Src/gpio.o \
-	CM7/Core/Src/timer.o \
-	CM7/Core/Src/rtc.o \
-	CM7/Core/Src/spi.o \
-	CM7/Core/Src/system.o \
-	CM7/Core/Src/watchdog.o \
-	CM7/Core/Src/m4_utilities.o \
-	CM7/Core/Startup/startup_stm32h747aiix.o \
+	src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
+	src/main.o \
+	src/can.o \
+	src/peripherals.o \
+	src/ringbuffer.o \
+	src/rpc.o \
+	src/stm32h7xx_it.o \
+	src/syscalls.o \
+	src/sysmem.o \
+	src/adc.o \
+	src/uart.o \
+	src/pwm.o \
+	src/gpio.o \
+	src/timer.o \
+	src/rtc.o \
+	src/spi.o \
+	src/system.o \
+	src/watchdog.o \
+	src/m4_utilities.o \
+	startup/startup_stm32h747xx.o \
 	libraries/openamp_arduino/src/condition.o \
 	libraries/openamp_arduino/src/device.o \
 	libraries/openamp_arduino/src/generic_device.o \
@@ -111,35 +111,35 @@ OBJS = \
 	libraries/openamp_arduino/src/time.o \
 	libraries/openamp_arduino/src/virtio.o \
 	libraries/openamp_arduino/src/virtqueue.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.o \
-	Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.o
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.o \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.o
 
 
 # ----- Verbosity control -----------------------------------------------------
@@ -188,6 +188,7 @@ clean:
 		rm -f $(NAME).bin $(NAME).elf $(NAME).hex
 		rm -f $(NAME)_text.{bin,hex}
 		rm -f $(OBJS) $(OBJS:.o=.d)
+		rm -f $(OBJS) $(OBJS:.o=.su)
 		rm -f *~
 
 # ----- Dependencies ----------------------------------------------------------
