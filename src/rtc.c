@@ -134,7 +134,7 @@ void rtc_set_date(uint8_t *data) {
     Error_Handler();
   }
   sDate.WeekDay = tm->tm_wday;
-  sDate.Month = tm->tm_mon;
+  sDate.Month = (tm->tm_mon + RTC_MONTH_JANUARY); /* tm_mon is 0-11 while RTC_DateTypeDef expects 1-12 */
   sDate.Date = tm->tm_mday;
   sDate.Year = tm->tm_year;
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
@@ -161,7 +161,7 @@ void rtc_get_date(uint8_t *data) {
   now.tm_min = sTime.Minutes;
   now.tm_sec = sTime.Seconds;
   now.tm_wday = sDate.WeekDay;
-  now.tm_mon = sDate.Month;
+  now.tm_mon = (sDate.Month - RTC_MONTH_JANUARY); /* tm_mon is 0-11 while RTC_DateTypeDef expects 1-12 */
   now.tm_mday = sDate.Date;
   now.tm_year = sDate.Year;
 
