@@ -61,11 +61,11 @@ DUTY_CAPTURED=$(echo $PWM_CAPTURE | cut -d' ' -f2)
 echo "PWM 0 period: $PERIOD  -  PWM 8 period captured: $PERIOD_CAPTURED"
 echo "PWM 0 duty cycle: $DUTY  -  PWM 8 duty cycle captured: $DUTY_CAPTURED"
 
-if [ "$PERIOD_CAPTURED" -lt `expr $PERIOD - 20` ] | [ "$PERIOD_CAPTURED" -gt `expr $PERIOD + 20` ]; then
+if [ "$PERIOD_CAPTURED" -lt `expr $PERIOD - 50` ] || [ "$PERIOD_CAPTURED" -gt `expr $PERIOD + 50` ]; then
    let fail=1
 fi
 
-if [ "$DUTY_CAPTURED" -lt `expr $DUTY - 20` ] | [ "$DUTY_CAPTURED" -gt `expr $DUTY + 20` ]; then
+if [ "$DUTY_CAPTURED" -lt `expr $DUTY - 50` ] || [ "$DUTY_CAPTURED" -gt `expr $DUTY + 50` ]; then
    let fail=1
 fi
 
@@ -92,11 +92,11 @@ DUTY_CAPTURED=$(echo $PWM_CAPTURE | cut -d' ' -f2)
 echo "PWM 0 period: $PERIOD  -  PWM 8 period captured: $PERIOD_CAPTURED"
 echo "PWM 0 duty cycle: $DUTY  -  PWM 8 duty cycle captured: $DUTY_CAPTURED"
 
-if [ "$PERIOD_CAPTURED" -lt `expr $PERIOD - 10` ] | [ "$PERIOD_CAPTURED" -gt `expr $PERIOD + 10` ]; then
+if [ "$PERIOD_CAPTURED" -lt `expr $PERIOD - 50` ] || [ "$PERIOD_CAPTURED" -gt `expr $PERIOD + 50` ]; then
    let fail=1
 fi
 
-if [ "$DUTY_CAPTURED" -lt `expr $DUTY - 10` ] | [ "$DUTY_CAPTURED" -gt `expr $DUTY + 10` ]; then
+if [ "$DUTY_CAPTURED" -lt `expr $DUTY - 50` ] || [ "$DUTY_CAPTURED" -gt `expr $DUTY + 50` ]; then
    let fail=1
 fi
 
