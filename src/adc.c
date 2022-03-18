@@ -74,7 +74,7 @@ void adc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
      * dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
      */
   } else if ((opcode >= A0) && (opcode <= A7)) {
-    get_ADC_value(opcode);
+    get_adc_value(opcode);
   } else {
     dbg_printf("Invalid ADC opcode %02x\n", opcode);
   }
@@ -89,7 +89,7 @@ void adc_init() {
   register_peripheral_callback(PERIPH_ADC, &adc_handler);
 }
 
-uint16_t get_ADC_value(enum AnalogPins name) {
+void get_adc_value(enum AnalogPins name) {
   ADC_ChannelConfTypeDef conf = {0};
   ADC_HandleTypeDef* peripheral;
 

@@ -44,8 +44,7 @@ enum AnalogPins {
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-uint16_t get_ADC_value(enum AnalogPins name);
-
 void adc_init();
+void get_adc_value(enum AnalogPins name);
 
 #endif  //ADC_H
