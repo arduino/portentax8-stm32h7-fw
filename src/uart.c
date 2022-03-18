@@ -78,7 +78,7 @@ int _write(int file, char *ptr, int len)
 }
 
 int _read(int file, char *ptr, int len) {
-
+  return -1;
 }
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
