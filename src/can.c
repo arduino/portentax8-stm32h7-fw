@@ -725,7 +725,7 @@ int can_write(can_t *obj, CAN_Message msg, int cc)
 
     if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, msg.data) != HAL_OK) {
         // Note for debug: you can get the error code calling HAL_FDCAN_GetError(&obj->CanHandle)
-        printf("error: %d\n", HAL_FDCAN_GetError(&obj->CanHandle));
+        printf("error: %ld\n", HAL_FDCAN_GetError(&obj->CanHandle));
         return 0;
     }
 
