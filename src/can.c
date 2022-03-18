@@ -842,7 +842,7 @@ int can_mode(can_t *obj, CanMode mode)
     return can_internal_init(obj);
 }
 
-
+#if 0
 static void can_irq(CANName name, int id)
 {
     FDCAN_HandleTypeDef CanHandle;
@@ -890,6 +890,7 @@ static void can_irq(CANName name, int id)
         }
     }
 }
+#endif
 
 #if 0
 void FDCAN1_IT0_IRQHandler(void)
