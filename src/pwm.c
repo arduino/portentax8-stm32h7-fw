@@ -164,19 +164,17 @@ void pwm_init() {
       break;
   }
   pwm_config_timer_unit_ns = 1000000000 / hrtim_frequency;
-  dbg_printf("HRTIM clock frequency = %d\n", pwm_config_timer_unit_ns);
-  dbg_printf("Config timer unit value = %d ns\n", pwm_config_timer_unit_ns);
+  dbg_printf("HRTIM clock frequency = %ld\n", pwm_config_timer_unit_ns);
+  dbg_printf("Config timer unit value = %ld ns\n", pwm_config_timer_unit_ns);
 
   apb_timer_frequency = 2*HAL_RCC_GetPCLK2Freq();
   pwm_capture_timer_unit_ns = 1000000000 / apb_timer_frequency;
-  dbg_printf("APB clock frequency = %d\n", apb_timer_frequency);
-  dbg_printf("Capture timer unit value = %d ns\n", pwm_capture_timer_unit_ns);
-
-
+  dbg_printf("APB clock frequency = %ld\n", apb_timer_frequency);
+  dbg_printf("Capture timer unit value = %ld ns\n", pwm_capture_timer_unit_ns);
 }
 
 void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns) {
-  dbg_printf("PWM channel %d %s with polarity %s, duty %dns, period %dns\n", channel, enable ? "enabled" : "disabled",
+  dbg_printf("PWM channel %d %s with polarity %s, duty %ldns, period %ldns\n", channel, enable ? "enabled" : "disabled",
       polarity? "high": "low", duty_ns, period_ns);
 
   HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};

@@ -20,56 +20,48 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "m4_utilities.h"
-#include "main.h"
-#include "rpc.h"
+#include "crc32.h"
+
 #include "stm32h7xx_hal.h"
-#include "stm32h7xx_ll_rcc.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-static FLASH_OBProgramInitTypeDef OBInit;
+CRC_HandleTypeDef crc_hdl;
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void disableCM4Autoboot() {
-  OBInit.Banks     = FLASH_BANK_1;
-  HAL_FLASHEx_OBGetConfig(&OBInit);
-  dbg_printf("OBInit.USERConfig: %lX\n", OBInit.USERConfig);
-  if (OBInit.USERConfig & FLASH_OPTSR_BCM4) {
-    dbg_printf("Changing option bytes\n");
-    OBInit.OptionType = OPTIONBYTE_USER;
-    OBInit.USERType = OB_USER_BCM4;
-    OBInit.USERConfig = 0;
-    if (HAL_FLASH_OB_Unlock() == HAL_OK)
-      if (HAL_FLASH_Unlock() == HAL_OK)
-        if (HAL_FLASHEx_OBProgram(&OBInit) == HAL_OK)
-          if (HAL_FLASH_OB_Launch() == HAL_OK)
-            if (HAL_FLASH_OB_Lock() == HAL_OK)
-              if (HAL_FLASH_Lock() == HAL_OK)
-              {
-                dbg_printf("Option bytes changed\n");
-                dbg_printf("Requires rebooting\n");
-                NVIC_SystemReset();
-                return;
-              }
-    dbg_printf("Failed changing option bytes");
-  }
+bool crc32_init()
+{
+  crc_hdl.Instance                     = CRC;
+
+  crc_hdl.Init.DefaultPolynomialUse    = DEFAULT_POLYNOMIAL_ENABLE;
+  crc_hdl.Init.DefaultInitValueUse     = DEFAULT_INIT_VALUE_ENABLE;
+  crc_hdl.Init.CRCLength               = CRC_POLYLENGTH_32B;
+  crc_hdl.Init.InputDataInversionMode  = CRC_INPUTDATA_INVERSION_NONE;
+  crc_hdl.Init.OutputDataInversionMode = CRC_OUTPUTDATA_INVERSION_DISABLE;
+
+  crc_hdl.InputDataFormat              = CRC_INPUTDATA_FORMAT_BYTES;
+
+  return (HAL_OK == HAL_CRC_Init(&crc_hdl));
 }
 
-int m4_booted_correctly = -1;
+uint32_t crc32_compute(uint8_t const * buf, uint32_t const buf_size)
+{
+  return HAL_CRC_Calculate(&crc_hdl, (uint32_t *)buf, buf_size);
+}
 
-void try_execute_m4_app() {
-  int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x10000000);
+void HAL_CRC_MspInit(CRC_HandleTypeDef * hcrc)
+{
+  if(hcrc->Instance == CRC)
+    __HAL_RCC_CRC_CLK_ENABLE();
+}
 
-  if (m4_app_valid) {
-    dbg_printf("Boot CM4\n");
-    LL_RCC_ForceCM4Boot();
-    m4_booted_correctly = serial_rpc_begin();
-    dbg_printf("CM4 booted: %d\n", m4_booted_correctly);
-  }
+void HAL_CRC_MspDeInit(CRC_HandleTypeDef * hcrc)
+{
+  if(hcrc->Instance == CRC)
+    __HAL_RCC_CRC_CLK_DISABLE();
 }

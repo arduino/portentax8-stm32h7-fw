@@ -391,7 +391,7 @@ void configureFDCAN(uint8_t peripheral, void* data) {
     can_frequency(&fdcan_2, *((uint32_t*)data));
   }
 
-  dbg_printf("Configuring fdcan%d with frequency %d\n", peripheral == PERIPH_FDCAN1 ? 1 : 2, *((uint32_t*)data));
+  dbg_printf("Configuring fdcan%d with frequency %ld\n", peripheral == PERIPH_FDCAN1 ? 1 : 2, *((uint32_t*)data));
 
   //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
   //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
