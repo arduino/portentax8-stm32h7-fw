@@ -62,8 +62,6 @@ int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
 
 void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)
 {
-  int idx = -1;
-
   if (strcmp(name, "raw") == 0) {
     OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RAW], name, dest, rpmsg_recv_raw_callback, NULL);
   }
