@@ -53,6 +53,7 @@ static can_irq_handler irq_handler;
  * FUNCTION DEFINITION
  **************************************************************************************/
 
+#if 0
 static void MX_FDCAN1_Init(void) {
 
   hfdcan1.Instance = FDCAN1;
@@ -122,6 +123,7 @@ static void MX_FDCAN2_Init(void) {
     Error_Handler();
   }
 }
+#endif
 
 static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
 
