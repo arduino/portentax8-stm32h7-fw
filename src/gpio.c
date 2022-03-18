@@ -223,6 +223,9 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
       break;
+    case IRQ_SIGNAL:
+      // do nothing;
+      break;
     case IRQ_ACK:
       //do nothing
       break;
