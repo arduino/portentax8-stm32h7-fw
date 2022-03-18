@@ -90,7 +90,6 @@ void handle_data() {
 
   __WFI();
 
-  //serial_rpc_available();
   watchdog_refresh();
 
   if (uart_data_available()) {
