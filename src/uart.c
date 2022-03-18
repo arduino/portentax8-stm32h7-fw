@@ -281,9 +281,9 @@ void uart_configure(uint8_t *data) {
 
   //HAL_UART_DeInit(&huart2);
 
-  uint32_t WordLength;
-  uint32_t Parity;
-  uint32_t StopBits;
+  uint32_t WordLength = UART_WORDLENGTH_8B;
+  uint32_t Parity = UART_PARITY_NONE;
+  uint32_t StopBits = UART_STOPBITS_1;
   uint32_t HwFlowCtl = UART_HWCONTROL_NONE;
 
   switch (config.bits) {
