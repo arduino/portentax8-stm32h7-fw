@@ -96,7 +96,7 @@ int serial_rpc_begin() {
   return 1;
 }
 
-int serial_rpc_available() {
+void serial_rpc_available() {
   OPENAMP_check_for_message();
 }
 
