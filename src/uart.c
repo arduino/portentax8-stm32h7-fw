@@ -299,7 +299,7 @@ void uart_configure(uint8_t *data) {
   }
 
 #ifdef DEBUG
-  char parity_str;
+  char parity_str = 'N';
 #endif
 
   switch (config.parity) {
