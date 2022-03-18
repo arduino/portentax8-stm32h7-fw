@@ -172,6 +172,8 @@ void OPENAMP_check_for_message(void)
   MAILBOX_Poll(rvdev.vdev);
 }
 
+uint32_t HAL_GetTick(void);
+
 void OPENAMP_Wait_EndPointready(struct rpmsg_endpoint *rp_ept, size_t timeout)
 {
   while(!is_rpmsg_ept_ready(rp_ept) && (HAL_GetTick() < timeout)) {
