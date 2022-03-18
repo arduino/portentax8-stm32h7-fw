@@ -298,20 +298,28 @@ void uart_configure(uint8_t *data) {
       break;
   }
 
+#ifdef DEBUG
   char parity_str;
+#endif
 
   switch (config.parity) {
     case PARITY_EVEN:
       Parity = UART_PARITY_EVEN;
+#ifdef DEBUG
       parity_str = 'E';
+#endif
       break;
     case PARITY_ODD:
       Parity = UART_PARITY_ODD;
+#ifdef DEBUG      
       parity_str = 'O';
+#endif
       break;
     case PARITY_NONE:
       Parity = UART_PARITY_NONE;
+#ifdef DEBUG
       parity_str = 'N';
+#endif
       break;
   }
 
