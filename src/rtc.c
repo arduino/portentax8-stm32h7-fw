@@ -114,10 +114,8 @@ void rtc_set_date(uint8_t *data)
 
 void rtc_get_date(uint8_t *data)
 {
-  struct rtc_time *tm = (struct rtc_time*)data;
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
-  RTC_AlarmTypeDef sAlarm = {0};
 
   struct rtc_time now;
 
