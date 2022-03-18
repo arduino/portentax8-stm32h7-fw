@@ -55,7 +55,7 @@ int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
   }
   printf("\n");
 */
-  ring_buffer_queue_arr(&virtual_uart_ring_buffer, (uint8_t*)data, len);
+  ring_buffer_queue_arr(&virtual_uart_ring_buffer, (const char *)data, len);
 
   return 0;
 }

@@ -61,7 +61,7 @@ int _write(int file, char *ptr, int len)
    * a UART transmission is ongoing, this will return
    * HAL_BUSY.
    */
-  if (HAL_OK == HAL_UART_Transmit_IT(&huart2, ptr, len))
+  if (HAL_OK == HAL_UART_Transmit_IT(&huart2, (const uint8_t *)ptr, len))
     return len;
 
   /* Direct transmission did not work, let's store it
@@ -90,11 +90,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   char data[16] = {0};
   uint16_t const bytes_read = ring_buffer_dequeue_arr(&uart_tx_ring_buffer, data, sizeof(data));
   /* Transmit data. */
-  HAL_UART_Transmit_IT(&huart2, data, bytes_read);
+  HAL_UART_Transmit_IT(&huart2, (const uint8_t *)data, bytes_read);
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-  ring_buffer_queue_arr(&uart_ring_buffer, uart_rxbuf, Size);
+  ring_buffer_queue_arr(&uart_ring_buffer, (char *)uart_rxbuf, Size);
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
 }
 
@@ -240,7 +240,7 @@ void uart_init() {
 }
 
 int uart_write(uint8_t *data, uint16_t size) {
-  return _write(0, data, size);
+  return _write(0, (char *)data, size);
 }
 
 int uart_data_available() {
@@ -250,7 +250,7 @@ int uart_data_available() {
 void uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, temp_buf, ring_buffer_num_items(&uart_ring_buffer));
+  int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&uart_ring_buffer));
   __enable_irq();
   enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
 }
@@ -262,7 +262,7 @@ int virtual_uart_data_available() {
 void virtual_uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+  int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
   __enable_irq();
   enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }
