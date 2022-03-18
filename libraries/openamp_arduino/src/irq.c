@@ -40,10 +40,13 @@ struct metal_irqs_state {
 	metal_mutex_t irq_lock;   /**< access lock */
 };
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-braces"
 static struct metal_irqs_state _irqs = {
 	.irqs = METAL_INIT_LIST(_irqs.irqs),
 	.irq_lock = METAL_MUTEX_INIT(_irqs.irq_lock),
 };
+#pragma GCC diagnostic pop
 
 int metal_irq_register(int irq,
                        metal_irq_handler hd,
