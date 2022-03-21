@@ -422,8 +422,9 @@ void dma_handle_data() {
   }
 }
 
-void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ PeriphCallbackFunc func) {
-  PeriphCallbacks[peripheral]/*[opcode]*/ = func;
+void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)
+{
+  PeriphCallbacks[peripheral] = func;
 }
 
 void Error_Handler_Name(const char* name) {
