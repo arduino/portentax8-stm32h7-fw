@@ -69,8 +69,11 @@ static int OPENAMP_shmem_init(int RPMsgRole)
     return status;
   }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
   metal_io_init(&device->regions[0], (void *)SHM_START_ADDRESS, shm_physmap,
                 SHM_SIZE, -1U, 0, NULL);
+#pragma GCC diagnostic pop
 
   shm_io = metal_device_io_region(device, 0);
   if (shm_io == NULL) {
@@ -139,8 +142,12 @@ int MX_OPENAMP_Init(int RPMsgRole, rpmsg_ns_bind_cb ns_bind_cb)
     return status;
   }
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
   rpmsg_virtio_init_shm_pool(&shpool, (void *)VRING_BUFF_ADDRESS,
                              (size_t)SHM_SIZE);
+#pragma GCC diagnostic pop
   rpmsg_init_vdev(&rvdev, vdev, ns_bind_cb, shm_io, &shpool);
 
 
