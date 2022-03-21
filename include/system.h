@@ -75,6 +75,7 @@ int get_dma_packet_size();
 
 void dma_handle_data();
 
-void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ void* func);
+typedef void (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
+void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ PeriphCallbackFunc func);
 
 #endif //SYSTEM_H

@@ -46,7 +46,7 @@ DMA_HandleTypeDef hdma_spi2_tx;
 DMA_HandleTypeDef hdma_spi2_rx;
 */
 
-void (*PeriphCallbacks[20]) (uint8_t opcode, uint8_t *data, uint16_t size); //[100];
+PeriphCallbackFunc PeriphCallbacks[20];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -422,7 +422,7 @@ void dma_handle_data() {
   }
 }
 
-void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ void* func) {
+void register_peripheral_callback(uint8_t peripheral,/* uint8_t opcode,*/ PeriphCallbackFunc func) {
   PeriphCallbacks[peripheral]/*[opcode]*/ = func;
 }
 
