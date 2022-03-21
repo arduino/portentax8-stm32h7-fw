@@ -48,7 +48,10 @@ struct vring_desc {
 struct vring_avail {
 	uint16_t flags;
 	uint16_t idx;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	uint16_t ring[0];
+#pragma GCC diagnostic pop
 };
 
 /* uint32_t is used here for ids for padding reasons. */
@@ -62,7 +65,10 @@ struct vring_used_elem {
 struct vring_used {
 	uint16_t flags;
 	uint16_t idx;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	struct vring_used_elem ring[0];
+#pragma GCC diagnostic pop
 };
 
 struct vring {

@@ -98,11 +98,13 @@ struct virtqueue {
 	 * holds the address of buffer received from other side.
 	 * Other fields in this structure are not used currently.
 	 */
-
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	struct vq_desc_extra {
 		void *cookie;
 		uint16_t ndescs;
 	} vq_descx[0];
+#pragma GCC diagnostic pop
 };
 
 /* struct to hold vring specific information */

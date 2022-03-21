@@ -54,7 +54,10 @@ struct resource_table {
 	uint32_t ver;
 	uint32_t num;
 	uint32_t reserved[2];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	uint32_t offset[0];
+#pragma GCC diagnostic pop
 } OPENAMP_PACKED_END;
 
 /**
@@ -69,7 +72,10 @@ struct resource_table {
 OPENAMP_PACKED_BEGIN
 struct fw_rsc_hdr {
 	uint32_t type;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	uint8_t data[0];
+#pragma GCC diagnostic pop
 } OPENAMP_PACKED_END;
 
 /**
@@ -300,7 +306,10 @@ struct fw_rsc_vdev {
 	uint8_t status;
 	uint8_t num_of_vrings;
 	uint8_t reserved[2];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 	struct fw_rsc_vdev_vring vring[0];
+#pragma GCC diagnostic pop
 } OPENAMP_PACKED_END;
 
 /**
