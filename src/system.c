@@ -348,7 +348,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     }
 */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
     data_amount = max(tx_pkt->header.size, rx_pkt->header.size);
+#pragma GCC diagnostic pop
 
     if (data_amount == 0) {
       return;
