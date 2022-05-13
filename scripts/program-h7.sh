@@ -1,4 +1,9 @@
 #!/bin/sh
+
+echo 8 > /sys/class/gpio/export                                                 
+echo 15 > /sys/class/gpio/export                                                
+echo 10 > /sys/class/gpio/export                                                
+
 FIRMWARE_H7_ON_MCU=$(cat /sys/kernel/x8h7_firmware/version)
 sudo -u fio dd if=/usr/arduino/extra/STM32H747AII6_CM7.bin of=/tmp/version bs=1 count=40 skip=$((0x40000))
 FIRMWARE_H7_ON_LINUX=$(strings /tmp/version | head -n1)
