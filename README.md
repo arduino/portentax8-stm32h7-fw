@@ -19,10 +19,10 @@ You can upload files to the Portenta X8 via `adb push`. Note: adb can only push 
 adb push STM32H747AII6_CM7.bin /home/fio
 adb push ...
 ```
-Then open a shell to the X8 via `adb shell` and move the file from within `/home/fio` to `/usr/arduino/extra` using `sudo mv`. Prior to that you need to remount `/usr` with read/write permissions (it's mounted read-only per default).
+Then open a shell to the X8 via `adb shell` and move the file from within `/home/fio` to `/usr/lib/firmware/arduino/stm32h7-fw` using `sudo mv`. Prior to that you need to remount `/usr` with read/write permissions (it's mounted read-only per default).
 ```bash
 sudo mount -o remount,rw /usr
-sudo mv STM32H747AII6_CM7.bin /usr/arduino/extra/STM32H747AII6_CM7.bin
+sudo mv STM32H747AII6_CM7.bin /usr/lib/firmware/arduino/stm32h7-fw/STM32H747AII6_CM7.bin
 ```
 #### Flash `STM32H747AIIX`/Cortex-M7 firmware
 ```bash
