@@ -213,6 +213,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       } else {
         disable_irq(GPIO_pinmap[index].pin);
       }
+      break;
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
       dbg_printf("GPIO%d: WRITE %d\n", index, value);
