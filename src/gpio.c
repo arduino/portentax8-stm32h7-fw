@@ -141,9 +141,6 @@ static void disable_irq(uint8_t pin) {
   else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
   }
-  else {
-    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
-  }
 }
 
 static void enable_irq(uint8_t pin) {
@@ -165,9 +162,6 @@ static void enable_irq(uint8_t pin) {
   } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
     NVIC_SetVector(EXTI9_5_IRQn, (uint32_t)&handle_irq);
-  } else {
-    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-    NVIC_SetVector(EXTI15_10_IRQn, (uint32_t)&handle_irq);
   }
 }
 
