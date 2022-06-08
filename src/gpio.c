@@ -199,6 +199,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
       IRQ_pinmap[GPIO_PIN_to_index(GPIO_InitStruct.Pin)].pin = index;
+      dbg_printf("GPIO%d: IRQ_TYPE %d\n", index, value);
       break;
     case IRQ_ENABLE:
       if (value == 1) {
@@ -206,6 +207,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       } else {
         disable_irq(GPIO_pinmap[index].pin);
       }
+      dbg_printf("GPIO%d: IRQ_ENABLE %d\n", index, value);
       break;
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
@@ -219,9 +221,11 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_SIGNAL:
       // do nothing;
+      dbg_printf("GPIO%d: IRQ_SIGNAL %d\n", index, value);
       break;
     case IRQ_ACK:
       //do nothing
+      dbg_printf("GPIO%d: IRQ_ACK %d\n", index, value);
       break;
   }
 }
