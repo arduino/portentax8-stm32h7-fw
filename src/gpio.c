@@ -195,7 +195,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
     case IRQ_TYPE:
       GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
       GPIO_InitStruct.Mode = ((value == GPIO_MODE_IN_RE) || (value == GPIO_MODE_IN_AH)) ? GPIO_MODE_IT_RISING : GPIO_MODE_IT_FALLING;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
       IRQ_pinmap[GPIO_PIN_to_index(GPIO_InitStruct.Pin)].pin = index;
