@@ -224,7 +224,23 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
     // wait for the DMA interrupt to be over
   }
 
-  __disable_irq();
+  /* Enter critical section: Since this function is called both from inside
+   * interrupt context (handle_irq/gpio.c) as well as from normal execution
+   * context it is necessary not only to blindly re-enable interrupts, but
+   * to store the current interrupt situation and restore it at the end of
+   * the critical section.
+   */
+  uint32_t const primask_bit = __get_PRIMASK();
+  /*
+   * PRIMASK - Typically configured in code using the CMSIS __disable_irq() and
+   * __enable_irq() routines or the cpsid i and cpsie i assembly instructions
+   * directly. Setting the PRIMASK to 1 disables all exceptions of configurable
+   * priority. This means, only NMI, Hardfault, & Reset exceptions can still occur.
+   *
+   * Source: https://interrupt.memfault.com/blog/arm-cortex-m-exceptions-and-nvic
+   */
+  __set_PRIMASK(1) ;
+
   /* complete_packet:
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
@@ -261,7 +277,8 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
   dbg_printf("\n");
 
 cleanup:
-  __enable_irq();
+  /* Exit critical section: restore previous priority mask */
+  __set_PRIMASK(primask_bit);
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
