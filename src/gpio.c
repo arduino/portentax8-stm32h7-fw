@@ -286,8 +286,8 @@ void gpio_handle_data()
   uint16_t const copy_int_event_flags = int_event_flags;
   __enable_irq();
 
-  /* We have a total of 16 external interrupts. */
-  for (uint8_t index = 0; index < 16; index++)
+  /* We have a total of 10 external interrupts. */
+  for (uint8_t index = 0; index < 10; index++)
   {
     /* Check whether or not an external interrupt has occured. */
     if (copy_int_event_flags & (1 << index))
