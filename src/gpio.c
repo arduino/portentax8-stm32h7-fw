@@ -90,6 +90,13 @@ struct IRQ_numbers IRQ_pinmap[16];
 static volatile uint16_t int_event_flags = 0;
 
 /**************************************************************************************
+ * INTERNAL FUNCTION DECLARATION
+ **************************************************************************************/
+
+static void disable_irq(uint8_t pin);
+static void enable_irq(uint8_t pin);
+
+/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
@@ -115,8 +122,16 @@ static void handle_irq() {
   uint8_t index = 0;
   while (pr != 0) {
     if (pr & 0x1) {
+      /* Set the flag variable which leads to a transmission
+       * of a interrupt event within gpio_handle_data.
+       */
       int_event_flags |= (1 << index);
+      /* Clear interrupt flag for this specific GPIO interrupt. */
       HAL_GPIO_EXTI_IRQHandler(1 << index);
+      /* Disable the interrupt that just fired in order to
+       * prevent it from immediately firing again.
+       */
+      disable_irq(GPIO_pinmap[index].pin);
     }
     pr >>= 1;
     index++;
@@ -284,6 +299,11 @@ void gpio_handle_data()
       __disable_irq();
       int_event_flags &= ~(1 << index);
       __enable_irq();
+      /* Re-enable the interrupt that was disabled within
+       * handle_irq to prevent firing of another interrupt
+       * until this one has been signalled to the application.
+       */
+      enable_irq(GPIO_pinmap[index].pin);
     }
   }
 }
