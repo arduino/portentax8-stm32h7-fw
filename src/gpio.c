@@ -311,6 +311,11 @@ void gpio_handle_data()
       /* Clear this flag. */
       __disable_irq();
       int_event_flags &= ~(1 << index);
+      /* Clear again interrupt flag for this specific GPIO interrupt.
+       * This serves to make sure that we are not returning straight to
+       * another interrupt when calling gpio_enable_irq in the line below.
+       */
+      HAL_GPIO_EXTI_IRQHandler(1 << index);
       /* Re-enable the interrupt that was disabled within
        * handle_irq to prevent firing of another interrupt
        * until this one has been signalled to the application.
