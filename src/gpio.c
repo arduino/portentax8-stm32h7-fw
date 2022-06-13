@@ -325,6 +325,9 @@ void gpio_handle_data()
         uint8_t irq_pin = IRQ_pinmap[index].pin;
         enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
         ack_system |= (1 << index); /* Add busy bit to our irq pin */
+        __disable_irq();
+        int_event_flags &= ~(1 << index); /*Clear this flag */
+        __enable_irq();
       }
     }
   }
