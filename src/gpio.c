@@ -95,6 +95,7 @@ static volatile uint16_t int_event_flags = 0;
 
 static void gpio_disable_irq(uint8_t pin);
 static void gpio_enable_irq(uint8_t pin);
+static void gpio_set_handler(uint8_t pin);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -162,21 +163,32 @@ static void gpio_disable_irq(uint8_t pin) {
 static void gpio_enable_irq(uint8_t pin) {
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-    NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_1) {
     HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-    NVIC_SetVector(EXTI1_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_2) {
     HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-    NVIC_SetVector(EXTI2_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_3) {
     HAL_NVIC_EnableIRQ(EXTI3_IRQn);
-    NVIC_SetVector(EXTI3_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_4) {
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
-    NVIC_SetVector(EXTI4_IRQn, (uint32_t)&handle_irq);
   } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
     HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+  }
+}
+
+static void gpio_set_handler(uint8_t pin)
+{
+  if (pin == GPIO_PIN_0) {
+    NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_1) {
+    NVIC_SetVector(EXTI1_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_2) {
+    NVIC_SetVector(EXTI2_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_3) {
+    NVIC_SetVector(EXTI3_IRQn, (uint32_t)&handle_irq);
+  } else if (pin == GPIO_PIN_4) {
+    NVIC_SetVector(EXTI4_IRQn, (uint32_t)&handle_irq);
+  } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
     NVIC_SetVector(EXTI9_5_IRQn, (uint32_t)&handle_irq);
   }
 }
@@ -219,6 +231,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_ENABLE:
       if (value == 1) {
+        gpio_set_handler(GPIO_pinmap[index].pin);
         gpio_enable_irq(GPIO_pinmap[index].pin);
       } else {
         gpio_disable_irq(GPIO_pinmap[index].pin);
