@@ -278,8 +278,8 @@ void gpio_handle_data()
     if (copy_int_event_flags & (1 << index))
     {
       /* Send information to the M8. */
-      uint8_t irq = IRQ_pinmap[index].pin;
-      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq), &irq);
+      uint8_t irq_pin = IRQ_pinmap[index].pin;
+      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
       /* Clear this flag. */
       __disable_irq();
       int_event_flags &= ~(1 << index);
