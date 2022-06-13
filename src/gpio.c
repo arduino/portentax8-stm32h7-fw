@@ -87,6 +87,8 @@ struct GPIO_numbers GPIO_pinmap[] = {
 
 struct IRQ_numbers IRQ_pinmap[16];
 
+static volatile uint16_t int_event_flags = 0;
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -113,8 +115,7 @@ static void handle_irq() {
   uint8_t index = 0;
   while (pr != 0) {
     if (pr & 0x1) {
-      uint8_t irq = IRQ_pinmap[index].pin;
-      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq), &irq);
+      int_event_flags |= (1 << index);
       HAL_GPIO_EXTI_IRQHandler(1 << index);
     }
     pr >>= 1;
@@ -261,4 +262,28 @@ void gpio_set_initial_config() {
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+void gpio_handle_data()
+{
+  /* Take a threadsafe copy of the interrupt flags. */
+  __disable_irq();
+  uint16_t const copy_int_event_flags = int_event_flags;
+  __enable_irq();
+
+  /* We have a total of 16 external interrupts. */
+  for (uint8_t index = 0; index < 16; index++)
+  {
+    /* Check whether or not an external interrupt has occured. */
+    if (copy_int_event_flags & (1 << index))
+    {
+      /* Send information to the M8. */
+      uint8_t irq = IRQ_pinmap[index].pin;
+      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq), &irq);
+      /* Clear this flag. */
+      __disable_irq();
+      int_event_flags &= ~(1 << index);
+      __enable_irq();
+    }
+  }
 }

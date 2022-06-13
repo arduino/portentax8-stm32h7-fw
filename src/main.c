@@ -102,6 +102,8 @@ void handle_data() {
 
   can_handle_data();
 
+  gpio_handle_data();
+
   dma_handle_data();
 
 /*
