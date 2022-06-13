@@ -298,12 +298,12 @@ void gpio_handle_data()
       /* Clear this flag. */
       __disable_irq();
       int_event_flags &= ~(1 << index);
-      __enable_irq();
       /* Re-enable the interrupt that was disabled within
        * handle_irq to prevent firing of another interrupt
        * until this one has been signalled to the application.
        */
       enable_irq(GPIO_pinmap[index].pin);
+      __enable_irq();
     }
   }
 }
