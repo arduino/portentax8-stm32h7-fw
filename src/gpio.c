@@ -93,8 +93,8 @@ static volatile uint16_t int_event_flags = 0;
  * INTERNAL FUNCTION DECLARATION
  **************************************************************************************/
 
-static void disable_irq(uint8_t pin);
-static void enable_irq(uint8_t pin);
+static void gpio_disable_irq(uint8_t pin);
+static void gpio_enable_irq(uint8_t pin);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -131,14 +131,14 @@ static void handle_irq() {
       /* Disable the interrupt that just fired in order to
        * prevent it from immediately firing again.
        */
-      disable_irq(GPIO_pinmap[index].pin);
+      gpio_disable_irq(GPIO_pinmap[index].pin);
     }
     pr >>= 1;
     index++;
   }
 }
 
-static void disable_irq(uint8_t pin) {
+static void gpio_disable_irq(uint8_t pin) {
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);
   }
@@ -159,7 +159,7 @@ static void disable_irq(uint8_t pin) {
   }
 }
 
-static void enable_irq(uint8_t pin) {
+static void gpio_enable_irq(uint8_t pin) {
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
     NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);
@@ -219,9 +219,9 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_ENABLE:
       if (value == 1) {
-        enable_irq(GPIO_pinmap[index].pin);
+        gpio_enable_irq(GPIO_pinmap[index].pin);
       } else {
-        disable_irq(GPIO_pinmap[index].pin);
+        gpio_disable_irq(GPIO_pinmap[index].pin);
       }
       dbg_printf("GPIO%d: IRQ_ENABLE %d\n", index, value);
       break;
@@ -302,7 +302,7 @@ void gpio_handle_data()
        * handle_irq to prevent firing of another interrupt
        * until this one has been signalled to the application.
        */
-      enable_irq(GPIO_pinmap[index].pin);
+      gpio_enable_irq(GPIO_pinmap[index].pin);
       __enable_irq();
     }
   }
