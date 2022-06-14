@@ -118,7 +118,7 @@ static void MX_GPIO_Init(void) {
 #define GPIO_MODE_IN_AH         0x04   /*!< Input interrupt active high */
 #define GPIO_MODE_IN_AL         0x08   /*!< Input interrupt active low */
 
-volatile uint16_t ack_system = 0;
+//volatile uint16_t ack_system = 0;
 
 static void handle_irq() {
   uint32_t pr = EXTI->PR1;
@@ -260,21 +260,21 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       dbg_printf("GPIO%d: IRQ_SIGNAL %d\n", index, value);
       break;
     case IRQ_ACK:
-      // Clear busy bit
-      ack_system &= ~(1 << index);
+      dbg_printf("GPIO%d: IRQ_ACK %d\n", index, value);
       //__disable_irq();
+      // Clear busy bit
+      //ack_system &= ~(1 << index);
       /* Clear again interrupt flag for this specific GPIO interrupt.
        * This serves to make sure that we are not returning straight to
        * another interrupt when calling gpio_enable_irq in the line below.
        */
-      HAL_GPIO_EXTI_IRQHandler(1 << index);
+      //HAL_GPIO_EXTI_IRQHandler(GPIO_pinmap[index].pin);
       /* Re-enable the interrupt that was disabled within
        * handle_irq to prevent firing of another interrupt
        * until this one has been signalled to the application.
        */
       gpio_enable_irq(GPIO_pinmap[index].pin);
       //__enable_irq();
-      dbg_printf("GPIO%d: IRQ_ACK %d ack_system %x\n", index, value, ack_system);
       break;
   }
 }
@@ -317,6 +317,7 @@ void gpio_handle_data()
   /* Take a threadsafe copy of the interrupt flags. */
   __disable_irq();
   uint16_t const copy_int_event_flags = int_event_flags;
+  //uint16_t const copy_ack_system = ack_system;
   __enable_irq();
 
   /* We have a total of 10 external interrupts. */
@@ -325,15 +326,15 @@ void gpio_handle_data()
     /* Check whether or not an external interrupt has occured. */
     if (copy_int_event_flags & (1 << index))
     {
-      if(!(ack_system & (1 << index))) { /* Enqueue packet only if not busy */
+      //if(!(copy_ack_system & (1 << index))) { /* Enqueue packet only if not busy */
         /* Send information to the AP. */
         uint8_t irq_pin = IRQ_pinmap[index].pin;
         enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
-        ack_system |= (1 << index); /* Add busy bit to our irq pin */
         __disable_irq();
+        //ack_system |= (1 << index); /* Add busy bit to our irq pin */
         int_event_flags &= ~(1 << index); /*Clear this flag */
         __enable_irq();
-      }
+      //}
     }
   }
 }
