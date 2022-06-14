@@ -125,6 +125,9 @@ static void handle_irq() {
   uint8_t index = 0;
   while (pr != 0) {
     if (pr & 0x1) {
+
+      dbg_printf("handle_irq: index = %d (%x)\n", index, 1<<index);
+
       /* Set the flag variable which leads to a transmission
        * of a interrupt event within gpio_handle_data.
        */
@@ -134,7 +137,7 @@ static void handle_irq() {
       /* Disable the interrupt that just fired in order to
        * prevent it from immediately firing again.
        */
-      gpio_disable_irq(GPIO_pinmap[index].pin);
+      gpio_disable_irq(1 << index);
     }
     pr >>= 1;
     index++;
@@ -142,6 +145,7 @@ static void handle_irq() {
 }
 
 static void gpio_disable_irq(uint8_t pin) {
+  dbg_printf("gpio_disable_irq: pin = %x\n", pin);
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);
   }
@@ -163,6 +167,7 @@ static void gpio_disable_irq(uint8_t pin) {
 }
 
 static void gpio_enable_irq(uint8_t pin) {
+  dbg_printf("gpio_enable_irq: pin = %x\n", pin);
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
   } else if (pin == GPIO_PIN_1) {
@@ -232,13 +237,13 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       dbg_printf("GPIO%d: IRQ_TYPE %d\n", index, value);
       break;
     case IRQ_ENABLE:
+      dbg_printf("GPIO%d: IRQ_ENABLE %d\n", index, value);
       if (value == 1) {
         gpio_set_handler(GPIO_pinmap[index].pin);
         gpio_enable_irq(GPIO_pinmap[index].pin);
       } else {
         gpio_disable_irq(GPIO_pinmap[index].pin);
       }
-      dbg_printf("GPIO%d: IRQ_ENABLE %d\n", index, value);
       break;
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
