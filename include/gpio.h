@@ -33,4 +33,6 @@ void gpio_init();
 
 void gpio_set_initial_config();
 
+void gpio_handle_data();
+
 #endif  //GPIO_H

@@ -87,6 +87,16 @@ struct GPIO_numbers GPIO_pinmap[] = {
 
 struct IRQ_numbers IRQ_pinmap[16];
 
+static volatile uint16_t int_event_flags = 0;
+
+/**************************************************************************************
+ * INTERNAL FUNCTION DECLARATION
+ **************************************************************************************/
+
+static void gpio_disable_irq(uint8_t pin);
+static void gpio_enable_irq(uint8_t pin);
+static void gpio_set_handler(uint8_t pin);
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -113,16 +123,25 @@ static void handle_irq() {
   uint8_t index = 0;
   while (pr != 0) {
     if (pr & 0x1) {
-      uint8_t irq = IRQ_pinmap[index].pin;
-      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq), &irq);
+      dbg_printf("handle_irq: index = %d (%x)\n", index, 1<<index);
+      /* Set the flag variable which leads to a transmission
+       * of a interrupt event within gpio_handle_data.
+       */
+      int_event_flags |= (1 << index);
+      /* Clear interrupt flag for this specific GPIO interrupt. */
       HAL_GPIO_EXTI_IRQHandler(1 << index);
+      /* Disable the interrupt that just fired in order to
+       * prevent it from immediately firing again.
+       */
+      gpio_disable_irq(1 << index);
     }
     pr >>= 1;
     index++;
   }
 }
 
-static void disable_irq(uint8_t pin) {
+static void gpio_disable_irq(uint8_t pin) {
+  dbg_printf("gpio_disable_irq: pin = %x\n", pin);
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);
   }
@@ -141,33 +160,39 @@ static void disable_irq(uint8_t pin) {
   else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
     HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
   }
-  else {
-    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+}
+
+static void gpio_enable_irq(uint8_t pin) {
+  dbg_printf("gpio_enable_irq: pin = %x\n", pin);
+  if (pin == GPIO_PIN_0) {
+    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+  } else if (pin == GPIO_PIN_1) {
+    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+  } else if (pin == GPIO_PIN_2) {
+    HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+  } else if (pin == GPIO_PIN_3) {
+    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+  } else if (pin == GPIO_PIN_4) {
+    HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+  } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
+    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
   }
 }
 
-static void enable_irq(uint8_t pin) {
+static void gpio_set_handler(uint8_t pin)
+{
   if (pin == GPIO_PIN_0) {
-    HAL_NVIC_EnableIRQ(EXTI0_IRQn);
     NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_1) {
-    HAL_NVIC_EnableIRQ(EXTI1_IRQn);
     NVIC_SetVector(EXTI1_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_2) {
-    HAL_NVIC_EnableIRQ(EXTI2_IRQn);
     NVIC_SetVector(EXTI2_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_3) {
-    HAL_NVIC_EnableIRQ(EXTI3_IRQn);
     NVIC_SetVector(EXTI3_IRQn, (uint32_t)&handle_irq);
   } else if (pin == GPIO_PIN_4) {
-    HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     NVIC_SetVector(EXTI4_IRQn, (uint32_t)&handle_irq);
   } else if (pin >= GPIO_PIN_5 && pin <= GPIO_PIN_9) {
-    HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
     NVIC_SetVector(EXTI9_5_IRQn, (uint32_t)&handle_irq);
-  } else {
-    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-    NVIC_SetVector(EXTI15_10_IRQn, (uint32_t)&handle_irq);
   }
 }
 
@@ -200,19 +225,22 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_TYPE:
       GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
-      GPIO_InitStruct.Mode = (value == GPIO_MODE_IN_RE || value == GPIO_MODE_IN_AH ? GPIO_MODE_IT_RISING : GPIO_MODE_IT_FALLING) ;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      GPIO_InitStruct.Mode = ((value == GPIO_MODE_IN_RE) || (value == GPIO_MODE_IN_AH)) ? GPIO_MODE_IT_RISING : GPIO_MODE_IT_FALLING;
+      GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
-      enable_irq(GPIO_pinmap[index].pin);
       IRQ_pinmap[GPIO_PIN_to_index(GPIO_InitStruct.Pin)].pin = index;
+      dbg_printf("GPIO%d: IRQ_TYPE %d\n", index, value);
       break;
     case IRQ_ENABLE:
+      dbg_printf("GPIO%d: IRQ_ENABLE %d\n", index, value);
       if (value == 1) {
-        enable_irq(GPIO_pinmap[index].pin);
+        gpio_set_handler(GPIO_pinmap[index].pin);
+        gpio_enable_irq(GPIO_pinmap[index].pin);
       } else {
-        disable_irq(GPIO_pinmap[index].pin);
+        gpio_disable_irq(GPIO_pinmap[index].pin);
       }
+      break;
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
       dbg_printf("GPIO%d: WRITE %d\n", index, value);
@@ -225,9 +253,15 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_SIGNAL:
       // do nothing;
+      dbg_printf("GPIO%d: IRQ_SIGNAL %d\n", index, value);
       break;
     case IRQ_ACK:
-      //do nothing
+      dbg_printf("GPIO%d: IRQ_ACK %d\n", index, value);
+      /* Re-enable the interrupt that was disabled within
+       * handle_irq to prevent firing of another interrupt
+       * until this one has been signalled to the application.
+       */
+      gpio_enable_irq(GPIO_pinmap[index].pin);
       break;
   }
 }
@@ -263,4 +297,26 @@ void gpio_set_initial_config() {
 
   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 3, 0);
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+}
+
+void gpio_handle_data()
+{
+  /* Take a threadsafe copy of the interrupt flags. */
+  __disable_irq();
+  uint16_t const copy_int_event_flags = int_event_flags;
+  __enable_irq();
+
+  /* We have a total of 10 external interrupts. */
+  for (uint8_t index = 0; index < 10; index++)
+  {
+    /* Check whether or not an external interrupt has occured. */
+    if (copy_int_event_flags & (1 << index))
+    {
+      uint8_t irq_pin = IRQ_pinmap[index].pin;
+      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
+      __disable_irq();
+      int_event_flags &= ~(1 << index); /*Clear this flag */
+      __enable_irq();
+    }
+  }
 }
