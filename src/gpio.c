@@ -115,8 +115,6 @@ static void MX_GPIO_Init(void) {
 
 #define GPIO_MODE_IN_RE         0x01   /*!< Input interrupt rising edge */
 #define GPIO_MODE_IN_FE         0x02   /*!< Input interrupt falling edge */
-#define GPIO_MODE_IN_AH         0x04   /*!< Input interrupt active high */
-#define GPIO_MODE_IN_AL         0x08   /*!< Input interrupt active low */
 
 static void handle_irq() {
   uint32_t pr = EXTI->PR1;
@@ -225,7 +223,11 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       break;
     case IRQ_TYPE:
       GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
-      GPIO_InitStruct.Mode = ((value == GPIO_MODE_IN_RE) || (value == GPIO_MODE_IN_AH)) ? GPIO_MODE_IT_RISING : GPIO_MODE_IT_FALLING;
+
+      if      (value == GPIO_MODE_IN_RE) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+      else if (value == GPIO_MODE_IN_FE) GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+      else                               return;
+
       GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
