@@ -4,7 +4,19 @@ echo 8 > /sys/class/gpio/export
 echo 15 > /sys/class/gpio/export
 echo 10 > /sys/class/gpio/export
 
-FIRMWARE_H7_ON_MCU=$(cat /sys/kernel/x8h7_firmware/version)
+# Try at least three times to read firware version from sysfs
+for i in 1 2 3
+do
+    FIRMWARE_H7_ON_MCU=$(cat /sys/kernel/x8h7_firmware/version)
+    res=$?
+    if [ $res == 0 ]; then
+        break
+    else
+        echo "Failed to read h7 firmware version"
+        sleep 0.1
+    fi
+done
+
 sudo -u fio dd if=/usr/arduino/extra/STM32H747AII6_CM7.bin of=/tmp/version bs=1 count=40 skip=$((0x40000))
 FIRMWARE_H7_ON_LINUX=$(strings /tmp/version | head -n1)
 sudo -u fio rm /tmp/version
