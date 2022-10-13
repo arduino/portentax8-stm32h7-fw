@@ -6,11 +6,12 @@
 # modules allowing to access the extended IO interfaces
 # provided by the STM32H7.
 
+MPATH="/lib/modules/$(uname -r)/extra"
 modprobe industrialio
-insmod /usr/arduino/extra/x8h7_can.ko
-insmod /usr/arduino/extra/x8h7_gpio.ko
-insmod /usr/arduino/extra/x8h7_adc.ko
-insmod /usr/arduino/extra/x8h7_rtc.ko
-insmod /usr/arduino/extra/x8h7_pwm.ko
-insmod /usr/arduino/extra/x8h7_uart.ko
-insmod /usr/arduino/extra/x8h7_ui.ko
+insmod $MPATH/x8h7_can.ko
+insmod $MPATH/x8h7_gpio.ko
+insmod $MPATH/x8h7_adc.ko
+insmod $MPATH/x8h7_rtc.ko
+insmod $MPATH/x8h7_pwm.ko
+insmod $MPATH/x8h7_uart.ko
+insmod $MPATH/x8h7_ui.ko

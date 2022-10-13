@@ -7,5 +7,6 @@
 # of following modules is to provide basic spi access to STM
 # and read firmware version from it.
 
-insmod /usr/arduino/extra/x8h7_drv.ko
-insmod /usr/arduino/extra/x8h7_h7.ko
+MPATH="/lib/modules/$(uname -r)/extra"
+insmod $MPATH/x8h7_drv.ko
+insmod $MPATH/x8h7_h7.ko
