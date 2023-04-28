@@ -1,8 +1,9 @@
 #!/bin/sh
 
-echo 8 > /sys/class/gpio/export
-echo 15 > /sys/class/gpio/export
-echo 10 > /sys/class/gpio/export
+echo 8 > /sys/class/gpio/export # SWDIO
+echo 15 > /sys/class/gpio/export # SWDCLK
+echo 10 > /sys/class/gpio/export # NRST
+echo 11 > /sys/class/gpio/export # BOOT0
 
 # Try at least three times to read firware version from sysfs
 for i in 1 2 3
@@ -22,9 +23,9 @@ FIRMWARE_H7_ON_LINUX=$(strings /tmp/version | head -n1)
 sudo -u fio rm /tmp/version
 
 if [ "$FIRMWARE_H7_ON_MCU" = "$FIRMWARE_H7_ON_LINUX" ]; then
-  echo "Firmware on H7 matches firmware stored on M8. No Update."
+  echo "Firmware on H7 matches firmware stored on X8. No Update."
 else
-  echo "Firmware on H7 does not match firmware stored on M8. Performing Update."
+  echo "Firmware on H7 does not match firmware stored on X8. Performing Update."
   echo "Version(H7)="$FIRMWARE_H7_ON_MCU
   echo "Version(M8)="$FIRMWARE_H7_ON_LINUX
   openocd -f /usr/arduino/extra/openocd_script-imx_gpio.cfg -c "program /usr/arduino/extra/STM32H747AII6_CM7.bin verify reset exit 0x8000000"
