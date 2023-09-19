@@ -731,6 +731,9 @@ int can_write(can_t *obj, CAN_Message msg, int cc)
         return 0;
     }
 
+    uint8_t _msg[2] = {0x01, 0};
+    enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, 0x40, sizeof(_msg), _msg);
+
     return 1;
 }
 
