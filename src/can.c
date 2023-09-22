@@ -264,7 +264,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         uint32_t* info = (uint32_t*)data;
         CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
         canFilter(PERIPH_FDCAN1, info[1], info[2], format, info[0]);
-    } else {
+    } else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -281,6 +281,8 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         if (ret == 0) {
         canReset(PERIPH_FDCAN1);
         }
+    } else {
+      dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
     }
 }
 
@@ -291,7 +293,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         uint32_t* info = (uint32_t*)data;
         CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
         canFilter(PERIPH_FDCAN2, info[1], info[2], format, info[0]);
-    } else {
+    } else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -308,6 +310,8 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         if (ret == 0) {
         canReset(PERIPH_FDCAN2);
         }
+    } else {
+      dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
     }
 }
 

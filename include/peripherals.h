@@ -67,6 +67,7 @@ enum Opcodes_RTC {
 };
 
 enum Opcodes_CAN {
+  CAN_TX_FRAME = 0x01,
   CAN_FILTER = 0x50,
 };
 
