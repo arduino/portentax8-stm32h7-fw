@@ -6,6 +6,11 @@
 # modules allowing to access the extended IO interfaces
 # provided by the STM32H7.
 
+if [ "$(id -u)" != "0" ]; then
+  echo "This script must be run as root."
+  exit 1
+fi
+
 MPATH="/lib/modules/$(uname -r)/extra"
 rmmod $MPATH/x8h7_can.ko
 rmmod $MPATH/x8h7_gpio.ko
