@@ -36,6 +36,19 @@
 #define CFG_HW_RCC_SEMID    3
 #undef DUAL_CORE
 
+#define X8H7_CAN_STS_FLG_RX_OVR  0x01  // Receive Buffer Overflow
+#define X8H7_CAN_STS_FLG_TX_BO   0x02  // Bus-Off
+#define X8H7_CAN_STS_FLG_TX_EP   0x04  // Transmit Error-Passive
+#define X8H7_CAN_STS_FLG_RX_EP   0x08  // Receive Error-Passive
+#define X8H7_CAN_STS_FLG_TX_WAR  0x10  // Transmit Error Warning
+#define X8H7_CAN_STS_FLG_RX_WAR  0x20  // Receive Error Warning
+#define X8H7_CAN_STS_FLG_EWARN   0x40  // Error Warning
+#define X8H7_CAN_STS_FLG_TX_OVR  0x80  // Transmit Buffer Overflow
+
+#define X8H7_CAN_STS_INT_TX      0x01
+#define X8H7_CAN_STS_INT_RX      0x02
+#define X8H7_CAN_STS_INT_ERR     0x04
+
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
@@ -729,16 +742,23 @@ int can_write(can_t *obj, CAN_Message msg, int cc)
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, msg.data) != HAL_OK) {
-        // Note for debug: you can get the error code calling HAL_FDCAN_GetError(&obj->CanHandle)
-        printf("error: %ld\n", HAL_FDCAN_GetError(&obj->CanHandle));
-        return 0;
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, msg.data) != HAL_OK)
+    {
+      uint32_t const err_code = HAL_FDCAN_GetError(&obj->CanHandle);
+      printf("error: %ld\n", err_code);
+
+      uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
+      if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
+
+      enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      return 0;
     }
-
-    uint8_t _msg[2] = {0x01, 0};
-    enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, 0x40, sizeof(_msg), _msg);
-
-    return 1;
+    else
+    {
+      uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
+      enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      return 1;
+    }
 }
 
 int can_read(can_t *obj, CAN_Message *msg, int handle)
