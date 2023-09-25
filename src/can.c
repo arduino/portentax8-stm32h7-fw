@@ -290,7 +290,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        if (!can_write(&fdcan_1, msg, /* cc */ 0))
+        if (!can_write(&fdcan_1, msg))
         {
           can_reset(&fdcan_1);
         }
@@ -319,7 +319,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        if (!can_write(&fdcan_2, msg, /* cc */ 0))
+        if (!can_write(&fdcan_2, msg))
         {
           can_reset(&fdcan_2);
         }
@@ -699,11 +699,9 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
 }
 
 
-int can_write(can_t *obj, CAN_Message msg, int cc)
+int can_write(can_t *obj, CAN_Message msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
-
-    UNUSED(cc);
 
     // Configure Tx buffer message
     TxHeader.Identifier = msg.id;
