@@ -277,11 +277,21 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       can_frequency(&fdcan_1, can_bitrate);
       dbg_printf("fdcan1_handler: configuring fdcan1 with frequency %ld\n", can_bitrate);
     }
-    else if (opcode == CAN_FILTER) {
-        uint32_t* info = (uint32_t*)data;
-        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-        canFilter(PERIPH_FDCAN1, info[1], info[2], format, info[0]);
-    } else if (opcode == CAN_TX_FRAME) {
+    else if (opcode == CAN_FILTER)
+    {
+      uint32_t const * info = (uint32_t*)data;
+
+      uint32_t const handle = info[0];
+      uint32_t const id     = info[1];
+      uint32_t const mask   = info[2];
+
+      CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
+
+      if (!can_filter(&fdcan_1, id, mask, format, handle)) {
+        dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+      }
+    }
+    else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -310,11 +320,21 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       can_frequency(&fdcan_2, can_bitrate);
       dbg_printf("fdcan2_handler: configuring fdcan2 with frequency %ld\n", can_bitrate);
     }
-    else if (opcode == CAN_FILTER) {
-        uint32_t* info = (uint32_t*)data;
-        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-        canFilter(PERIPH_FDCAN2, info[1], info[2], format, info[0]);
-    } else if (opcode == CAN_TX_FRAME) {
+    else if (opcode == CAN_FILTER)
+    {
+        uint32_t const * info = (uint32_t*)data;
+
+        uint32_t const handle = info[0];
+        uint32_t const id     = info[1];
+        uint32_t const mask   = info[2];
+
+        CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
+
+        if (!can_filter(&fdcan_2, id, mask, format, handle)) {
+          dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+        }
+    }
+    else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -352,17 +372,6 @@ void canInit()
     HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
     HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
   */
-}
-
-int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_filter(&fdcan_1, id, mask, format, handle);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_filter(&fdcan_2, id, mask, format, handle);
-    }
-    return 0;
 }
 
 void can_handle_data() {

@@ -105,7 +105,6 @@ struct can_s {
 typedef struct can_s can_t;
 
 void          canInit();
-int           canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
 void          can_handle_data();
 
 void          can_init(can_t *obj);
