@@ -290,10 +290,9 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int const ret = can_write(&fdcan_1, msg, /* cc */ 0);
-
-        if (ret == 0) {
-        canReset(PERIPH_FDCAN1);
+        if (!can_write(&fdcan_1, msg, /* cc */ 0))
+        {
+          can_reset(&fdcan_1);
         }
     } else {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
@@ -320,10 +319,9 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int const ret = can_write(&fdcan_2, msg, /* cc */ 0);
-
-        if (ret == 0) {
-        canReset(PERIPH_FDCAN2);
+        if (!can_write(&fdcan_2, msg, /* cc */ 0))
+        {
+          can_reset(&fdcan_2);
         }
     } else {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
@@ -368,16 +366,6 @@ int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, 
         return can_filter(&fdcan_2, id, mask, format, handle);
     }
     return 0;
-}
-
-void canReset(uint8_t peripheral)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        can_reset(&fdcan_1);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        can_reset(&fdcan_2);
-    }
 }
 
 void can_handle_data() {
