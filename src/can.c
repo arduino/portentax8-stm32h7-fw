@@ -271,13 +271,27 @@ static void error(char* string) {
 }
 
 void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-    if (opcode == CONFIGURE) {
-        configureFDCAN(PERIPH_FDCAN1, data);
-    } else if (opcode == CAN_FILTER) {
-        uint32_t* info = (uint32_t*)data;
-        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-        canFilter(PERIPH_FDCAN1, info[1], info[2], format, info[0]);
-    } else if (opcode == CAN_TX_FRAME) {
+    if (opcode == CONFIGURE)
+    {
+      uint32_t const can_bitrate = *((uint32_t *)data);
+      can_frequency(&fdcan_1, can_bitrate);
+      dbg_printf("fdcan1_handler: configuring fdcan1 with frequency %ld\n", can_bitrate);
+    }
+    else if (opcode == CAN_FILTER)
+    {
+      uint32_t const * info = (uint32_t*)data;
+
+      uint32_t const handle = info[0];
+      uint32_t const id     = info[1];
+      uint32_t const mask   = info[2];
+
+      CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
+
+      if (!can_filter(&fdcan_1, id, mask, format, handle)) {
+        dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+      }
+    }
+    else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -290,9 +304,9 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int ret = canWrite(PERIPH_FDCAN1, msg, 0);
-        if (ret == 0) {
-        canReset(PERIPH_FDCAN1);
+        if (!can_write(&fdcan_1, msg))
+        {
+          can_reset(&fdcan_1);
         }
     } else {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
@@ -300,13 +314,27 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 }
 
 void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-    if (opcode == CONFIGURE) {
-        configureFDCAN(PERIPH_FDCAN2, data);
-    } else if (opcode == CAN_FILTER) {
-        uint32_t* info = (uint32_t*)data;
-        CANFormat format = info[1] < 0x800 ? CANStandard : CANExtended;
-        canFilter(PERIPH_FDCAN2, info[1], info[2], format, info[0]);
-    } else if (opcode == CAN_TX_FRAME) {
+    if (opcode == CONFIGURE)
+    {
+      uint32_t const can_bitrate = *((uint32_t *)data);
+      can_frequency(&fdcan_2, can_bitrate);
+      dbg_printf("fdcan2_handler: configuring fdcan2 with frequency %ld\n", can_bitrate);
+    }
+    else if (opcode == CAN_FILTER)
+    {
+        uint32_t const * info = (uint32_t*)data;
+
+        uint32_t const handle = info[0];
+        uint32_t const id     = info[1];
+        uint32_t const mask   = info[2];
+
+        CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
+
+        if (!can_filter(&fdcan_2, id, mask, format, handle)) {
+          dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+        }
+    }
+    else if (opcode == CAN_TX_FRAME) {
         CAN_Message msg;
         msg.type = CANData;
         msg.format = CANStandard;
@@ -319,9 +347,9 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int ret = canWrite(PERIPH_FDCAN2, msg, 0);
-        if (ret == 0) {
-        canReset(PERIPH_FDCAN2);
+        if (!can_write(&fdcan_2, msg))
+        {
+          can_reset(&fdcan_2);
         }
     } else {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
@@ -346,72 +374,15 @@ void canInit()
   */
 }
 
-int canWrite(uint8_t peripheral, CAN_Message msg, int cc)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_write(&fdcan_1, msg, cc);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_write(&fdcan_2, msg, cc);
-    }
-    return 0;
-}
-
-int canRead(uint8_t peripheral, CAN_Message *msg, int handle)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_read(&fdcan_1, msg, handle);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_read(&fdcan_2, msg, handle);
-    }
-    return 0;
-}
-
-int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_filter(&fdcan_1, id, mask, format, handle);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_filter(&fdcan_2, id, mask, format, handle);
-    }
-    return 0;
-}
-
-void canReset(uint8_t peripheral)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        can_reset(&fdcan_1);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        can_reset(&fdcan_2);
-    }
-}
-
 void can_handle_data() {
     CAN_Message msg;
-    if (can_read(&fdcan_1, &msg, 0)) {
+    if (can_read(&fdcan_1, &msg)) {
       enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg), &msg);
     }
 
-    if (can_read(&fdcan_2, &msg, 0)) {
+    if (can_read(&fdcan_2, &msg)) {
       enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(msg), &msg);
     }
-}
-
-void configureFDCAN(uint8_t peripheral, void* data) {
-
-  if (peripheral == PERIPH_FDCAN1) {
-    can_frequency(&fdcan_1, *((uint32_t*)data));
-  } else {
-    can_frequency(&fdcan_2, *((uint32_t*)data));
-  }
-
-  dbg_printf("Configuring fdcan%d with frequency %ld\n", peripheral == PERIPH_FDCAN1 ? 1 : 2, *((uint32_t*)data));
-
-  //HAL_FDCAN_ConfigFilter(&_hfdcan1, filterDef);
-  //HAL_FDCAN_ConfigGlobalFilter(&_hfdcan1, nonMatchingStd, nonMatchingExt, rejectRemoteStd, rejectRemoteExt);
 }
 
 /** Call all the init functions
@@ -720,11 +691,9 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
 }
 
 
-int can_write(can_t *obj, CAN_Message msg, int cc)
+int can_write(can_t *obj, CAN_Message msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
-
-    UNUSED(cc);
 
     // Configure Tx buffer message
     TxHeader.Identifier = msg.id;
@@ -761,10 +730,8 @@ int can_write(can_t *obj, CAN_Message msg, int cc)
     }
 }
 
-int can_read(can_t *obj, CAN_Message *msg, int handle)
+int can_read(can_t *obj, CAN_Message *msg)
 {
-    UNUSED(handle); // Not supported, RXFIFO0 is set default by can_filter and cannot be changed.
-
     if (HAL_FDCAN_GetRxFifoFillLevel(&obj->CanHandle, FDCAN_RX_FIFO0) == 0) {
         return 0; // No message arrived
     }
