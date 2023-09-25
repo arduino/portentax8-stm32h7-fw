@@ -290,7 +290,8 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int ret = canWrite(PERIPH_FDCAN1, msg, 0);
+        int const ret = can_write(&fdcan_1, msg, /* cc */ 0);
+
         if (ret == 0) {
         canReset(PERIPH_FDCAN1);
         }
@@ -319,7 +320,8 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         msg.format = CANExtended;
         }
 
-        int ret = canWrite(PERIPH_FDCAN2, msg, 0);
+        int const ret = can_write(&fdcan_2, msg, /* cc */ 0);
+
         if (ret == 0) {
         canReset(PERIPH_FDCAN2);
         }
@@ -344,17 +346,6 @@ void canInit()
     HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
     HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
   */
-}
-
-int canWrite(uint8_t peripheral, CAN_Message msg, int cc)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_write(&fdcan_1, msg, cc);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_write(&fdcan_2, msg, cc);
-    }
-    return 0;
 }
 
 int canRead(uint8_t peripheral, CAN_Message *msg, int handle)
