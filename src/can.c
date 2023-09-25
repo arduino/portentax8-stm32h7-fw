@@ -346,17 +346,6 @@ void canInit()
   */
 }
 
-int canRead(uint8_t peripheral, CAN_Message *msg, int handle)
-{
-    if (peripheral == PERIPH_FDCAN1) {
-        return can_read(&fdcan_1, msg, handle);
-    }
-    if (peripheral == PERIPH_FDCAN2) {
-        return can_read(&fdcan_2, msg, handle);
-    }
-    return 0;
-}
-
 int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle)
 {
     if (peripheral == PERIPH_FDCAN1) {
@@ -370,11 +359,11 @@ int canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, 
 
 void can_handle_data() {
     CAN_Message msg;
-    if (can_read(&fdcan_1, &msg, 0)) {
+    if (can_read(&fdcan_1, &msg)) {
       enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg), &msg);
     }
 
-    if (can_read(&fdcan_2, &msg, 0)) {
+    if (can_read(&fdcan_2, &msg)) {
       enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(msg), &msg);
     }
 }
@@ -738,10 +727,8 @@ int can_write(can_t *obj, CAN_Message msg)
     }
 }
 
-int can_read(can_t *obj, CAN_Message *msg, int handle)
+int can_read(can_t *obj, CAN_Message *msg)
 {
-    UNUSED(handle); // Not supported, RXFIFO0 is set default by can_filter and cannot be changed.
-
     if (HAL_FDCAN_GetRxFifoFillLevel(&obj->CanHandle, FDCAN_RX_FIFO0) == 0) {
         return 0; // No message arrived
     }

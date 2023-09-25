@@ -105,7 +105,6 @@ struct can_s {
 typedef struct can_s can_t;
 
 void          canInit();
-int           canRead(uint8_t peripheral, CAN_Message *msg, int handle);
 int           canFilter(uint8_t peripheral, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
 void          can_handle_data();
 void          configureFDCAN(uint8_t peripheral, void* data);
@@ -123,7 +122,7 @@ void          can_irq_set(can_t *obj, CanIrqType irq, uint32_t enable);
 
 
 int           can_write(can_t *obj, CAN_Message);
-int           can_read(can_t *obj, CAN_Message *msg, int handle);
+int           can_read(can_t *obj, CAN_Message *msg);
 int           can_mode(can_t *obj, CanMode mode);
 int           can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
 void          can_reset(can_t *obj);
