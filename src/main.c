@@ -49,22 +49,6 @@ volatile bool trigger_irq = false;
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-/*
-volatile bool can1_rx_irq = false;
-volatile bool can2_rx_irq = false;
-
-void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs) {
-  if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET) {
-    if (hfdcan == &hfdcan1) {
-      can1_rx_irq = true;
-    }
-    if (hfdcan == &hfdcan2) {
-      can2_rx_irq = true;
-    }
-  }
-}
-*/
-
 void peripheral_init() {
 
   uart_init();
