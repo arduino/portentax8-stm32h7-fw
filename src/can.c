@@ -704,7 +704,26 @@ int can_write(can_t *obj, CAN_Message msg)
     }
 
     TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    TxHeader.DataLength = msg.len << 16;
+    switch (msg.len)
+    {
+      default:
+      case 0:  TxHeader.DataLength = FDCAN_DLC_BYTES_0;  break;
+      case 1:  TxHeader.DataLength = FDCAN_DLC_BYTES_1;  break;
+      case 2:  TxHeader.DataLength = FDCAN_DLC_BYTES_2;  break;
+      case 3:  TxHeader.DataLength = FDCAN_DLC_BYTES_3;  break;
+      case 4:  TxHeader.DataLength = FDCAN_DLC_BYTES_4;  break;
+      case 5:  TxHeader.DataLength = FDCAN_DLC_BYTES_5;  break;
+      case 6:  TxHeader.DataLength = FDCAN_DLC_BYTES_6;  break;
+      case 7:  TxHeader.DataLength = FDCAN_DLC_BYTES_7;  break;
+      case 8:  TxHeader.DataLength = FDCAN_DLC_BYTES_8;  break;
+      case 12: TxHeader.DataLength = FDCAN_DLC_BYTES_12; break;
+      case 16: TxHeader.DataLength = FDCAN_DLC_BYTES_16; break;
+      case 20: TxHeader.DataLength = FDCAN_DLC_BYTES_20; break;
+      case 24: TxHeader.DataLength = FDCAN_DLC_BYTES_24; break;
+      case 32: TxHeader.DataLength = FDCAN_DLC_BYTES_32; break;
+      case 48: TxHeader.DataLength = FDCAN_DLC_BYTES_48; break;
+      case 64: TxHeader.DataLength = FDCAN_DLC_BYTES_64; break;
+    }
     TxHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
     TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
     TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
