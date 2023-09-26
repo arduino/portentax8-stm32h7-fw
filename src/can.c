@@ -288,7 +288,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
 
       if (!can_filter(&fdcan_1, id, mask, format, handle)) {
-        dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+        dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
       }
     }
     else if (opcode == CAN_TX_FRAME) {
@@ -331,7 +331,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
 
         if (!can_filter(&fdcan_2, id, mask, format, handle)) {
-          dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %ld, handle %ld\n", id, mask, format, handle);
+          dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
         }
     }
     else if (opcode == CAN_TX_FRAME) {
