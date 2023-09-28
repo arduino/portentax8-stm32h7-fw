@@ -27,6 +27,7 @@
 #include "stm32h7xx_ll_hsem.h"
 #include "system.h"
 #include "peripherals.h"
+#include "can_util.h"
 
 /**************************************************************************************
  * DEFINE
@@ -273,8 +274,8 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 
 void canInit()
 {
-    can_init_freq_direct(&fdcan_1, CAN_1, 800000);
-    can_init_freq_direct(&fdcan_2, CAN_2, 800000);
+    can_init_freq_direct(&fdcan_1, CAN_1, 100*1000UL);
+    can_init_freq_direct(&fdcan_2, CAN_2, 100*1000UL);
 
     register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
     register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
@@ -336,41 +337,39 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
     // Default values
     obj->CanHandle.Instance = (FDCAN_GlobalTypeDef *)peripheral;
 
-    /* Bit time parameter
-                                ex with 100 kHz   requested frequency hz
-    fdcan_ker_ck               | 10 MHz         | 10 MHz
-    Prescaler                  | 1              | 1
-    Time_quantum (tq)          | 100 ns         | 100 ns
-    Bit_rate                   | 0.1 MBit/s     | <hz>
-    Bit_length                 | 10 µs = 100 tq | <n_tq> = 10 000 000 / <hz>
-    Synchronization_segment    | 1 tq           | 1 tq
-    Phase_segment_1            | 69 tq          | <nts1> = <n_tq> * 0.75
-    Phase_segment_2            | 30 tq          | <nts2> = <n_tq> - 1 - <nts1>
-    Synchronization_Jump_width | 30 tq          | <nsjw> = <nts2>
-    */
+  uint32_t const can_bitrate = hz;
+  uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+  uint32_t const tq_max = 512;
+  uint32_t const tq_min = 1;
+  uint32_t const tseg1_min = 1;
+  uint32_t const tseg1_max = 256;
+  uint32_t const tseg2_min = 1;
+  uint32_t const tseg2_max = 128;
 
-    int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / hz;
+  CanNominalBitTimingResult can_bit_timing = {0};
 
-    int nominalPrescaler = 1;
-    // !When the sample point should be lower than 50%, this must be changed to
-    // !IS_FDCAN_NOMINAL_TSEG2(ntq/nominalPrescaler), since
-    // NTSEG2 and SJW max values are lower. For now the sample point is fix @75%
-    while (!IS_FDCAN_NOMINAL_TSEG1(ntq / nominalPrescaler)) {
-        nominalPrescaler ++;
-        if (!IS_FDCAN_NOMINAL_PRESCALER(nominalPrescaler)) {
-            error("Could not determine good nominalPrescaler. Bad clock value\n");
-        }
-    }
-    ntq = ntq / nominalPrescaler;
+  if (!calc_can_nominal_bit_timing(can_bitrate,
+                                   can_clock_Hz,
+                                   tq_max,
+                                   tq_min,
+                                   tseg1_min,
+                                   tseg1_max,
+                                   tseg2_min,
+                                   tseg2_max,
+                                   &can_bit_timing))
+  {
+    printf("Could not calculate valid CAN bit timing\n");
+    return;
+  }
 
     obj->CanHandle.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
     obj->CanHandle.Init.Mode = FDCAN_MODE_NORMAL;
     obj->CanHandle.Init.AutoRetransmission = ENABLE;
     obj->CanHandle.Init.TransmitPause = DISABLE;
     obj->CanHandle.Init.ProtocolException = ENABLE;
-    obj->CanHandle.Init.NominalPrescaler = nominalPrescaler;      // Prescaler
-    obj->CanHandle.Init.NominalTimeSeg1 = ntq * 0.75;      // Phase_segment_1
-    obj->CanHandle.Init.NominalTimeSeg2 = ntq - 1 - obj->CanHandle.Init.NominalTimeSeg1;      // Phase_segment_2
+    obj->CanHandle.Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
+    obj->CanHandle.Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
+    obj->CanHandle.Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
     obj->CanHandle.Init.NominalSyncJumpWidth = obj->CanHandle.Init.NominalTimeSeg2; // Synchronization_Jump_width
     obj->CanHandle.Init.DataPrescaler = 0x1;       // Not used - only in FDCAN
     obj->CanHandle.Init.DataSyncJumpWidth = 0x1;   // Not used - only in FDCAN
@@ -455,30 +454,34 @@ int can_frequency(can_t *obj, int f)
     }
 
 
-    /* See can_init_freq function for calculation details
-     *
-     * !Attention Not all bitrates can be covered with all fdcan-core-clk values. When a clk
-     * does not work for the desired bitrate, change system_clock settings for FDCAN_CLK
-     * (default FDCAN_CLK is PLLQ)
-     */
+  uint32_t const can_bitrate = f;
+  uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+  uint32_t const tq_max = 512;
+  uint32_t const tq_min = 1;
+  uint32_t const tseg1_min = 1;
+  uint32_t const tseg1_max = 256;
+  uint32_t const tseg2_min = 1;
+  uint32_t const tseg2_max = 128;
 
-    int ntq = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN) / f;
+  CanNominalBitTimingResult can_bit_timing = {0};
 
-    int nominalPrescaler = 1;
-    // !When the sample point should be lower than 50%, this must be changed to
-    // !IS_FDCAN_DATA_TSEG2(ntq/nominalPrescaler), since
-    // NTSEG2 and SJW max values are lower. For now the sample point is fix @75%
-    while (!IS_FDCAN_DATA_TSEG1(ntq / nominalPrescaler)) {
-        nominalPrescaler ++;
-        if (!IS_FDCAN_NOMINAL_PRESCALER(nominalPrescaler)) {
-            error("Could not determine good nominalPrescaler. Bad clock value\n");
-        }
-    }
-    ntq = ntq / nominalPrescaler;
+  if (!calc_can_nominal_bit_timing(can_bitrate,
+                                   can_clock_Hz,
+                                   tq_max,
+                                   tq_min,
+                                   tseg1_min,
+                                   tseg1_max,
+                                   tseg2_min,
+                                   tseg2_max,
+                                   &can_bit_timing))
+  {
+    printf("Could not calculate valid CAN bit timing\n");
+    return 0;
+  }
 
-    obj->CanHandle.Init.NominalPrescaler = nominalPrescaler;
-    obj->CanHandle.Init.NominalTimeSeg1 = ntq * 0.75;      // Phase_segment_1
-    obj->CanHandle.Init.NominalTimeSeg2 = ntq - 1 - obj->CanHandle.Init.NominalTimeSeg1;      // Phase_segment_2
+    obj->CanHandle.Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
+    obj->CanHandle.Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
+    obj->CanHandle.Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
     obj->CanHandle.Init.NominalSyncJumpWidth = obj->CanHandle.Init.NominalTimeSeg2; // Synchronization_Jump_width
 
     return can_internal_init(obj);
