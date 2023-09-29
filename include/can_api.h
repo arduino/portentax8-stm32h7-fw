@@ -28,59 +28,27 @@ extern "C" {
 
 #include "can_util.h"
 
-/**
- *
- * \enum    CANFormat
- *
- * \brief   Values that represent CAN Format
-**/
-enum CANFormat {
+typedef enum
+{
     CANStandard = 0,
     CANExtended = 1,
     CANAny = 2
-};
-typedef enum CANFormat CANFormat;
+} CANFormat;
 
-/**
- *
- * \enum    CANType
- *
- * \brief   Values that represent CAN Type
-**/
-enum CANType {
-    CANData   = 0,
-    CANRemote = 1
-};
-typedef enum CANType CANType;
+typedef enum
+{
+  CANData   = 0,
+  CANRemote = 1
+} CANType;
 
-/**
- *
- * \struct  CAN_Message
- *
- * \brief   Holder for single CAN message.
- *
-**/
-__attribute__((packed, aligned(4))) struct CAN_Message {
+typedef struct __attribute__((packed, aligned(4)))
+{
     unsigned int   id;                 // 29 bit identifier
     unsigned char  len;                // Length of data field in bytes
     unsigned char  data[8];            // Data field
     CANFormat      format;             // Format ::CANFormat
     CANType        type;               // Type ::CANType
-};
-typedef struct CAN_Message CAN_Message;
-
-typedef enum {
-    IRQ_RX,
-    IRQ_TX,
-    IRQ_ERROR,
-    IRQ_OVERRUN,
-    IRQ_WAKEUP,
-    IRQ_PASSIVE,
-    IRQ_ARB,
-    IRQ_BUS,
-    IRQ_READY
-} CanIrqType;
-
+} CAN_Message;
 
 typedef enum {
     MODE_RESET,
@@ -96,15 +64,12 @@ typedef enum {
     CAN_2 = (int)FDCAN2_BASE
 } CANName;
 
-typedef void (*can_irq_handler)(uint32_t id, CanIrqType type);
-
-struct can_s {
+typedef struct
+{
     FDCAN_HandleTypeDef CanHandle;
     int index;
     int hz;
-};
-
-typedef struct can_s can_t;
+} can_t;
 
 void          canInit();
 void          can_handle_data();
