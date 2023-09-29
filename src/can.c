@@ -51,6 +51,17 @@
 #define X8H7_CAN_STS_INT_ERR     0x04
 
 /**************************************************************************************
+ * GLOBAL CONSTANTS
+ **************************************************************************************/
+
+static uint32_t const TQ_MIN    =   1;
+static uint32_t const TQ_MAX    = 512;
+static uint32_t const TSEG1_MIN =   1;
+static uint32_t const TSEG1_MAX = 256;
+static uint32_t const TSEG2_MIN =   1;
+static uint32_t const TSEG2_MAX = 128;
+
+/**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
@@ -339,23 +350,17 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
 
   uint32_t const can_bitrate = hz;
   uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
-  uint32_t const tq_max = 512;
-  uint32_t const tq_min = 1;
-  uint32_t const tseg1_min = 1;
-  uint32_t const tseg1_max = 256;
-  uint32_t const tseg2_min = 1;
-  uint32_t const tseg2_max = 128;
 
   CanNominalBitTimingResult can_bit_timing = {0};
 
   if (!calc_can_nominal_bit_timing(can_bitrate,
                                    can_clock_Hz,
-                                   tq_max,
-                                   tq_min,
-                                   tseg1_min,
-                                   tseg1_max,
-                                   tseg2_min,
-                                   tseg2_max,
+                                   TQ_MAX,
+                                   TQ_MIN,
+                                   TSEG1_MIN,
+                                   TSEG1_MAX,
+                                   TSEG2_MIN,
+                                   TSEG2_MAX,
                                    &can_bit_timing))
   {
     printf("Could not calculate valid CAN bit timing\n");
@@ -453,26 +458,19 @@ int can_frequency(can_t *obj, int f)
         error("HAL_FDCAN_Stop error\n");
     }
 
-
   uint32_t const can_bitrate = f;
   uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
-  uint32_t const tq_max = 512;
-  uint32_t const tq_min = 1;
-  uint32_t const tseg1_min = 1;
-  uint32_t const tseg1_max = 256;
-  uint32_t const tseg2_min = 1;
-  uint32_t const tseg2_max = 128;
 
   CanNominalBitTimingResult can_bit_timing = {0};
 
   if (!calc_can_nominal_bit_timing(can_bitrate,
                                    can_clock_Hz,
-                                   tq_max,
-                                   tq_min,
-                                   tseg1_min,
-                                   tseg1_max,
-                                   tseg2_min,
-                                   tseg2_max,
+                                   TQ_MAX,
+                                   TQ_MIN,
+                                   TSEG1_MIN,
+                                   TSEG1_MAX,
+                                   TSEG2_MIN,
+                                   TSEG2_MAX,
                                    &can_bit_timing))
   {
     printf("Could not calculate valid CAN bit timing\n");
