@@ -439,6 +439,8 @@ int can_frequency(can_t *obj, uint32_t const can_bitrate)
     return 0;
   }
 
+  dbg_printf("can_frequency:\n\r  can_bitrate = %ld\n\r  can_clock_Hz = %ld\n", can_bitrate, can_clock_Hz);
+
     obj->CanHandle.Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
     obj->CanHandle.Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
     obj->CanHandle.Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
