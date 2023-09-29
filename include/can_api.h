@@ -119,7 +119,6 @@ int           can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat forma
 void          can_reset(can_t *obj);
 unsigned char can_rderror(can_t *obj);
 unsigned char can_tderror(can_t *obj);
-void          can_monitor(can_t *obj, int silent);
 
 #ifdef __cplusplus
 }

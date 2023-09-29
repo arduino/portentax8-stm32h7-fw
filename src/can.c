@@ -590,33 +590,6 @@ unsigned char can_tderror(can_t *obj)
     return (unsigned char)ErrorCounters.TxErrorCnt;
 }
 
-void can_monitor(can_t *obj, int silent)
-{
-    CanMode mode = MODE_NORMAL;
-    if (silent) {
-        switch (obj->CanHandle.Init.Mode) {
-            case FDCAN_MODE_INTERNAL_LOOPBACK:
-                mode = MODE_TEST_SILENT;
-                break;
-            default:
-                mode = MODE_SILENT;
-                break;
-        }
-    } else {
-        switch (obj->CanHandle.Init.Mode) {
-            case FDCAN_MODE_INTERNAL_LOOPBACK:
-            case FDCAN_MODE_EXTERNAL_LOOPBACK:
-                mode = MODE_TEST_LOCAL;
-                break;
-            default:
-                mode = MODE_NORMAL;
-                break;
-        }
-    }
-
-    can_mode(obj, mode);
-}
-
 /** Change CAN operation to the specified mode
  *
  *  @param mode The new operation mode (MODE_RESET, MODE_NORMAL, MODE_SILENT, MODE_TEST_LOCAL, MODE_TEST_GLOBAL, MODE_TEST_SILENT)
