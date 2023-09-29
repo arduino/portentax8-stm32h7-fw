@@ -354,6 +354,7 @@ int can_internal_init(can_t *obj)
 void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     __HAL_RCC_FDCAN_CLK_ENABLE();
+    HAL_RCC_FDCAN_CLK_ENABLED++;
 
     if (peripheral == CAN_1) {
         obj->index = 0;
