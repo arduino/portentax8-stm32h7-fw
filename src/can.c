@@ -72,9 +72,6 @@ FDCAN_HandleTypeDef hfdcan2;
 can_t fdcan_1;
 can_t fdcan_2;
 
-static uintptr_t can_irq_contexts[2] = {0};
-static can_irq_handler irq_handler;
-
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -404,12 +401,6 @@ void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const ca
     obj->CanHandle.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
 
     can_internal_init(obj);
-}
-
-void can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t context)
-{
-    irq_handler = handler;
-    can_irq_contexts[obj->index] = context;
 }
 
 void can_free(can_t *obj)
