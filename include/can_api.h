@@ -112,7 +112,7 @@ void          can_init_direct(can_t *obj);
 void          can_init_freq(can_t *obj, int hz);
 void          can_init_freq_direct(can_t *obj, CANName peripheral, int hz);
 void          can_free(can_t *obj);
-int           can_frequency(can_t *obj, int hz);
+int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 
 void          can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t id);
 void          can_irq_free(can_t *obj);

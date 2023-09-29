@@ -452,13 +452,12 @@ void can_reset(can_t *obj)
 }
 
 
-int can_frequency(can_t *obj, int f)
+int can_frequency(can_t *obj, uint32_t const can_bitrate)
 {
     if (HAL_FDCAN_Stop(&obj->CanHandle) != HAL_OK) {
         error("HAL_FDCAN_Stop error\n");
     }
 
-  uint32_t const can_bitrate = f;
   uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
 
   CanNominalBitTimingResult can_bit_timing = {0};
