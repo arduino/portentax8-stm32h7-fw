@@ -26,59 +26,29 @@ extern "C" {
 
 #include <inttypes.h>
 
-/**
- *
- * \enum    CANFormat
- *
- * \brief   Values that represent CAN Format
-**/
-enum CANFormat {
+#include "can_util.h"
+
+typedef enum
+{
     CANStandard = 0,
     CANExtended = 1,
     CANAny = 2
-};
-typedef enum CANFormat CANFormat;
+} CANFormat;
 
-/**
- *
- * \enum    CANType
- *
- * \brief   Values that represent CAN Type
-**/
-enum CANType {
-    CANData   = 0,
-    CANRemote = 1
-};
-typedef enum CANType CANType;
+typedef enum
+{
+  CANData   = 0,
+  CANRemote = 1
+} CANType;
 
-/**
- *
- * \struct  CAN_Message
- *
- * \brief   Holder for single CAN message.
- *
-**/
-__attribute__((packed, aligned(4))) struct CAN_Message {
+typedef struct __attribute__((packed, aligned(4)))
+{
     unsigned int   id;                 // 29 bit identifier
     unsigned char  len;                // Length of data field in bytes
     unsigned char  data[8];            // Data field
     CANFormat      format;             // Format ::CANFormat
     CANType        type;               // Type ::CANType
-};
-typedef struct CAN_Message CAN_Message;
-
-typedef enum {
-    IRQ_RX,
-    IRQ_TX,
-    IRQ_ERROR,
-    IRQ_OVERRUN,
-    IRQ_WAKEUP,
-    IRQ_PASSIVE,
-    IRQ_ARB,
-    IRQ_BUS,
-    IRQ_READY
-} CanIrqType;
-
+} CAN_Message;
 
 typedef enum {
     MODE_RESET,
@@ -94,30 +64,18 @@ typedef enum {
     CAN_2 = (int)FDCAN2_BASE
 } CANName;
 
-typedef void (*can_irq_handler)(uint32_t id, CanIrqType type);
-
-struct can_s {
+typedef struct
+{
     FDCAN_HandleTypeDef CanHandle;
     int index;
     int hz;
-};
-
-typedef struct can_s can_t;
+} can_t;
 
 void          canInit();
 void          can_handle_data();
 
-void          can_init(can_t *obj);
-void          can_init_direct(can_t *obj);
-void          can_init_freq(can_t *obj, int hz);
-void          can_init_freq_direct(can_t *obj, CANName peripheral, int hz);
-void          can_free(can_t *obj);
-int           can_frequency(can_t *obj, int hz);
-
-void          can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t id);
-void          can_irq_free(can_t *obj);
-void          can_irq_set(can_t *obj, CanIrqType irq, uint32_t enable);
-
+void          can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
+int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 
 int           can_write(can_t *obj, CAN_Message);
 int           can_read(can_t *obj, CAN_Message *msg);
@@ -126,7 +84,6 @@ int           can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat forma
 void          can_reset(can_t *obj);
 unsigned char can_rderror(can_t *obj);
 unsigned char can_tderror(can_t *obj);
-void          can_monitor(can_t *obj, int silent);
 
 #ifdef __cplusplus
 }

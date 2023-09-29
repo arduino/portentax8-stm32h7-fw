@@ -74,6 +74,7 @@ OBJS = \
 	src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
 	src/main.o \
 	src/can.o \
+	src/can_util.o \
 	src/peripherals.o \
 	src/ringbuffer.o \
 	src/rpc.o \
