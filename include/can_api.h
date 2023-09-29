@@ -110,7 +110,6 @@ void          canInit();
 void          can_handle_data();
 
 void          can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
-void          can_free(can_t *obj);
 int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 
 int           can_write(can_t *obj, CAN_Message);

@@ -403,14 +403,6 @@ void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const ca
     can_internal_init(obj);
 }
 
-void can_free(can_t *obj)
-{
-  __HAL_RCC_FDCAN_FORCE_RESET();
-  __HAL_RCC_FDCAN_RELEASE_RESET();
-  __HAL_RCC_FDCAN_CLK_DISABLE();
-}
-
-
 /** Reset CAN interface.
  *
  * To use after error overflow.
