@@ -26,6 +26,8 @@ extern "C" {
 
 #include <inttypes.h>
 
+#include "can_util.h"
+
 /**
  *
  * \enum    CANFormat
@@ -107,10 +109,7 @@ typedef struct can_s can_t;
 void          canInit();
 void          can_handle_data();
 
-void          can_init(can_t *obj);
-void          can_init_direct(can_t *obj);
-void          can_init_freq(can_t *obj, int hz);
-void          can_init_freq_direct(can_t *obj, CANName peripheral, int hz);
+void          can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
 void          can_free(can_t *obj);
 int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 

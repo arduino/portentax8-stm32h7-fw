@@ -27,7 +27,6 @@
 #include "stm32h7xx_ll_hsem.h"
 #include "system.h"
 #include "peripherals.h"
-#include "can_util.h"
 
 /**************************************************************************************
  * DEFINE
@@ -60,6 +59,8 @@ static uint32_t const TSEG1_MIN =   1;
 static uint32_t const TSEG1_MAX = 256;
 static uint32_t const TSEG2_MIN =   1;
 static uint32_t const TSEG2_MAX = 128;
+
+static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -285,11 +286,27 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 
 void canInit()
 {
-    can_init_freq_direct(&fdcan_1, CAN_1, 100*1000UL);
-    can_init_freq_direct(&fdcan_2, CAN_2, 100*1000UL);
+  CanNominalBitTimingResult default_can_bit_timing = {0};
 
-    register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
-    register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
+  if (!calc_can_nominal_bit_timing(DEFAULT_CAN_BIT_RATE,
+                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
+                                   TQ_MAX,
+                                   TQ_MIN,
+                                   TSEG1_MIN,
+                                   TSEG1_MAX,
+                                   TSEG2_MIN,
+                                   TSEG2_MAX,
+                                   &default_can_bit_timing))
+  {
+    printf("Could not calculate valid default CAN bit timing\n");
+    return;
+  }
+
+  can_init(&fdcan_1, CAN_1, default_can_bit_timing);
+  can_init(&fdcan_2, CAN_2, default_can_bit_timing);
+
+  register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
+  register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
 void can_handle_data() {
@@ -334,7 +351,7 @@ int can_internal_init(can_t *obj)
     return 1;
 }
 
-void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
+void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     __HAL_RCC_FDCAN_CLK_ENABLE();
 
@@ -347,25 +364,6 @@ void can_init_freq_direct(can_t *obj, CANName peripheral, int hz)
 
     // Default values
     obj->CanHandle.Instance = (FDCAN_GlobalTypeDef *)peripheral;
-
-  uint32_t const can_bitrate = hz;
-  uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
-
-  CanNominalBitTimingResult can_bit_timing = {0};
-
-  if (!calc_can_nominal_bit_timing(can_bitrate,
-                                   can_clock_Hz,
-                                   TQ_MAX,
-                                   TQ_MIN,
-                                   TSEG1_MIN,
-                                   TSEG1_MAX,
-                                   TSEG2_MIN,
-                                   TSEG2_MAX,
-                                   &can_bit_timing))
-  {
-    printf("Could not calculate valid CAN bit timing\n");
-    return;
-  }
 
     obj->CanHandle.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
     obj->CanHandle.Init.Mode = FDCAN_MODE_NORMAL;
