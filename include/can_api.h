@@ -114,7 +114,6 @@ void          can_free(can_t *obj);
 int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 
 void          can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t id);
-void          can_irq_free(can_t *obj);
 
 int           can_write(can_t *obj, CAN_Message);
 int           can_read(can_t *obj, CAN_Message *msg);

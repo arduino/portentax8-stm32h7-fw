@@ -412,25 +412,6 @@ void can_irq_init(can_t *obj, can_irq_handler handler, uintptr_t context)
     can_irq_contexts[obj->index] = context;
 }
 
-void can_irq_free(can_t *obj)
-{
-    CANName can = (CANName)obj->CanHandle.Instance;
-    if (can == CAN_1) {
-        HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
-        HAL_NVIC_DisableIRQ(FDCAN1_IT1_IRQn);
-    }
-    else if (can == CAN_2) {
-        HAL_NVIC_DisableIRQ(FDCAN2_IT0_IRQn);
-        HAL_NVIC_DisableIRQ(FDCAN2_IT1_IRQn);
-    }
-    else {
-        return;
-    }
-    HAL_NVIC_DisableIRQ(FDCAN_CAL_IRQn);
-
-    can_irq_contexts[obj->index] = 0;
-}
-
 void can_free(can_t *obj)
 {
   __HAL_RCC_FDCAN_FORCE_RESET();
