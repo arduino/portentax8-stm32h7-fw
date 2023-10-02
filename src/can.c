@@ -49,6 +49,16 @@
 #define X8H7_CAN_STS_INT_RX      0x02
 #define X8H7_CAN_STS_INT_ERR     0x04
 
+/* Special address description flags for the CAN_ID */
+#define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+#define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+#define CAN_ERR_FLAG 0x20000000U /* error message frame */
+
+/* Valid bits in CAN ID for frame formats */
+#define CAN_SFF_MASK 0x000007FFU /* standard frame format (SFF) */
+#define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
+#define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
+
 /**************************************************************************************
  * GLOBAL CONSTANTS
  **************************************************************************************/
@@ -215,18 +225,23 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
         dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
       }
     }
-    else if (opcode == CAN_TX_FRAME) {
-        CAN_Message msg;
-        msg.type = CANData;
-        msg.format = CANStandard;
-        memcpy(&msg, data, size);
+    else if (opcode == CAN_TX_FRAME)
+    {
+      CAN_Message msg;
+      memcpy(&msg, data, size);
 
-        dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
-        msg.id, msg.len, msg.data[0]);
+      msg.type = CANData;
 
-        if (msg.id > 0x7FF) {
+      if (msg.id & CAN_EFF_FLAG) {
+        msg.id &= CAN_EFF_MASK;
         msg.format = CANExtended;
-        }
+      }
+      else {
+        msg.id &= CAN_SFF_MASK;
+        msg.format = CANStandard;
+      }
+
+      dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
         if (!can_write(&fdcan_1, msg))
         {
@@ -258,18 +273,23 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
           dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
         }
     }
-    else if (opcode == CAN_TX_FRAME) {
-        CAN_Message msg;
-        msg.type = CANData;
-        msg.format = CANStandard;
-        memcpy(&msg, data, size);
+    else if (opcode == CAN_TX_FRAME)
+    {
+      CAN_Message msg;
+      memcpy(&msg, data, size);
 
-        dbg_printf("Sending CAN message to %x, size %d, content[0]=0x%02X\n",
-        msg.id, msg.len, msg.data[0]);
+      msg.type = CANData;
 
-        if (msg.id > 0x7FF) {
+      if (msg.id & CAN_EFF_FLAG) {
+        msg.id &= CAN_EFF_MASK;
         msg.format = CANExtended;
-        }
+      }
+      else {
+        msg.id &= CAN_SFF_MASK;
+        msg.format = CANStandard;
+      }
+
+      dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
         if (!can_write(&fdcan_2, msg))
         {
