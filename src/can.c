@@ -572,6 +572,8 @@ int can_write(can_t *obj, CAN_Message msg)
 
 int can_read(can_t *obj, CAN_Message *msg)
 {
+  static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
+
     if (HAL_FDCAN_GetRxFifoFillLevel(&obj->CanHandle, FDCAN_RX_FIFO0) == 0) {
         return 0; // No message arrived
     }
@@ -589,7 +591,7 @@ int can_read(can_t *obj, CAN_Message *msg)
     }
     msg->id   = RxHeader.Identifier;
     msg->type = (RxHeader.RxFrameType == FDCAN_DATA_FRAME) ? CANData : CANRemote;
-    msg->len  = RxHeader.DataLength >> 16; // see FDCAN_data_length_code value
+    msg->len  = DLCtoBytes[RxHeader.DataLength >> 16]; // see FDCAN_data_length_code value
 
     return 1;
 }
