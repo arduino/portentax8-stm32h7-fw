@@ -59,6 +59,24 @@
 #define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
 #define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
 
+#define CAN_FRAME_MAX_DATA_LEN	8
+#define X8H7_CAN_HEADER_SIZE    5
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
+
+union x8h7_can_message
+{
+  struct __attribute__((packed))
+  {
+    uint32_t id;                           // 29 bit identifier
+    uint8_t  len;                          // Length of data field in bytes
+    uint8_t  data[CAN_FRAME_MAX_DATA_LEN]; // Data field
+  } field;
+  uint8_t buf[X8H7_CAN_HEADER_SIZE + CAN_FRAME_MAX_DATA_LEN];
+};
+
 /**************************************************************************************
  * GLOBAL CONSTANTS
  **************************************************************************************/
@@ -326,14 +344,45 @@ void canInit()
   register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
-void can_handle_data() {
+void can_handle_data()
+{
     CAN_Message msg;
-    if (can_read(&fdcan_1, &msg)) {
-      enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg), &msg);
+    if (can_read(&fdcan_1, &msg))
+    {
+      union x8h7_can_message x8h7_can_msg;
+
+      x8h7_can_msg.field.id  = msg.id;
+      x8h7_can_msg.field.len = (msg.len <= CAN_FRAME_MAX_DATA_LEN) ? msg.len : CAN_FRAME_MAX_DATA_LEN;
+      memcpy(x8h7_can_msg.field.data, msg.data, x8h7_can_msg.field.len);
+
+      if (msg.format == CANExtended)
+        x8h7_can_msg.field.id = CAN_EFF_FLAG | (x8h7_can_msg.field.id & CAN_EFF_MASK);
+      else
+        x8h7_can_msg.field.id =                (x8h7_can_msg.field.id & CAN_SFF_MASK);
+
+      if (msg.type == CANRemote)
+        x8h7_can_msg.field.id |= CAN_RTR_FLAG;
+
+      enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(x8h7_can_msg.buf), x8h7_can_msg.buf);
     }
 
-    if (can_read(&fdcan_2, &msg)) {
-      enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(msg), &msg);
+    if (can_read(&fdcan_2, &msg))
+    {
+      union x8h7_can_message x8h7_can_msg;
+
+      x8h7_can_msg.field.id  = msg.id;
+      x8h7_can_msg.field.len = (msg.len <= CAN_FRAME_MAX_DATA_LEN) ? msg.len : CAN_FRAME_MAX_DATA_LEN;
+      memcpy(x8h7_can_msg.field.data, msg.data, x8h7_can_msg.field.len);
+
+      if (msg.format == CANExtended)
+        x8h7_can_msg.field.id = CAN_EFF_FLAG | (x8h7_can_msg.field.id & CAN_EFF_MASK);
+      else
+        x8h7_can_msg.field.id =                (x8h7_can_msg.field.id & CAN_SFF_MASK);
+
+      if (msg.type == CANRemote)
+        x8h7_can_msg.field.id |= CAN_RTR_FLAG;
+
+      enqueue_packet(PERIPH_FDCAN2, DATA, sizeof(x8h7_can_msg.buf), x8h7_can_msg.buf);
     }
 }
 
