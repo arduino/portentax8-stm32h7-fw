@@ -36,8 +36,8 @@ extern "C" {
  * DEFINE
  **************************************************************************************/
 
-#define CAN_FRAME_MAX_DATA_LEN	8
-#define X8H7_CAN_HEADER_SIZE    5
+#define X8H7_CAN_HEADER_SIZE        5
+#define X8H7_CAN_FRAME_MAX_DATA_LEN	8
 
 /**************************************************************************************
  * TYPEDEF
@@ -71,9 +71,9 @@ union x8h7_can_message
   {
     uint32_t id;                           // 29 bit identifier
     uint8_t  len;                          // Length of data field in bytes
-    uint8_t  data[CAN_FRAME_MAX_DATA_LEN]; // Data field
+    uint8_t  data[X8H7_CAN_FRAME_MAX_DATA_LEN]; // Data field
   } field;
-  uint8_t buf[X8H7_CAN_HEADER_SIZE + CAN_FRAME_MAX_DATA_LEN];
+  uint8_t buf[X8H7_CAN_HEADER_SIZE + X8H7_CAN_FRAME_MAX_DATA_LEN];
 };
 
 typedef enum {
