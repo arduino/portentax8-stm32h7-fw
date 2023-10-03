@@ -227,27 +227,15 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_TX_FRAME)
     {
-      CAN_Message msg;
+      union x8h7_can_message msg;
       memcpy(&msg, data, size);
-
-      msg.type = CANData;
-
-      if (msg.id & CAN_EFF_FLAG) {
-        msg.id &= CAN_EFF_MASK;
-        msg.format = CANExtended;
-      }
-      else {
-        msg.id &= CAN_SFF_MASK;
-        msg.format = CANStandard;
-      }
 
       dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
-        if (!can_write(&fdcan_1, msg))
-        {
-          can_reset(&fdcan_1);
-        }
-    } else {
+      if (!can_write(&fdcan_1, &msg))
+        can_reset(&fdcan_1);
+    }
+    else {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
     }
 }
@@ -275,27 +263,15 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_TX_FRAME)
     {
-      CAN_Message msg;
+      union x8h7_can_message msg;
       memcpy(&msg, data, size);
-
-      msg.type = CANData;
-
-      if (msg.id & CAN_EFF_FLAG) {
-        msg.id &= CAN_EFF_MASK;
-        msg.format = CANExtended;
-      }
-      else {
-        msg.id &= CAN_SFF_MASK;
-        msg.format = CANStandard;
-      }
 
       dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
-        if (!can_write(&fdcan_2, msg))
-        {
-          can_reset(&fdcan_2);
-        }
-    } else {
+      if (!can_write(&fdcan_2, &msg))
+        can_reset(&fdcan_2);
+    }
+    else {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
     }
 }
@@ -514,20 +490,23 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
 }
 
 
-int can_write(can_t *obj, CAN_Message msg)
+int can_write(can_t *obj, union x8h7_can_message const * msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
 
-    // Configure Tx buffer message
-    TxHeader.Identifier = msg.id;
-    if (msg.format == CANStandard) {
-        TxHeader.IdType = FDCAN_STANDARD_ID;
-    } else {
-        TxHeader.IdType = FDCAN_EXTENDED_ID;
-    }
+  if (msg->field.id & CAN_EFF_FLAG)
+  {
+    TxHeader.IdType     = FDCAN_EXTENDED_ID;
+    TxHeader.Identifier = msg->field.id & CAN_EFF_MASK;
+  }
+  else
+  {
+    TxHeader.IdType     = FDCAN_STANDARD_ID;
+    TxHeader.Identifier = msg->field.id & CAN_SFF_MASK;
+  }
 
     TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    switch (msg.len)
+    switch (msg->field.len)
     {
       default:
       case 0:  TxHeader.DataLength = FDCAN_DLC_BYTES_0;  break;
@@ -553,7 +532,7 @@ int can_write(can_t *obj, CAN_Message msg)
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, msg.data) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(&obj->CanHandle);
       printf("error: %ld\n", err_code);
