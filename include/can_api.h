@@ -24,9 +24,24 @@
 extern "C" {
 #endif
 
+/**************************************************************************************
+ * INCLUDE
+ **************************************************************************************/
+
 #include <inttypes.h>
 
 #include "can_util.h"
+
+/**************************************************************************************
+ * DEFINE
+ **************************************************************************************/
+
+#define CAN_FRAME_MAX_DATA_LEN	8
+#define X8H7_CAN_HEADER_SIZE    5
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
 
 typedef enum
 {
@@ -49,6 +64,17 @@ typedef struct __attribute__((packed, aligned(4)))
     CANFormat      format;             // Format ::CANFormat
     CANType        type;               // Type ::CANType
 } CAN_Message;
+
+union x8h7_can_message
+{
+  struct __attribute__((packed))
+  {
+    uint32_t id;                           // 29 bit identifier
+    uint8_t  len;                          // Length of data field in bytes
+    uint8_t  data[CAN_FRAME_MAX_DATA_LEN]; // Data field
+  } field;
+  uint8_t buf[X8H7_CAN_HEADER_SIZE + CAN_FRAME_MAX_DATA_LEN];
+};
 
 typedef enum {
     MODE_RESET,
@@ -78,7 +104,7 @@ void          can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult
 int           can_frequency(can_t *obj, uint32_t const can_bitrate);
 
 int           can_write(can_t *obj, CAN_Message);
-int           can_read(can_t *obj, CAN_Message *msg);
+int           can_read(can_t *obj, union x8h7_can_message *msg);
 int           can_mode(can_t *obj, CanMode mode);
 int           can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
 void          can_reset(can_t *obj);
