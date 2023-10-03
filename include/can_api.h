@@ -50,12 +50,6 @@ typedef enum
     CANAny = 2
 } CANFormat;
 
-typedef enum
-{
-  CANData   = 0,
-  CANRemote = 1
-} CANType;
-
 union x8h7_can_message
 {
   struct __attribute__((packed))
@@ -68,15 +62,6 @@ union x8h7_can_message
 };
 
 typedef enum {
-    MODE_RESET,
-    MODE_NORMAL,
-    MODE_SILENT,
-    MODE_TEST_LOCAL,
-    MODE_TEST_GLOBAL,
-    MODE_TEST_SILENT
-} CanMode;
-
-typedef enum {
     CAN_1 = (int)FDCAN1_BASE,
     CAN_2 = (int)FDCAN2_BASE
 } CANName;
@@ -85,6 +70,10 @@ typedef struct
 {
     FDCAN_HandleTypeDef CanHandle;
 } can_t;
+
+/**************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************/
 
 void          canInit();
 void          can_handle_data();
