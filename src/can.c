@@ -302,13 +302,6 @@ void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const ca
     __HAL_RCC_FDCAN_CLK_ENABLE();
     HAL_RCC_FDCAN_CLK_ENABLED++;
 
-    if (peripheral == CAN_1) {
-        obj->index = 0;
-    }
-    else if (peripheral == CAN_2) {
-        obj->index = 1;
-    }
-
     // Default values
     obj->CanHandle.Instance = (FDCAN_GlobalTypeDef *)peripheral;
 

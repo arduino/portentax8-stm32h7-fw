@@ -84,8 +84,6 @@ typedef enum {
 typedef struct
 {
     FDCAN_HandleTypeDef CanHandle;
-    int index;
-    int hz;
 } can_t;
 
 void          canInit();
