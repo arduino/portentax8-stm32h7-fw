@@ -185,8 +185,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 
       dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
-      if (!can_write(&fdcan_1, &msg))
-        can_reset(&fdcan_1);
+      can_write(&fdcan_1, &msg);
     }
     else {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
@@ -221,8 +220,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 
       dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
 
-      if (!can_write(&fdcan_2, &msg))
-        can_reset(&fdcan_2);
+      can_write(&fdcan_2, &msg);
     }
     else {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
@@ -354,18 +352,6 @@ void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const ca
     can_internal_init(obj);
 }
 
-/** Reset CAN interface.
- *
- * To use after error overflow.
- */
-void can_reset(can_t *obj)
-{
-    can_mode(obj, MODE_RESET);
-    HAL_FDCAN_ResetTimeoutCounter(&obj->CanHandle);
-    HAL_FDCAN_ResetTimestampCounter(&obj->CanHandle);
-}
-
-
 int can_frequency(can_t *obj, uint32_t const can_bitrate)
 {
     if (HAL_FDCAN_Stop(&obj->CanHandle) != HAL_OK) {
@@ -443,7 +429,7 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
 }
 
 
-int can_write(can_t *obj, union x8h7_can_message const * msg)
+void can_write(can_t *obj, union x8h7_can_message const * msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
 
@@ -494,13 +480,11 @@ int can_write(can_t *obj, union x8h7_can_message const * msg)
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
 
       enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
-      return 0;
     }
     else
     {
       uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
       enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
-      return 1;
     }
 }
 
@@ -553,43 +537,4 @@ unsigned char can_tderror(can_t *obj)
     HAL_FDCAN_GetErrorCounters(&obj->CanHandle, &ErrorCounters);
 
     return (unsigned char)ErrorCounters.TxErrorCnt;
-}
-
-/** Change CAN operation to the specified mode
- *
- *  @param mode The new operation mode (MODE_RESET, MODE_NORMAL, MODE_SILENT, MODE_TEST_LOCAL, MODE_TEST_GLOBAL, MODE_TEST_SILENT)
- *
- *  @returns
- *    0 if mode change failed or unsupported,
- *    1 if mode change was successful
- */
-int can_mode(can_t *obj, CanMode mode)
-{
-    if (HAL_FDCAN_Stop(&obj->CanHandle) != HAL_OK) {
-        error("HAL_FDCAN_Stop error\n");
-    }
-
-    switch (mode) {
-        case MODE_RESET:
-            break;
-        case MODE_NORMAL:
-            obj->CanHandle.Init.Mode = FDCAN_MODE_NORMAL;
-            // obj->CanHandle.Init.NominalPrescaler = 100;   // Prescaler
-            break;
-        case MODE_SILENT: // Bus Monitoring
-            obj->CanHandle.Init.Mode = FDCAN_MODE_BUS_MONITORING;
-            break;
-        case MODE_TEST_GLOBAL: // External LoopBack
-        case MODE_TEST_LOCAL:
-            obj->CanHandle.Init.Mode = FDCAN_MODE_EXTERNAL_LOOPBACK;
-            break;
-        case MODE_TEST_SILENT: // Internal LoopBack
-            obj->CanHandle.Init.Mode = FDCAN_MODE_INTERNAL_LOOPBACK;
-            // obj->CanHandle.Init.NominalPrescaler = 1;   // Prescaler
-            break;
-        default:
-            return 0;
-    }
-
-    return can_internal_init(obj);
 }
