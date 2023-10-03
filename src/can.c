@@ -580,11 +580,13 @@ int can_read(can_t *obj, union x8h7_can_message *msg)
         return 0; // No message arrived
     }
 
-    FDCAN_RxHeaderTypeDef RxHeader = {0};
-    if (HAL_FDCAN_GetRxMessage(&obj->CanHandle, FDCAN_RX_FIFO0, &RxHeader, msg->field.data) != HAL_OK) {
-        error("HAL_FDCAN_GetRxMessage error\n"); // Should not occur as previous HAL_FDCAN_GetRxFifoFillLevel call reported some data
-        return 0;
-    }
+  FDCAN_RxHeaderTypeDef RxHeader = {0};
+  uint8_t RxData[64] = {0};
+  if (HAL_FDCAN_GetRxMessage(&obj->CanHandle, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  {
+    error("HAL_FDCAN_GetRxMessage error\n"); // Should not occur as previous HAL_FDCAN_GetRxFifoFillLevel call reported some data
+    return 0;
+  }
 
   if (RxHeader.IdType == FDCAN_EXTENDED_ID)
     msg->field.id = CAN_EFF_FLAG | (RxHeader.Identifier & CAN_EFF_MASK);
@@ -594,7 +596,11 @@ int can_read(can_t *obj, union x8h7_can_message *msg)
   if (RxHeader.RxFrameType == FDCAN_REMOTE_FRAME)
     msg->field.id |= CAN_RTR_FLAG;
 
-  msg->field.len  = DLCtoBytes[RxHeader.DataLength >> 16];
+  msg->field.len = DLCtoBytes[RxHeader.DataLength >> 16];
+  if (msg->field.len > sizeof(msg->field.data))
+    msg->field.len = sizeof(msg->field.data);
+
+  memcpy(msg->field.data, RxData, msg->field.len);
 
   return 1;
 }
