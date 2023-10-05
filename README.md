@@ -1,5 +1,7 @@
 :floppy_disk: `portentax8-stm32h7-fw`
 =====================================
+[![Smoke test status](https://github.com/https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/smoke-test.yml)
+
 This repository contains the firmware running on the `STM32H747AIIX`/Cortex-M7 core which, in combination with loadable kernel modules within the Linux distribution, provides access to various IO busses on the expansion headers of the Portenta X8.
 
 ### Developer Guide
