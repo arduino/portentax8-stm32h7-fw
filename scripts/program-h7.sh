@@ -5,7 +5,7 @@ echo 15 > /sys/class/gpio/export # SWDCLK
 echo 10 > /sys/class/gpio/export # NRST
 echo 11 > /sys/class/gpio/export # BOOT0
 
-# Try at least three times to read firware version from sysfs
+# Try at least three times to read firmware version from sysfs
 for i in 1 2 3
 do
     FIRMWARE_H7_ON_MCU=$(cat /sys/kernel/x8h7_firmware/version)

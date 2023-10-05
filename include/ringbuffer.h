@@ -40,7 +40,7 @@
 
 /**
  * The type which is used to hold the size
- * and the indicies of the buffer.
+ * and the indices of the buffer.
  * Must be able to fit \c RING_BUFFER_SIZE .
  */
 typedef uint16_t ring_buffer_size_t;

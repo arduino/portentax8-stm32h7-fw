@@ -72,7 +72,7 @@ int _write(int file, char *ptr, int len)
   __disable_irq();
   /* Enqueue data to write into ringbuffer. */
   ring_buffer_queue_arr(&uart_tx_ring_buffer, ptr, len);
-  /* Reenable interrupts. */
+  /* Re-enable interrupts. */
   __enable_irq();
   return len;
 }
