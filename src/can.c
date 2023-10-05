@@ -322,7 +322,7 @@ void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const ca
     /* Message RAM offset is only supported in STM32H7 platforms of supported FDCAN platforms */
     obj->CanHandle.Init.MessageRAMOffset = 0;
 
-    /* The number of Standard and Extended ID filters are initialized to the maximum possile extent
+    /* The number of Standard and Extended ID filters are initialized to the maximum possible extent
      * for STM32H7 platforms
      */
     obj->CanHandle.Init.StdFiltersNbr = 128; // to be aligned with the handle parameter in can_filter

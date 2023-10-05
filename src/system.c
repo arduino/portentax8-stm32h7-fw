@@ -265,7 +265,7 @@ void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* dat
   /* Copy subpacket.raw_data at after subpacket.header. */
   memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, data, size);
   tx_pkt->header.size += size;
-  /* Calculate a simple checksum to ensure bit flips in the length field can be recognised. */
+  /* Calculate a simple checksum to ensure bit flips in the length field can be recognized. */
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
@@ -379,7 +379,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     get_data_amount = false;
 
   } else {
-    // real end of operation, pause DMA, memcpy stuff around and reenable DMA
+    // real end of operation, pause DMA, memcpy stuff around and re-enable DMA
     // HAL_SPI_DMAPause(&hspi1);
 
     transferState = TRANSFER_COMPLETE;

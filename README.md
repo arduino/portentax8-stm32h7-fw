@@ -1,6 +1,7 @@
 :floppy_disk: `portentax8-stm32h7-fw`
 =====================================
 [![Smoke test status](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/smoke-test.yml/badge.svg)](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/smoke-test.yml)
+[![Spell Check status](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/spell-check.yml/badge.svg)](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/spell-check.yml)
 [![Sync Labels status](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/sync-labels.yml/badge.svg)](https://github.com/arduino/portentax8-stm32h7-fw/actions/workflows/sync-labels.yml)
 
 This repository contains the firmware running on the `STM32H747AIIX`/Cortex-M7 core which, in combination with loadable kernel modules within the Linux distribution, provides access to various IO busses on the expansion headers of the Portenta X8.
@@ -33,7 +34,7 @@ cd /usr/arduino/extra
 sudo ./program.sh
 ```
 ### IMX8 / H7 Interface Block Diagram
-Every communication is initated by the IMX8 who serves as SPI controller. This happens either by the user issueing a `write` call on any of the interfaces or by the H7 requesting the start of a communication by setting `IRQ` to `1`. A detailed description of the used protocol can be found [here](doc/protocol.md).
+Every communication is initiated by the IMX8 who serves as SPI controller. This happens either by the user issuing a `write` call on any of the interfaces or by the H7 requesting the start of a communication by setting `IRQ` to `1`. A detailed description of the used protocol can be found [here](doc/protocol.md).
 <p align="center">
   <img src="doc/img/portenta-x8h7-interface-block-diagram.png" width="75%">
 </p>

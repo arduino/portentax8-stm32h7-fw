@@ -261,7 +261,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       dbg_printf("GPIO%d: IRQ_ACK %d\n", index, value);
       /* Re-enable the interrupt that was disabled within
        * handle_irq to prevent firing of another interrupt
-       * until this one has been signalled to the application.
+       * until this one has been signaled to the application.
        */
       gpio_enable_irq(GPIO_pinmap[index].pin);
       break;
@@ -311,7 +311,7 @@ void gpio_handle_data()
   /* We have a total of 10 external interrupts. */
   for (uint8_t index = 0; index < 10; index++)
   {
-    /* Check whether or not an external interrupt has occured. */
+    /* Check whether or not an external interrupt has occurred. */
     if (copy_int_event_flags & (1 << index))
     {
       uint8_t irq_pin = IRQ_pinmap[index].pin;
