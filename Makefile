@@ -70,78 +70,84 @@ INCLUDES = \
 	   -Ilibraries/openamp_arduino/openamp \
 	   -Ilibraries/openamp_arduino/metal \
 
-OBJS = \
-	src/system_stm32h7xx_dualcore_boot_cm4_cm7.o \
-	src/main.o \
-	src/can.o \
-	src/can_util.o \
-	src/peripherals.o \
-	src/ringbuffer.o \
-	src/rpc.o \
-	src/stm32h7xx_it.o \
-	src/syscalls.o \
-	src/sysmem.o \
-	src/adc.o \
-	src/uart.o \
-	src/pwm.o \
-	src/gpio.o \
-	src/timer.o \
-	src/rtc.o \
-	src/spi.o \
-	src/system.o \
-	src/watchdog.o \
-	src/m4_utilities.o \
-	startup/startup_stm32h747xx.o \
-	libraries/openamp_arduino/src/condition.o \
-	libraries/openamp_arduino/src/device.o \
-	libraries/openamp_arduino/src/generic_device.o \
-	libraries/openamp_arduino/src/generic_init.o \
-	libraries/openamp_arduino/src/generic_io.o \
-	libraries/openamp_arduino/src/init.o \
-	libraries/openamp_arduino/src/io.o \
-	libraries/openamp_arduino/src/irq.o \
-	libraries/openamp_arduino/src/log.o \
-	libraries/openamp_arduino/src/mailbox_hsem_if.o \
-	libraries/openamp_arduino/src/openamp.o \
-	libraries/openamp_arduino/src/remoteproc_virtio.o \
-	libraries/openamp_arduino/src/rpmsg.o \
-	libraries/openamp_arduino/src/rpmsg_virtio.o \
-	libraries/openamp_arduino/src/rsc_table.o \
-	libraries/openamp_arduino/src/shmem.o \
-	libraries/openamp_arduino/src/sys.o \
-	libraries/openamp_arduino/src/time.o \
-	libraries/openamp_arduino/src/virtio.o \
-	libraries/openamp_arduino/src/virtqueue.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.o \
-	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.o
+SRCS = \
+	src/system_stm32h7xx_dualcore_boot_cm4_cm7.c \
+	src/main.c \
+	src/can.c \
+	src/can_util.c \
+	src/peripherals.c \
+	src/ringbuffer.c \
+	src/rpc.c \
+	src/stm32h7xx_it.c \
+	src/syscalls.c \
+	src/sysmem.c \
+	src/adc.c \
+	src/uart.c \
+	src/pwm.c \
+	src/gpio.c \
+	src/timer.c \
+	src/rtc.c \
+	src/spi.c \
+	src/system.c \
+	src/watchdog.c \
+	src/m4_utilities.c \
+	libraries/openamp_arduino/src/condition.c \
+	libraries/openamp_arduino/src/device.c \
+	libraries/openamp_arduino/src/generic_device.c \
+	libraries/openamp_arduino/src/generic_init.c \
+	libraries/openamp_arduino/src/generic_io.c \
+	libraries/openamp_arduino/src/init.c \
+	libraries/openamp_arduino/src/io.c \
+	libraries/openamp_arduino/src/irq.c \
+	libraries/openamp_arduino/src/log.c \
+	libraries/openamp_arduino/src/mailbox_hsem_if.c \
+	libraries/openamp_arduino/src/openamp.c \
+	libraries/openamp_arduino/src/remoteproc_virtio.c \
+	libraries/openamp_arduino/src/rpmsg.c \
+	libraries/openamp_arduino/src/rpmsg_virtio.c \
+	libraries/openamp_arduino/src/rsc_table.c \
+	libraries/openamp_arduino/src/shmem.c \
+	libraries/openamp_arduino/src/sys.c \
+	libraries/openamp_arduino/src/time.c \
+	libraries/openamp_arduino/src/virtio.c \
+	libraries/openamp_arduino/src/virtqueue.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_adc_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hrtim.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_iwdg.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rtc_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c \
+	libraries/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c
 
+SRCS_ASM = \
+	startup/startup_stm32h747xx.s
+
+BUILDDIR?=.
+
+OBJS = $(patsubst %.c,$(BUILDDIR)/%.o,$(SRCS))
+OBJS += $(patsubst %.s,$(BUILDDIR)/%.o,$(SRCS_ASM))
 
 # ----- Verbosity control -----------------------------------------------------
 
@@ -173,7 +179,14 @@ debug:		CFLAGS += -DDEBUG
 debug:		CXXFLAGS += -DDEBUG
 debug:		$(NAME).bin $(NAME).hex
 
-$(NAME).elf: $(OBJS)
+builddir:
+	mkdir -p $(BUILDDIR) && \
+	mkdir -p $(BUILDDIR)/src && \
+	mkdir -p $(BUILDDIR)/startup && \
+	mkdir -p $(BUILDDIR)/libraries/openamp_arduino/src/ && \
+	mkdir -p $(BUILDDIR)/libraries/STM32H7xx_HAL_Driver/Src/
+
+$(NAME).elf: builddir $(OBJS)
 	$(CC) -o $@ $(OBJS) $(DEFINES) $(CFLAGS) $(LDFLAGS)
 	$(SIZE) $@
 
@@ -204,11 +217,11 @@ MKDEP =									\
 	  [ "$${PIPESTATUS[*]}" = "0 0" ] ||				\
 	  { rm -f $(basename $@).d; exit 1; }
 
-%.o: %.c
+$(BUILDDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 	$(MKDEP)
 
-%.o: %.S
+$(BUILDDIR)/%.o: %.s
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -D__ASSEMBLY__ -c $< -o $@
 	$(MKDEP)
 
