@@ -213,11 +213,11 @@ MKDEP =									\
 	  [ "$${PIPESTATUS[*]}" = "0 0" ] ||				\
 	  { rm -f $(basename $@).d; exit 1; }
 
-$(BUILDDIR)/%.o: %.c
+$(BUILDDIR)/%.o: %.c | builddir
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 	$(MKDEP)
 
-$(BUILDDIR)/%.o: %.s
+$(BUILDDIR)/%.o: %.s | builddir
 	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDES) -D__ASSEMBLY__ -c $< -o $@
 	$(MKDEP)
 
