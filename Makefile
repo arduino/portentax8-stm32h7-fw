@@ -144,7 +144,7 @@ SRCS = \
 SRCS_ASM = \
 	startup/startup_stm32h747xx.s
 
-BUILDDIR?=.
+BUILDDIR?=build
 
 OBJS = $(patsubst %.c,$(BUILDDIR)/%.o,$(SRCS))
 OBJS += $(patsubst %.s,$(BUILDDIR)/%.o,$(SRCS_ASM))
