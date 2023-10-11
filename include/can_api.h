@@ -66,11 +66,6 @@ typedef enum {
     CAN_2 = (int)FDCAN2_BASE
 } CANName;
 
-typedef struct
-{
-    FDCAN_HandleTypeDef CanHandle;
-} can_t;
-
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
@@ -78,14 +73,14 @@ typedef struct
 void          canInit();
 void          can_handle_data();
 
-void          can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
-int           can_frequency(can_t *obj, uint32_t const can_bitrate);
+void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
+int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
-void          can_write(can_t *obj, union x8h7_can_message const * msg);
-int           can_read(can_t *obj, union x8h7_can_message *msg);
-int           can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t handle);
-unsigned char can_rderror(can_t *obj);
-unsigned char can_tderror(can_t *obj);
+void          can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg);
+int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_message *msg);
+int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t id, uint32_t mask, CANFormat format, int32_t filter_index);
+unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
+unsigned char can_tderror(FDCAN_HandleTypeDef * handle);
 
 #ifdef __cplusplus
 }

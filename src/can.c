@@ -76,11 +76,8 @@ static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-FDCAN_HandleTypeDef hfdcan1;
-FDCAN_HandleTypeDef hfdcan2;
-
-can_t fdcan_1;
-can_t fdcan_2;
+FDCAN_HandleTypeDef fdcan_1;
+FDCAN_HandleTypeDef fdcan_2;
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -272,82 +269,82 @@ void can_handle_data()
  *    0 if mode change failed or unsupported,
  *    1 if mode change was successful
  */
-int can_internal_init(can_t *obj)
+int can_internal_init(FDCAN_HandleTypeDef * handle)
 {
-    if (HAL_FDCAN_Init(&obj->CanHandle) != HAL_OK) {
+    if (HAL_FDCAN_Init(handle) != HAL_OK) {
         error("HAL_FDCAN_Init error\n");
     }
 
-    if (can_filter(obj, 0, 0, CANStandard, 0) == 0) {
+    if (can_filter(handle, 0, 0, CANStandard, 0) == 0) {
         error("can_filter error\n");
     }
 
-    if (can_filter(obj, 0, 0, CANExtended, 0) == 0) {
+    if (can_filter(handle, 0, 0, CANExtended, 0) == 0) {
         error("can_filter error\n");
     }
 
-    if (HAL_FDCAN_ConfigGlobalFilter(&obj->CanHandle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK) {
+    if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK) {
         error("HAL_FDCAN_ConfigGlobalFilter error\n");
     }
 
-    if (HAL_FDCAN_Start(&obj->CanHandle) != HAL_OK) {
+    if (HAL_FDCAN_Start(handle) != HAL_OK) {
         error("HAL_FDCAN_Start error\n");
     }
 
     return 1;
 }
 
-void can_init(can_t *obj, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
+void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     __HAL_RCC_FDCAN_CLK_ENABLE();
     HAL_RCC_FDCAN_CLK_ENABLED++;
 
     // Default values
-    obj->CanHandle.Instance = (FDCAN_GlobalTypeDef *)peripheral;
+    handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
 
-    obj->CanHandle.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
-    obj->CanHandle.Init.Mode = FDCAN_MODE_NORMAL;
-    obj->CanHandle.Init.AutoRetransmission = ENABLE;
-    obj->CanHandle.Init.TransmitPause = DISABLE;
-    obj->CanHandle.Init.ProtocolException = ENABLE;
-    obj->CanHandle.Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
-    obj->CanHandle.Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
-    obj->CanHandle.Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
-    obj->CanHandle.Init.NominalSyncJumpWidth = obj->CanHandle.Init.NominalTimeSeg2; // Synchronization_Jump_width
-    obj->CanHandle.Init.DataPrescaler = 0x1;       // Not used - only in FDCAN
-    obj->CanHandle.Init.DataSyncJumpWidth = 0x1;   // Not used - only in FDCAN
-    obj->CanHandle.Init.DataTimeSeg1 = 0x1;        // Not used - only in FDCAN
-    obj->CanHandle.Init.DataTimeSeg2 = 0x1;        // Not used - only in FDCAN
+    handle->Init.FrameFormat = FDCAN_FRAME_CLASSIC;
+    handle->Init.Mode = FDCAN_MODE_NORMAL;
+    handle->Init.AutoRetransmission = ENABLE;
+    handle->Init.TransmitPause = DISABLE;
+    handle->Init.ProtocolException = ENABLE;
+    handle->Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
+    handle->Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
+    handle->Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
+    handle->Init.NominalSyncJumpWidth = handle->Init.NominalTimeSeg2; // Synchronization_Jump_width
+    handle->Init.DataPrescaler = 0x1;       // Not used - only in FDCAN
+    handle->Init.DataSyncJumpWidth = 0x1;   // Not used - only in FDCAN
+    handle->Init.DataTimeSeg1 = 0x1;        // Not used - only in FDCAN
+    handle->Init.DataTimeSeg2 = 0x1;        // Not used - only in FDCAN
 
     /* Message RAM offset is only supported in STM32H7 platforms of supported FDCAN platforms */
-    obj->CanHandle.Init.MessageRAMOffset = 0;
+    handle->Init.MessageRAMOffset = 0;
 
     /* The number of Standard and Extended ID filters are initialized to the maximum possible extent
      * for STM32H7 platforms
      */
-    obj->CanHandle.Init.StdFiltersNbr = 128; // to be aligned with the handle parameter in can_filter
-    obj->CanHandle.Init.ExtFiltersNbr = 64; // to be aligned with the handle parameter in can_filter
+    handle->Init.StdFiltersNbr = 128; // to be aligned with the handle parameter in can_filter
+    handle->Init.ExtFiltersNbr = 64; // to be aligned with the handle parameter in can_filter
 
-    obj->CanHandle.Init.RxFifo0ElmtsNbr = 8;
-    obj->CanHandle.Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
-    obj->CanHandle.Init.RxFifo1ElmtsNbr = 0;
-    obj->CanHandle.Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
-    obj->CanHandle.Init.RxBuffersNbr = 0;
-    obj->CanHandle.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
-    obj->CanHandle.Init.TxEventsNbr = 3;
-    obj->CanHandle.Init.TxBuffersNbr = 0;
-    obj->CanHandle.Init.TxFifoQueueElmtsNbr = 3;
+    handle->Init.RxFifo0ElmtsNbr = 8;
+    handle->Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
+    handle->Init.RxFifo1ElmtsNbr = 0;
+    handle->Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
+    handle->Init.RxBuffersNbr = 0;
+    handle->Init.RxBufferSize = FDCAN_DATA_BYTES_8;
+    handle->Init.TxEventsNbr = 3;
+    handle->Init.TxBuffersNbr = 0;
+    handle->Init.TxFifoQueueElmtsNbr = 3;
 
-    obj->CanHandle.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
+    handle->Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
 
-    obj->CanHandle.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
+    handle->Init.TxElmtSize = FDCAN_DATA_BYTES_8;
 
-    can_internal_init(obj);
+    can_internal_init(handle);
 }
 
-int can_frequency(can_t *obj, uint32_t const can_bitrate)
+int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 {
-    if (HAL_FDCAN_Stop(&obj->CanHandle) != HAL_OK) {
+    if (HAL_FDCAN_Stop(handle) != HAL_OK) {
         error("HAL_FDCAN_Stop error\n");
     }
 
@@ -371,12 +368,12 @@ int can_frequency(can_t *obj, uint32_t const can_bitrate)
 
   dbg_printf("can_frequency:\n\r  can_bitrate = %ld\n\r  can_clock_Hz = %ld\n", can_bitrate, can_clock_Hz);
 
-    obj->CanHandle.Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
-    obj->CanHandle.Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
-    obj->CanHandle.Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
-    obj->CanHandle.Init.NominalSyncJumpWidth = obj->CanHandle.Init.NominalTimeSeg2; // Synchronization_Jump_width
+  handle->Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
+  handle->Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
+  handle->Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
+  handle->Init.NominalSyncJumpWidth = handle->Init.NominalTimeSeg2; // Synchronization_Jump_width
 
-    return can_internal_init(obj);
+  return can_internal_init(handle);
 }
 
 
@@ -392,20 +389,20 @@ int can_frequency(can_t *obj, uint32_t const can_bitrate)
  *    0 if filter change failed or unsupported,
  *    new filter handle if successful (not supported yet => returns 1)
  */
-int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t handle)
+int can_filter(FDCAN_HandleTypeDef * handle, uint32_t id, uint32_t mask, CANFormat format, int32_t filter_index)
 {
     FDCAN_FilterTypeDef sFilterConfig = {0};
 
     if (format == CANStandard) {
         sFilterConfig.IdType = FDCAN_STANDARD_ID;
-        sFilterConfig.FilterIndex = handle;
+        sFilterConfig.FilterIndex = filter_index;
         sFilterConfig.FilterType = FDCAN_FILTER_MASK;
         sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
         sFilterConfig.FilterID1 = id;
         sFilterConfig.FilterID2 = mask;
     } else if (format == CANExtended) {
         sFilterConfig.IdType = FDCAN_EXTENDED_ID;
-        sFilterConfig.FilterIndex = handle;
+        sFilterConfig.FilterIndex = filter_index;
         sFilterConfig.FilterType = FDCAN_FILTER_MASK;
         sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
         sFilterConfig.FilterID1 = id;
@@ -414,7 +411,7 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
         return 0;
     }
 
-    if (HAL_FDCAN_ConfigFilter(&obj->CanHandle, &sFilterConfig) != HAL_OK) {
+    if (HAL_FDCAN_ConfigFilter(handle, &sFilterConfig) != HAL_OK) {
         return 0;
     }
 
@@ -422,7 +419,7 @@ int can_filter(can_t *obj, uint32_t id, uint32_t mask, CANFormat format, int32_t
 }
 
 
-void can_write(can_t *obj, union x8h7_can_message const * msg)
+void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
 
@@ -464,34 +461,34 @@ void can_write(can_t *obj, union x8h7_can_message const * msg)
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&obj->CanHandle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
     {
-      uint32_t const err_code = HAL_FDCAN_GetError(&obj->CanHandle);
+      uint32_t const err_code = HAL_FDCAN_GetError(handle);
       printf("error: %ld\n", err_code);
 
       uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
 
-      enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
     }
     else
     {
       uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      enqueue_packet(obj == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
     }
 }
 
-int can_read(can_t *obj, union x8h7_can_message *msg)
+int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_message *msg)
 {
   static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
-    if (HAL_FDCAN_GetRxFifoFillLevel(&obj->CanHandle, FDCAN_RX_FIFO0) == 0) {
+    if (HAL_FDCAN_GetRxFifoFillLevel(handle, FDCAN_RX_FIFO0) == 0) {
         return 0; // No message arrived
     }
 
   FDCAN_RxHeaderTypeDef RxHeader = {0};
   uint8_t RxData[64] = {0};
-  if (HAL_FDCAN_GetRxMessage(&obj->CanHandle, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
+  if (HAL_FDCAN_GetRxMessage(handle, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
   {
     error("HAL_FDCAN_GetRxMessage error\n"); // Should not occur as previous HAL_FDCAN_GetRxFifoFillLevel call reported some data
     return 0;
@@ -514,20 +511,16 @@ int can_read(can_t *obj, union x8h7_can_message *msg)
   return 1;
 }
 
-unsigned char can_rderror(can_t *obj)
+unsigned char can_rderror(FDCAN_HandleTypeDef * handle)
 {
-    FDCAN_ErrorCountersTypeDef ErrorCounters;
-
-    HAL_FDCAN_GetErrorCounters(&obj->CanHandle, &ErrorCounters);
-
-    return (unsigned char)ErrorCounters.RxErrorCnt;
+  FDCAN_ErrorCountersTypeDef ErrorCounters;
+  HAL_FDCAN_GetErrorCounters(handle, &ErrorCounters);
+  return (unsigned char)ErrorCounters.RxErrorCnt;
 }
 
-unsigned char can_tderror(can_t *obj)
+unsigned char can_tderror(FDCAN_HandleTypeDef * handle)
 {
-    FDCAN_ErrorCountersTypeDef ErrorCounters;
-
-    HAL_FDCAN_GetErrorCounters(&obj->CanHandle, &ErrorCounters);
-
-    return (unsigned char)ErrorCounters.TxErrorCnt;
+  FDCAN_ErrorCountersTypeDef ErrorCounters;
+  HAL_FDCAN_GetErrorCounters(handle, &ErrorCounters);
+  return (unsigned char)ErrorCounters.TxErrorCnt;
 }

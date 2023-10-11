@@ -22,8 +22,8 @@
 #include "main.h"
 
 /* External variables --------------------------------------------------------*/
-extern FDCAN_HandleTypeDef hfdcan1;
-extern FDCAN_HandleTypeDef hfdcan2;
+extern FDCAN_HandleTypeDef fdcan_1;
+extern FDCAN_HandleTypeDef fdcan_1;
 extern DMA_HandleTypeDef hdma_spi3_tx;
 extern DMA_HandleTypeDef hdma_spi3_rx;
 extern SPI_HandleTypeDef hspi3;
@@ -148,14 +148,14 @@ void DMA1_Stream1_IRQHandler(void) {
  * @brief This function handles FDCAN1 interrupt 0.
  */
 void FDCAN1_IT0_IRQHandler(void) {
-  HAL_FDCAN_IRQHandler(&hfdcan1);
+  HAL_FDCAN_IRQHandler(&fdcan_1);
 }
 
 /**
  * @brief This function handles FDCAN2 interrupt 0.
  */
 void FDCAN2_IT0_IRQHandler(void) {
-  HAL_FDCAN_IRQHandler(&hfdcan2);
+  HAL_FDCAN_IRQHandler(&fdcan_1);
 }
 
 /**
