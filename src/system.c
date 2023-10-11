@@ -28,7 +28,7 @@
 #include "adc.h"
 #include "pwm.h"
 #include "gpio.h"
-#include "can_api.h"
+#include "can.h"
 #include "rtc.h"
 #include "uart.h"
 #include "rpc.h"

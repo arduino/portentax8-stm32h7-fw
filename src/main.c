@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include "peripherals.h"
 #include "ringbuffer.h"
-#include "can_api.h"
+#include "can.h"
 #include "rpc.h"
 #include "adc.h"
 #include "uart.h"
@@ -67,7 +67,7 @@ void peripheral_init() {
 
   adc_init();
 
-  canInit();
+  can_init();
 }
 
 void handle_data() {

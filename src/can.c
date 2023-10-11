@@ -23,7 +23,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include "can_api.h"
+
+#include "can.h"
 #include "stm32h7xx_ll_hsem.h"
 #include "system.h"
 #include "peripherals.h"
@@ -225,7 +226,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
 }
 
 
-void canInit()
+void can_init()
 {
   CanNominalBitTimingResult default_can_bit_timing = {0};
 
@@ -243,8 +244,8 @@ void canInit()
     return;
   }
 
-  can_init(&fdcan_1, CAN_1, default_can_bit_timing);
-  can_init(&fdcan_2, CAN_2, default_can_bit_timing);
+  can_init_device(&fdcan_1, CAN_1, default_can_bit_timing);
+  can_init_device(&fdcan_2, CAN_2, default_can_bit_timing);
 
   register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
   register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
@@ -294,7 +295,7 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
     return 1;
 }
 
-void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
+void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     __HAL_RCC_FDCAN_CLK_ENABLE();
     HAL_RCC_FDCAN_CLK_ENABLED++;
