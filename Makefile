@@ -20,11 +20,6 @@ AS = $(CROSS_COMPILE)gcc
 OBJCOPY = $(CROSS_COMPILE)objcopy
 SIZE = $(CROSS_COMPILE)size
 
-FLASH = stm32flash
-FLASHFLAGS = --reset --format ihex
-BOOTLOADER = dfu-util
-BOOTLOADER_FLAGS = -a 0 -s 0x08000000:leave
-
 LINKER_SCRIPT = linker/STM32H747AIIX_FLASH.ld
 
 CFLAGS  = -O2 -Wall -Werror -pedantic -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=gnu11 -g3 -ffunction-sections -fdata-sections -fstack-usage
@@ -227,13 +222,3 @@ $(BUILDDIR)/%.o: %.s
 	$(MKDEP)
 
 -include $(OBJS:.o=.d)
-
-# ----- Programming and device control ----------------------------------------
-
-.PHONY: load boot
-
-load: $(NAME).hex
-	$(FLASH) $(FLASHFLAGS) write $(NAME).hex
-
-boot: $(NAME).bin
-	$(BOOTLOADER) $(BOOTLOADER_FLAGS) -D $(NAME).bin
