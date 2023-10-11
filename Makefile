@@ -204,6 +204,7 @@ clean:
 		rm -f $(OBJS) $(OBJS:.o=.d)
 		rm -f $(OBJS) $(OBJS:.o=.su)
 		rm -f *~
+		rm -rf $(BUILDDIR)
 
 # ----- Dependencies ----------------------------------------------------------
 
