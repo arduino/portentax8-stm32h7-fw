@@ -3,3 +3,4 @@
 *.o
 STM32H747AII6*
 .idea/
+build/
