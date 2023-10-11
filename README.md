@@ -12,7 +12,7 @@ This repository contains the firmware running on the `STM32H747AIIX`/Cortex-M7 c
 ```bash
 make
 # or
-BUILDDIR=build make -j8
+BUILDDIR=my-build-dir make -j8
 ```
 * or `bitbake`.
 ```bash
