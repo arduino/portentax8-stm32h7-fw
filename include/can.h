@@ -55,7 +55,7 @@ union x8h7_can_filter_message
   uint8_t buf[sizeof(uint32_t) /* idx */ + sizeof(uint32_t) /* id */ + sizeof(uint32_t) /* mask */];
 };
 
-union x8h7_can_message
+union x8h7_can_frame_message
 {
   struct __attribute__((packed))
   {
@@ -81,8 +81,8 @@ void          can_handle_data();
 void          can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
 int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
-void          can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg);
-int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_message *msg);
+void          can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg);
+int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg);
 int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id);
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
 unsigned char can_tderror(FDCAN_HandleTypeDef * handle);

@@ -178,7 +178,7 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_TX_FRAME)
     {
-      union x8h7_can_message msg;
+      union x8h7_can_frame_message msg;
       memcpy(&msg, data, size);
 
       dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
@@ -213,7 +213,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_TX_FRAME)
     {
-      union x8h7_can_message msg;
+      union x8h7_can_frame_message msg;
       memcpy(&msg, data, size);
 
       dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
@@ -253,7 +253,7 @@ void can_init()
 
 void can_handle_data()
 {
-  union x8h7_can_message msg;
+  union x8h7_can_frame_message msg;
 
   if (can_read(&fdcan_1, &msg)) {
     enqueue_packet(PERIPH_FDCAN1, DATA, sizeof(msg.buf), msg.buf);
@@ -397,7 +397,7 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
 }
 
 
-void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg)
+void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
 
@@ -456,7 +456,7 @@ void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg)
     }
 }
 
-int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_message *msg)
+int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
 {
   static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
