@@ -28,6 +28,7 @@ extern "C" {
  * INCLUDE
  **************************************************************************************/
 
+#include <stdbool.h>
 #include <inttypes.h>
 
 #include "can_util.h"
@@ -43,12 +44,16 @@ extern "C" {
  * TYPEDEF
  **************************************************************************************/
 
-typedef enum
+union x8h7_can_filter_message
 {
-    CANStandard = 0,
-    CANExtended = 1,
-    CANAny = 2
-} CANFormat;
+  struct __attribute__((packed))
+  {
+    uint32_t idx;
+    uint32_t id;
+    uint32_t mask;
+  } field;
+  uint8_t buf[sizeof(uint32_t) /* idx */ + sizeof(uint32_t) /* id */ + sizeof(uint32_t) /* mask */];
+};
 
 union x8h7_can_message
 {
@@ -78,7 +83,7 @@ int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bit
 
 void          can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_message const * msg);
 int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_message *msg);
-int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t id, uint32_t mask, CANFormat format, int32_t filter_index);
+int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id);
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
 unsigned char can_tderror(FDCAN_HandleTypeDef * handle);
 

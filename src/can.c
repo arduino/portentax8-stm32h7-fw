@@ -164,16 +164,16 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_FILTER)
     {
-      uint32_t const * info = (uint32_t*)data;
+      union x8h7_can_filter_message x8h7_msg;
+      memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
 
-      uint32_t const handle = info[0];
-      uint32_t const id     = info[1];
-      uint32_t const mask   = info[2];
-
-      CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
-
-      if (!can_filter(&fdcan_1, id, mask, format, handle)) {
-        dbg_printf("fdcan1_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
+      if (!can_filter(&fdcan_1,
+                      x8h7_msg.field.idx,
+                      x8h7_msg.field.id,
+                      x8h7_msg.field.mask,
+                      x8h7_msg.field.id & CAN_EFF_FLAG))
+      {
+        dbg_printf("fdcan1_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
       }
     }
     else if (opcode == CAN_TX_FRAME)
@@ -199,17 +199,17 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     }
     else if (opcode == CAN_FILTER)
     {
-        uint32_t const * info = (uint32_t*)data;
+      union x8h7_can_filter_message x8h7_msg;
+      memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
 
-        uint32_t const handle = info[0];
-        uint32_t const id     = info[1];
-        uint32_t const mask   = info[2];
-
-        CANFormat const format = (id < 0x800) ? CANStandard : CANExtended;
-
-        if (!can_filter(&fdcan_2, id, mask, format, handle)) {
-          dbg_printf("fdcan2_handler: can_filter failed for id: %ld, mask: %ld, format: %d, handle %ld\n", id, mask, format, handle);
-        }
+      if (!can_filter(&fdcan_2,
+                      x8h7_msg.field.idx,
+                      x8h7_msg.field.id,
+                      x8h7_msg.field.mask,
+                      x8h7_msg.field.id & CAN_EFF_FLAG))
+      {
+        dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
+      }
     }
     else if (opcode == CAN_TX_FRAME)
     {
@@ -276,11 +276,11 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
         error("HAL_FDCAN_Init error\n");
     }
 
-    if (can_filter(handle, 0, 0, CANStandard, 0) == 0) {
+    if (can_filter(handle, 0, 0, 0, false) == 0) {
         error("can_filter error\n");
     }
 
-    if (can_filter(handle, 0, 0, CANExtended, 0) == 0) {
+    if (can_filter(handle, 0, 0, 0, true) == 0) {
         error("can_filter error\n");
     }
 
@@ -378,45 +378,22 @@ int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 }
 
 
-/** Filter out incoming messages
- *
- *  @param obj CAN object
- *  @param id the id to filter on
- *  @param mask the mask applied to the id
- *  @param format format to filter on
- *  @param handle message filter handle (not supported yet)
- *
- *  @returns
- *    0 if filter change failed or unsupported,
- *    new filter handle if successful (not supported yet => returns 1)
- */
-int can_filter(FDCAN_HandleTypeDef * handle, uint32_t id, uint32_t mask, CANFormat format, int32_t filter_index)
+int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id)
 {
-    FDCAN_FilterTypeDef sFilterConfig = {0};
+  FDCAN_FilterTypeDef sFilterConfig = {0};
 
-    if (format == CANStandard) {
-        sFilterConfig.IdType = FDCAN_STANDARD_ID;
-        sFilterConfig.FilterIndex = filter_index;
-        sFilterConfig.FilterType = FDCAN_FILTER_MASK;
-        sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-        sFilterConfig.FilterID1 = id;
-        sFilterConfig.FilterID2 = mask;
-    } else if (format == CANExtended) {
-        sFilterConfig.IdType = FDCAN_EXTENDED_ID;
-        sFilterConfig.FilterIndex = filter_index;
-        sFilterConfig.FilterType = FDCAN_FILTER_MASK;
-        sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-        sFilterConfig.FilterID1 = id;
-        sFilterConfig.FilterID2 = mask;
-    } else { // Filter for CANAny format cannot be configured for STM32
-        return 0;
-    }
+  sFilterConfig.IdType = is_extended_id ? FDCAN_EXTENDED_ID : FDCAN_STANDARD_ID;
+  sFilterConfig.FilterIndex = filter_index;
+  sFilterConfig.FilterType = FDCAN_FILTER_MASK;
+  sFilterConfig.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  sFilterConfig.FilterID1 = is_extended_id ? (id & CAN_EFF_MASK) : (id & CAN_SFF_MASK);
+  sFilterConfig.FilterID2 = is_extended_id ? (mask & CAN_EFF_MASK) : (mask & CAN_SFF_MASK);
 
-    if (HAL_FDCAN_ConfigFilter(handle, &sFilterConfig) != HAL_OK) {
-        return 0;
-    }
+  if (HAL_FDCAN_ConfigFilter(handle, &sFilterConfig) != HAL_OK) {
+    return 0;
+  }
 
-    return 1;
+  return 1;
 }
 
 
