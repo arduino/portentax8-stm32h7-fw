@@ -220,8 +220,14 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   }
 */
 
-  while (get_data_amount == false) {
-    // wait for the DMA interrupt to be over
+  /* Wait for transfer to be complete. */
+  bool is_dma_transfer_complete = false;
+  while (!is_dma_transfer_complete)
+  {
+    uint32_t primask_bit = __get_PRIMASK();
+    __set_PRIMASK(1) ;
+    is_dma_transfer_complete = get_data_amount;
+    __set_PRIMASK(primask_bit);
   }
 
   /* Enter critical section: Since this function is called both from inside
@@ -298,7 +304,15 @@ cleanup:
 void trigger_packet()
 {
   /* Wait for transfer to be complete. */
-  while (!get_data_amount) { }
+  bool is_dma_transfer_complete = false;
+  while (!is_dma_transfer_complete)
+  {
+    uint32_t primask_bit = __get_PRIMASK();
+    __set_PRIMASK(1) ;
+    is_dma_transfer_complete = get_data_amount;
+    __set_PRIMASK(primask_bit);
+  }
+
   /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
