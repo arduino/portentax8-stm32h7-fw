@@ -61,7 +61,7 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer[SPI_DM
 
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
-volatile bool get_data_amount = true;
+volatile bool is_dma_transfer_complete_flag = true;
 volatile uint16_t data_amount = 0;
 
 /**************************************************************************************
@@ -360,7 +360,7 @@ int get_dma_packet_size() {
 
 void EXTI15_10_IRQHandler(void)
 {
-  if (get_data_amount) {
+  if (is_dma_transfer_complete_flag) {
     spi_transmit_receive(PERIPH_SPI3, (uint8_t *)TX_Buffer,
                          (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
   }
@@ -372,7 +372,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  if (get_data_amount) {
+  if (is_dma_transfer_complete_flag) {
 
 /*
     if (rx_pkt->checksum != rx_pkt->size ^ 0x5555) {
@@ -391,7 +391,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     // reconfigure the DMA to actually receive the data
     spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
-    get_data_amount = false;
+    is_dma_transfer_complete_flag = false;
 
   } else {
     // real end of operation, pause DMA, memcpy stuff around and re-enable DMA
@@ -407,7 +407,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // clean the transfer buffer size to restart
     tx_pkt->header.size = 0;
 
-    get_data_amount = true;
+    is_dma_transfer_complete_flag = true;
 
     // HAL_SPI_DMAResume(&hspi1);
   }
@@ -478,7 +478,7 @@ static bool is_dma_transfer_complete()
   bool is_dma_transfer_complete_flag_temp = false;
   uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
-  is_dma_transfer_complete_flag_temp = get_data_amount;
+  is_dma_transfer_complete_flag_temp = is_dma_transfer_complete_flag;
   __set_PRIMASK(primask_bit);
   return is_dma_transfer_complete_flag_temp;
 }
