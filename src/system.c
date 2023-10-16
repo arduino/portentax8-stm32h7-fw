@@ -209,7 +209,7 @@ void clean_dma_buffer() {
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
 }
 
-void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
+int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
 /*
   int timeout = 100000;
@@ -241,6 +241,8 @@ void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t con
    */
   __set_PRIMASK(1) ;
 
+  int bytes_enqueued = 0;
+
   /* complete_packet:
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
@@ -267,6 +269,8 @@ void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t con
   tx_pkt->header.size += size;
   /* Calculate a simple checksum to ensure bit flips in the length field can be recognized. */
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
+  /* Update internal status variable of how many bytes have been enqueued. */
+  bytes_enqueued += sizeof(pkt.header) + size;
 
 #ifdef DEBUG
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
@@ -284,6 +288,7 @@ cleanup:
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
+  return bytes_enqueued;
 }
 
 #ifndef REALVERSION
