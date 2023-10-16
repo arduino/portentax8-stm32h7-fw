@@ -282,8 +282,6 @@ cleanup:
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
-
-  //trigger_irq = true;
 }
 
 #ifndef REALVERSION
