@@ -209,7 +209,7 @@ void clean_dma_buffer() {
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
 }
 
-int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
+int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data, bool const trigger_irq)
 {
 /*
   int timeout = 100000;
@@ -286,9 +286,22 @@ cleanup:
   /* Exit critical section: restore previous priority mask */
   __set_PRIMASK(primask_bit);
 
+  if (trigger_irq)
+  {
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
+  }
+
+  return bytes_enqueued;
+}
+
+void trigger_packet()
+{
+  /* Wait for transfer to be complete. */
+  while (!get_data_amount) { }
+  /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
-  return bytes_enqueued;
 }
 
 #ifndef REALVERSION
@@ -299,7 +312,7 @@ char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[]
 
 void writeVersion() {
   const char* version = REAL_VERSION_FLASH;
-  enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
+  enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, true);
 }
 
 extern int m4_booted_correctly;
@@ -309,7 +322,7 @@ void h7_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     writeVersion();
   }
   if (opcode == BOOT_M4) {
-    enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
+    enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly, true);
   }
 }
 

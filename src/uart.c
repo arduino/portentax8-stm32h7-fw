@@ -252,7 +252,7 @@ void uart_handle_data() {
   __disable_irq();
   int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&uart_ring_buffer));
   __enable_irq();
-  enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
+  enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf, true);
 }
 
 int virtual_uart_data_available() {
@@ -264,7 +264,7 @@ void virtual_uart_handle_data() {
   __disable_irq();
   int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
   __enable_irq();
-  enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
+  enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf, true);
 }
 
 void UART2_enable_rx_irq() {

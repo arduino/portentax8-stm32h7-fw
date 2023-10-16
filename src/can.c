@@ -253,23 +253,25 @@ void can_init()
 
 void can_handle_data()
 {
+  size_t bytes_enqueued = 0;
   union x8h7_can_frame_message msg;
 
-  if (can_read(&fdcan_1, &msg))
-  {
-    enqueue_packet(PERIPH_FDCAN1,
-                   CAN_RX_FRAME,
-                   X8H7_CAN_HEADER_SIZE + msg.field.len,
-                   msg.buf);
-  }
+  /* Note: the last read package is lost in this implementation. We need to fix this by
+   * implementing some peek method or by buffering messages in a ringbuffer.
+   */
 
-  if (can_read(&fdcan_2, &msg))
-  {
-    enqueue_packet(PERIPH_FDCAN2,
-                   CAN_RX_FRAME,
-                   X8H7_CAN_HEADER_SIZE + msg.field.len,
-                   msg.buf);
-  }
+  for (; can_read(&fdcan_1, &msg) &&
+         enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+         bytes_enqueued++)
+  { }
+
+  for (; can_read(&fdcan_2, &msg) &&
+         enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+         bytes_enqueued++)
+  { }
+
+  if (bytes_enqueued)
+    trigger_packet();
 }
 
 /** Call all the init functions
@@ -455,12 +457,12 @@ void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const 
       uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
 
-      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, true);
     }
     else
     {
       uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, true);
     }
 }
 
@@ -468,9 +470,8 @@ int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
 {
   static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
-    if (HAL_FDCAN_GetRxFifoFillLevel(handle, FDCAN_RX_FIFO0) == 0) {
-        return 0; // No message arrived
-    }
+  if (HAL_FDCAN_GetRxFifoFillLevel(handle, FDCAN_RX_FIFO0) == 0)
+    return 0; // No message arrived
 
   FDCAN_RxHeaderTypeDef RxHeader = {0};
   uint8_t RxData[64] = {0};
