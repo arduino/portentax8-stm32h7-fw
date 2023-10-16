@@ -65,6 +65,12 @@ volatile bool get_data_amount = true;
 volatile uint16_t data_amount = 0;
 
 /**************************************************************************************
+ * INTERNAL FUNCTION DECLARATION
+ **************************************************************************************/
+
+static bool is_dma_transfer_complete();
+
+/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
@@ -211,24 +217,8 @@ void clean_dma_buffer() {
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data, bool const trigger_irq)
 {
-/*
-  int timeout = 100000;
-  // don't feed data in the middle of a transmission
-  while (get_data_amount == false && timeout > 0) {
-    // wait for the DMA interrupt to be over
-    timeout--;
-  }
-*/
-
   /* Wait for transfer to be complete. */
-  bool is_dma_transfer_complete = false;
-  while (!is_dma_transfer_complete)
-  {
-    uint32_t primask_bit = __get_PRIMASK();
-    __set_PRIMASK(1) ;
-    is_dma_transfer_complete = get_data_amount;
-    __set_PRIMASK(primask_bit);
-  }
+  while (!is_dma_transfer_complete()) { }
 
   /* Enter critical section: Since this function is called both from inside
    * interrupt context (handle_irq/gpio.c) as well as from normal execution
@@ -304,14 +294,7 @@ cleanup:
 void trigger_packet()
 {
   /* Wait for transfer to be complete. */
-  bool is_dma_transfer_complete = false;
-  while (!is_dma_transfer_complete)
-  {
-    uint32_t primask_bit = __get_PRIMASK();
-    __set_PRIMASK(1) ;
-    is_dma_transfer_complete = get_data_amount;
-    __set_PRIMASK(primask_bit);
-  }
+  while (!is_dma_transfer_complete()) { }
 
   /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
@@ -484,4 +467,18 @@ void Error_Handler_Name(const char* name) {
   __disable_irq();
   while (1) {
   }
+}
+
+/**************************************************************************************
+ * INTERNAL FUNCTION DEFINITION
+ **************************************************************************************/
+
+static bool is_dma_transfer_complete()
+{
+  bool is_dma_transfer_complete_flag_temp = false;
+  uint32_t primask_bit = __get_PRIMASK();
+  __set_PRIMASK(1) ;
+  is_dma_transfer_complete_flag_temp = get_data_amount;
+  __set_PRIMASK(primask_bit);
+  return is_dma_transfer_complete_flag_temp;
 }
