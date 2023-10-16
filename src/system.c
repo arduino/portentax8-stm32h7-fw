@@ -243,10 +243,10 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
-  struct complete_packet *tx_pkt = get_dma_packet();
-  if ((tx_pkt->header.size + size) > get_dma_packet_size()) {
+  struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
+  if ((tx_pkt->header.size + size) > sizeof(TX_Buffer))
     goto cleanup;
-  }
+
   /* subpacket:
    * - uint8_t peripheral; |
    * - uint8_t opcode;     |
@@ -348,14 +348,6 @@ void dma_init() {
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
   //Get function callback from LUT (peripherals vs opcodes)
   (*PeriphCallbacks[peripheral])(opcode, data, size);
-}
-
-struct complete_packet* get_dma_packet() {
-  return (struct complete_packet *)TX_Buffer;
-}
-
-int get_dma_packet_size() {
-  return sizeof(TX_Buffer);
 }
 
 void EXTI15_10_IRQHandler(void)
