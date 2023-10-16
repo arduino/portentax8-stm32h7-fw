@@ -65,7 +65,7 @@ void system_init();
 
 void dma_init();
 
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data);
+void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
 
 void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data);
 

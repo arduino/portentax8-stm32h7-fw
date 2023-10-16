@@ -209,8 +209,8 @@ void clean_dma_buffer() {
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
 }
 
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data) {
-
+void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
+{
 /*
   int timeout = 100000;
   // don't feed data in the middle of a transmission
