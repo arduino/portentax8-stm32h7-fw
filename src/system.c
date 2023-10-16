@@ -268,13 +268,15 @@ void enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t con
   /* Calculate a simple checksum to ensure bit flips in the length field can be recognized. */
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
+#ifdef DEBUG
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
       to_peripheral_string(peripheral), opcode, size);
 
-  for (int i = 0; i < size; i++) {
+  for (int i = 0; i < size; i++)
     dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
-  }
+
   dbg_printf("\n");
+#endif
 
 cleanup:
   /* Exit critical section: restore previous priority mask */
