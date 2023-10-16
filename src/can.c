@@ -258,7 +258,7 @@ void can_handle_data()
   if (can_read(&fdcan_1, &msg))
   {
     enqueue_packet(PERIPH_FDCAN1,
-                   DATA,
+                   CAN_RX_FRAME,
                    X8H7_CAN_HEADER_SIZE + msg.field.len,
                    msg.buf);
   }
@@ -266,7 +266,7 @@ void can_handle_data()
   if (can_read(&fdcan_2, &msg))
   {
     enqueue_packet(PERIPH_FDCAN2,
-                   DATA,
+                   CAN_RX_FRAME,
                    X8H7_CAN_HEADER_SIZE + msg.field.len,
                    msg.buf);
   }
