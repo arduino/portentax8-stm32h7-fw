@@ -398,6 +398,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
 
     // clean the transfer buffer size to restart
     tx_pkt->header.size = 0;
+    tx_pkt->header.checksum = 0;
 
     is_dma_transfer_complete_flag = true;
 
