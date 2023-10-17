@@ -310,20 +310,16 @@ void trigger_packet()
 
 char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
 
-int writeVersion()
-{
-  const char* version = REAL_VERSION_FLASH;
-  return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, true);
-}
-
 extern int m4_booted_correctly;
 
 int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
   int bytes_enqueued = 0;
 
-  if (opcode == FW_VERSION) {
-    bytes_enqueued += writeVersion();
+  if (opcode == FW_VERSION)
+  {
+    const char* version = REAL_VERSION_FLASH;
+    bytes_enqueued += enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, true);
   }
   if (opcode == BOOT_M4) {
     bytes_enqueued += enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly, true);
