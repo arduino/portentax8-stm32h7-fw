@@ -421,13 +421,17 @@ void dma_handle_data()
     while (rx_pkt_userspace->header.peripheral != 0xFF &&
            rx_pkt_userspace->header.peripheral != 0x00)
     {
+#ifdef DEBUG
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-          to_peripheral_string(rx_pkt_userspace->header.peripheral), rx_pkt_userspace->header.opcode,
-              rx_pkt_userspace->header.size);
-      for (int i = 0; i < rx_pkt_userspace->header.size; i++) {
+                 to_peripheral_string(rx_pkt_userspace->header.peripheral),
+                 rx_pkt_userspace->header.opcode,
+                 rx_pkt_userspace->header.size);
+
+      for (int i = 0; i < rx_pkt_userspace->header.size; i++)
         dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
-      }
+
       dbg_printf("\n");
+#endif
 
       // do something useful with this packet
       dispatchPacket(rx_pkt_userspace->header.peripheral, rx_pkt_userspace->header.opcode,
