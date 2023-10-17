@@ -60,7 +60,6 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer[SPI_DM
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 volatile bool is_dma_transfer_complete_flag = true;
-volatile uint16_t data_amount = 0;
 
 /**************************************************************************************
  * INTERNAL FUNCTION DECLARATION
@@ -367,14 +366,14 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-    data_amount = max(tx_pkt->header.size, rx_pkt->header.size);
+    uint16_t const bytes_to_transfer = max(tx_pkt->header.size, rx_pkt->header.size);
 #pragma GCC diagnostic pop
 
-    if (data_amount == 0)
+    if (bytes_to_transfer == 0)
       return;
 
     // reconfigure the DMA to actually receive the data
-    spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
+    spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), bytes_to_transfer);
     is_dma_transfer_complete_flag = false;
   }
   else
