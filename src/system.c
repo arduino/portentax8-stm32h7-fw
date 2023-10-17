@@ -218,7 +218,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * to store the current interrupt situation and restore it at the end of
    * the critical section.
    */
-  uint32_t const primask_bit = __get_PRIMASK();
+  volatile uint32_t primask_bit = __get_PRIMASK();
   /*
    * PRIMASK - Typically configured in code using the CMSIS __disable_irq() and
    * __enable_irq() routines or the cpsid i and cpsie i assembly instructions
@@ -271,14 +271,14 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
 #endif
 
 cleanup:
-  /* Exit critical section: restore previous priority mask */
-  __set_PRIMASK(primask_bit);
-
   if (trigger_irq)
   {
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
   }
+
+  /* Exit critical section: restore previous priority mask */
+  __set_PRIMASK(primask_bit);
 
   return bytes_enqueued;
 }
@@ -288,9 +288,14 @@ void trigger_packet()
   /* Wait for transfer to be complete. */
   while (!is_dma_transfer_complete()) { }
 
+  /* Enter critical section. */
+  volatile uint32_t primask_bit = __get_PRIMASK();
+  __set_PRIMASK(1) ;
   /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
+  /* Exit critical section: restore previous priority mask */
+  __set_PRIMASK(primask_bit);
 }
 
 #ifndef REALVERSION
