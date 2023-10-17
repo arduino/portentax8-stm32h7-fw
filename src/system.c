@@ -235,8 +235,8 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
-  struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
-  if ((tx_pkt->header.size + size) > sizeof(TX_Buffer))
+  struct complete_packet * pkt = (struct complete_packet *)TX_Buffer;
+  if ((pkt->header.size + size) > sizeof(TX_Buffer))
     goto cleanup;
 
   /* subpacket:
@@ -250,13 +250,13 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   subpkt.header.opcode = opcode;
   subpkt.header.size = size;
   /* Copy subpacket.header at the end of the current complete_packet superframe. */
-  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, &subpkt, sizeof(subpkt.header));
-  tx_pkt->header.size += sizeof(subpkt.header);
+  memcpy((uint8_t*)&(pkt->data) + pkt->header.size, &subpkt, sizeof(subpkt.header));
+  pkt->header.size += sizeof(subpkt.header);
   /* Copy subpacket.raw_data at after subpacket.header. */
-  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, data, size);
-  tx_pkt->header.size += size;
+  memcpy((uint8_t*)&(pkt->data) + pkt->header.size, data, size);
+  pkt->header.size += size;
   /* Calculate a simple checksum to ensure bit flips in the length field can be recognized. */
-  tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
+  pkt->header.checksum = pkt->header.size ^ 0x5555;
   /* Update internal status variable of how many bytes have been enqueued. */
   bytes_enqueued += sizeof(subpkt.header) + size;
 
