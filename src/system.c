@@ -408,14 +408,19 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
 */
 }
 
-void dma_handle_data() {
-  if (transferState == TRANSFER_COMPLETE) {
+void dma_handle_data()
+{
+  if (transferState == TRANSFER_COMPLETE)
+  {
+    /* Enter critical section. */
+    volatile uint32_t primask_bit = __get_PRIMASK();
+    __set_PRIMASK(1) ;
 
-    struct subpacket *rx_pkt_userspace =
-        (struct subpacket *)RX_Buffer_userspace;
+    struct subpacket *rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
     while (rx_pkt_userspace->header.peripheral != 0xFF &&
-            rx_pkt_userspace->header.peripheral != 0x00) {
+           rx_pkt_userspace->header.peripheral != 0x00)
+    {
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
           to_peripheral_string(rx_pkt_userspace->header.peripheral), rx_pkt_userspace->header.opcode,
               rx_pkt_userspace->header.size);
@@ -430,7 +435,11 @@ void dma_handle_data() {
 
       rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
     }
+
     transferState = TRANSFER_WAIT;
+
+    /* Leave critical section. */
+    __set_PRIMASK(primask_bit);
   }
 
   if (transferState == TRANSFER_ERROR) {
@@ -460,7 +469,7 @@ void Error_Handler_Name(const char* name) {
 static bool is_dma_transfer_complete()
 {
   bool is_dma_transfer_complete_flag_temp = false;
-  uint32_t primask_bit = __get_PRIMASK();
+  volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
   is_dma_transfer_complete_flag_temp = is_dma_transfer_complete_flag;
   __set_PRIMASK(primask_bit);
