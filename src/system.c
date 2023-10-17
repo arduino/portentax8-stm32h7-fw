@@ -321,7 +321,8 @@ int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
     const char* version = REAL_VERSION_FLASH;
     bytes_enqueued += enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, true);
   }
-  if (opcode == BOOT_M4) {
+  else if (opcode == BOOT_M4)
+  {
     bytes_enqueued += enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly, true);
   }
 
