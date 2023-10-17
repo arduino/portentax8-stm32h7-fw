@@ -301,8 +301,10 @@ void gpio_set_initial_config() {
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
-void gpio_handle_data()
+int gpio_handle_data()
 {
+  int bytes_enqueued = 0;
+
   /* Take a threadsafe copy of the interrupt flags. */
   __disable_irq();
   uint16_t const copy_int_event_flags = int_event_flags;
@@ -315,10 +317,12 @@ void gpio_handle_data()
     if (copy_int_event_flags & (1 << index))
     {
       uint8_t irq_pin = IRQ_pinmap[index].pin;
-      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin, true);
+      bytes_enqueued += enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin, false);
       __disable_irq();
       int_event_flags &= ~(1 << index); /*Clear this flag */
       __enable_irq();
     }
   }
+
+  return bytes_enqueued;
 }

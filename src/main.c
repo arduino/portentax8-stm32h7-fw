@@ -64,23 +64,25 @@ void peripheral_init() {
   can_init();
 }
 
-void handle_data() {
-
+void handle_data()
+{
   __WFI();
 
   watchdog_refresh();
 
-  if (uart_data_available()) {
-    uart_handle_data();
-  }
+  int bytes_enqueued = 0;
 
-  if (virtual_uart_data_available()) {
-    virtual_uart_handle_data();
-  }
+  if (uart_data_available())
+    bytes_enqueued += uart_handle_data();
 
-  can_handle_data();
+  if (virtual_uart_data_available())
+    bytes_enqueued += virtual_uart_handle_data();
 
-  gpio_handle_data();
+  bytes_enqueued += can_handle_data();
+  bytes_enqueued += gpio_handle_data();
+
+  if (bytes_enqueued)
+    trigger_packet();
 
   dma_handle_data();
 }

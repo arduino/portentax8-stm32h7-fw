@@ -251,9 +251,9 @@ void can_init()
   register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
-void can_handle_data()
+int can_handle_data()
 {
-  size_t bytes_enqueued = 0;
+  int bytes_enqueued = 0;
   union x8h7_can_frame_message msg;
 
   /* Note: the last read package is lost in this implementation. We need to fix this by
@@ -270,8 +270,7 @@ void can_handle_data()
          bytes_enqueued++)
   { }
 
-  if (bytes_enqueued)
-    trigger_packet();
+  return bytes_enqueued; /* Fixme: those are not actually bytes enqueued, but frames enqeued. Nonetheless it serves its purpose for now, but must be cleaned up later. */
 }
 
 /** Call all the init functions

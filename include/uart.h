@@ -51,11 +51,11 @@ int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout);
 
 int uart_data_available();
 
-void uart_handle_data();
+int uart_handle_data();
 
 int virtual_uart_data_available();
 
-void virtual_uart_handle_data();
+int virtual_uart_handle_data();
 
 void UART2_enable_rx_irq();
 

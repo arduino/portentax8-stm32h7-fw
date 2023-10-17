@@ -76,7 +76,7 @@ typedef enum {
  **************************************************************************************/
 
 void          can_init();
-void          can_handle_data();
+int           can_handle_data();
 
 void          can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
 int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
