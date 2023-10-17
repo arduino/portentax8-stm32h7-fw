@@ -356,28 +356,22 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
   struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
-  if (is_dma_transfer_complete_flag) {
-
-/*
-    if (rx_pkt->checksum != rx_pkt->size ^ 0x5555) {
-      return;
-    }
-*/
-
+  if (is_dma_transfer_complete_flag)
+  {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
     data_amount = max(tx_pkt->header.size, rx_pkt->header.size);
 #pragma GCC diagnostic pop
 
-    if (data_amount == 0) {
+    if (data_amount == 0)
       return;
-    }
 
     // reconfigure the DMA to actually receive the data
     spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), data_amount);
     is_dma_transfer_complete_flag = false;
-
-  } else {
+  }
+  else
+  {
     // real end of operation, pause DMA, memcpy stuff around and re-enable DMA
     // HAL_SPI_DMAPause(&hspi1);
 
