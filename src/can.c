@@ -161,6 +161,7 @@ int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       uint32_t const can_bitrate = *((uint32_t *)data);
       can_frequency(&fdcan_1, can_bitrate);
       dbg_printf("fdcan1_handler: configuring fdcan1 with frequency %ld\n", can_bitrate);
+      return 0;
     }
     else if (opcode == CAN_FILTER)
     {
@@ -175,6 +176,7 @@ int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       {
         dbg_printf("fdcan1_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
       }
+      return 0;
     }
     else if (opcode == CAN_TX_FRAME)
     {
@@ -182,21 +184,23 @@ int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       memcpy(&msg, data, size);
 
       dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
-
-      can_write(&fdcan_1, &msg);
+      return can_write(&fdcan_1, &msg);
     }
-    else {
+    else
+    {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
+      return 0;
     }
-    return 0;
 }
 
-int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
     if (opcode == CONFIGURE)
     {
       uint32_t const can_bitrate = *((uint32_t *)data);
       can_frequency(&fdcan_2, can_bitrate);
       dbg_printf("fdcan2_handler: configuring fdcan2 with frequency %ld\n", can_bitrate);
+      return 0;
     }
     else if (opcode == CAN_FILTER)
     {
@@ -211,6 +215,7 @@ int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       {
         dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
       }
+      return 0;
     }
     else if (opcode == CAN_TX_FRAME)
     {
@@ -218,13 +223,13 @@ int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       memcpy(&msg, data, size);
 
       dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
-
-      can_write(&fdcan_2, &msg);
+      return can_write(&fdcan_2, &msg);
     }
-    else {
+    else
+    {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
+      return 0;
     }
-    return 0;
 }
 
 
@@ -410,7 +415,7 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
 }
 
 
-void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
+int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
     FDCAN_TxHeaderTypeDef TxHeader = {0};
 
@@ -460,12 +465,12 @@ void can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const 
       uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
 
-      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, true);
+      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, false);
     }
     else
     {
       uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, true);
+      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, false);
     }
 }
 

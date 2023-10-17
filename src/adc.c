@@ -71,24 +71,23 @@ static int get_adc_value(enum AnalogPins name);
 
 int adc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
-  int bytes_enqueued = 0;
-
-  if (opcode == CONFIGURE) {
+  if (opcode == CONFIGURE)
+  {
     /* Note: ADC currently only supports polling mode.
      * uint16_t adc_sample_rate = *((uint16_t*)data);
      * dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
      */
+    return 0;
   }
   else if ((opcode >= A0) && (opcode <= A7))
   {
-    bytes_enqueued += get_adc_value(opcode);
+    return get_adc_value(opcode);
   }
   else
   {
-    dbg_printf("Invalid ADC opcode %02x\n", opcode);
+    dbg_printf("adc_handler: invalid ADC opcode %02x\n", opcode);
+    return 0;
   }
-
-  return bytes_enqueued;
 }
 
 void adc_init() {
@@ -120,7 +119,7 @@ int get_adc_value(enum AnalogPins name) {
 
   dbg_printf("ADC%d: %d\n", name-1, value);
 
-  return enqueue_packet(PERIPH_ADC, name, sizeof(value), &value, true);
+  return enqueue_packet(PERIPH_ADC, name, sizeof(value), &value, false);
 }
 
 static void MX_ADC1_Init(void) {

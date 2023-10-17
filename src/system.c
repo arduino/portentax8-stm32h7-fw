@@ -314,19 +314,17 @@ extern int m4_booted_correctly;
 
 int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
-  int bytes_enqueued = 0;
-
-  if (opcode == FW_VERSION)
-  {
+  if (opcode == FW_VERSION) {
     const char* version = REAL_VERSION_FLASH;
-    bytes_enqueued += enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, true);
+    return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version, false);
   }
-  else if (opcode == BOOT_M4)
-  {
-    bytes_enqueued += enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly, true);
+  else if (opcode == BOOT_M4) {
+    return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly, false);
   }
-
-  return bytes_enqueued;
+  else {
+    dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
+    return 0;
+  }
 }
 
 void system_init() {
@@ -413,11 +411,22 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
 */
 }
 
-void dma_handle_data()
+int dma_handle_data()
 {
+  if (transferState == TRANSFER_ERROR)
+  {
+    dbg_printf("dma_handle_data: got transfer error, recovering\n");
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
+    transferState = TRANSFER_WAIT;
+    return 0;
+  }
+
   /* Enter critical section. */
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
+
+  int bytes_enqueued = 0;
 
   if (transferState == TRANSFER_COMPLETE)
   {
@@ -447,9 +456,9 @@ void dma_handle_data()
       PeriphCallbackFunc const peripheral_callback = PeriphCallbacks[rx_pkt_userspace->header.peripheral];
 
       /* Invoke the registered callback for the selected peripheral. */
-      peripheral_callback(rx_pkt_userspace->header.opcode,
-                          (uint8_t *)(&(rx_pkt_userspace->raw_data)),
-                          rx_pkt_userspace->header.size);
+      bytes_enqueued += peripheral_callback(rx_pkt_userspace->header.opcode,
+                                            (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                                            rx_pkt_userspace->header.size);
 
       /* Advance to the next package. */
       rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
@@ -461,12 +470,7 @@ void dma_handle_data()
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
 
-  if (transferState == TRANSFER_ERROR) {
-      dbg_printf("got transfer error, recovering\n");
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-      transferState = TRANSFER_WAIT;
-  }
+  return bytes_enqueued;
 }
 
 void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)

@@ -68,7 +68,7 @@ void dma_init();
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data, bool const trigger_irq);
 void trigger_packet();
 
-void dma_handle_data();
+int dma_handle_data();
 
 typedef int (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
 void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);

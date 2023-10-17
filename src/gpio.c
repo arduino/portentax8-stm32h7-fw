@@ -250,8 +250,8 @@ int gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
     case READ:
       response[0] = index;
       response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
-      enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response, true);
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
+      return enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response, false);
       break;
     case IRQ_SIGNAL:
       // do nothing;
