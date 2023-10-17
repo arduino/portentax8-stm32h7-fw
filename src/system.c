@@ -35,10 +35,16 @@
 #include "spi.h"
 
 /**************************************************************************************
+ * DEFINE
+ **************************************************************************************/
+
+#define NUM_PERIPHERAL_CALLBACKS (20)
+
+/**************************************************************************************
  * TYPEDEF
  **************************************************************************************/
 
-PeriphCallbackFunc PeriphCallbacks[20];
+PeriphCallbackFunc PeriphCallbacks[NUM_PERIPHERAL_CALLBACKS];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
 
@@ -342,11 +348,6 @@ void dma_init() {
   clean_dma_buffer();
 }
 
-void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data) {
-  //Get function callback from LUT (peripherals vs opcodes)
-  (*PeriphCallbacks[peripheral])(opcode, data, size);
-}
-
 void EXTI15_10_IRQHandler(void)
 {
   if (is_dma_transfer_complete_flag) {
@@ -380,12 +381,13 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     // real end of operation, pause DMA, memcpy stuff around and re-enable DMA
     // HAL_SPI_DMAPause(&hspi1);
 
-    transferState = TRANSFER_COMPLETE;
-
     memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->header.size);
 
     // mark the next packet as invalid
     *((uint32_t*)((uint8_t *)RX_Buffer_userspace + rx_pkt->header.size)) = 0xFFFFFFFF; // INVALID;
+
+    // mark transfer as complete, AFTER copying to user space
+    transferState = TRANSFER_COMPLETE;
 
     // clean the transfer buffer size to restart
     tx_pkt->header.size = 0;
@@ -410,12 +412,12 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi) {
 
 void dma_handle_data()
 {
+  /* Enter critical section. */
+  volatile uint32_t primask_bit = __get_PRIMASK();
+  __set_PRIMASK(1) ;
+
   if (transferState == TRANSFER_COMPLETE)
   {
-    /* Enter critical section. */
-    volatile uint32_t primask_bit = __get_PRIMASK();
-    __set_PRIMASK(1) ;
-
     struct subpacket *rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
     while (rx_pkt_userspace->header.peripheral != 0xFF &&
@@ -433,18 +435,28 @@ void dma_handle_data()
       dbg_printf("\n");
 #endif
 
-      // do something useful with this packet
-      dispatchPacket(rx_pkt_userspace->header.peripheral, rx_pkt_userspace->header.opcode,
-          rx_pkt_userspace->header.size, &(rx_pkt_userspace->raw_data));
+      if (rx_pkt_userspace->header.peripheral >= NUM_PERIPHERAL_CALLBACKS) {
+        printf("error, invalid peripheral id received: %d\n", rx_pkt_userspace->header.peripheral);
+        break; /* Leave this loop. */
+      }
 
+      /* Obtain the registered callback for the selected peripheral. */
+      PeriphCallbackFunc const peripheral_callback = PeriphCallbacks[rx_pkt_userspace->header.peripheral];
+
+      /* Invoke the registered callback for the selected peripheral. */
+      peripheral_callback(rx_pkt_userspace->header.opcode,
+                          (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                          rx_pkt_userspace->header.size);
+
+      /* Advance to the next package. */
       rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
     }
 
     transferState = TRANSFER_WAIT;
-
-    /* Leave critical section. */
-    __set_PRIMASK(primask_bit);
   }
+
+  /* Leave critical section. */
+  __set_PRIMASK(primask_bit);
 
   if (transferState == TRANSFER_ERROR) {
       dbg_printf("got transfer error, recovering\n");
