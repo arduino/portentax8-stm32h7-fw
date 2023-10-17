@@ -38,14 +38,6 @@
  * TYPEDEF
  **************************************************************************************/
 
-/*
-DMA_HandleTypeDef hdma_spi3_tx;
-DMA_HandleTypeDef hdma_spi3_rx;
-
-DMA_HandleTypeDef hdma_spi2_tx;
-DMA_HandleTypeDef hdma_spi2_rx;
-*/
-
 PeriphCallbackFunc PeriphCallbacks[20];
 
 enum { TRANSFER_WAIT, TRANSFER_COMPLETE, TRANSFER_ERROR };
