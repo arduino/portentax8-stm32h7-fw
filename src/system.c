@@ -350,9 +350,16 @@ void dma_init() {
 
 void EXTI15_10_IRQHandler(void)
 {
-  if (is_dma_transfer_complete_flag) {
-    spi_transmit_receive((uint8_t *)TX_Buffer, (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+  struct complete_packet * tx_pkt = (struct complete_packet *)TX_Buffer;
+  struct complete_packet * rx_pkt = (struct complete_packet *)RX_Buffer;
+
+  if (is_dma_transfer_complete_flag)
+  {
+    spi_transmit_receive((uint8_t *)&(tx_pkt->header),
+                         (uint8_t *)&(rx_pkt->header),
+                         sizeof(tx_pkt->header));
   }
+
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
