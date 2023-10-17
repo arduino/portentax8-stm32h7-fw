@@ -214,17 +214,19 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
   }
 }
 
-void uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == CONFIGURE) {
     uart_configure(data);
   }
   if (opcode == DATA) {
     uart_write(data, size);
   }
+  return 0;
 }
 
-void virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   serial_rpc_write(data, size);
+  return 0;
 }
 
 

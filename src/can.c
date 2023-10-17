@@ -155,7 +155,7 @@ static void error(char* string) {
     while (1);
 }
 
-void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     if (opcode == CONFIGURE)
     {
       uint32_t const can_bitrate = *((uint32_t *)data);
@@ -188,9 +188,10 @@ void fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     else {
       dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
     }
+    return 0;
 }
 
-void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     if (opcode == CONFIGURE)
     {
       uint32_t const can_bitrate = *((uint32_t *)data);
@@ -223,6 +224,7 @@ void fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     else {
       dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
     }
+    return 0;
 }
 
 

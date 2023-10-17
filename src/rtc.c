@@ -36,6 +36,9 @@ RTC_HandleTypeDef hrtc;
  * FUNCTION DEFINITION
  **************************************************************************************/
 
+static void rtc_set_date(uint8_t *data);
+static int  rtc_get_date(uint8_t *data);
+
 static void MX_RTC_Init(void)
 {
   hrtc.Instance = RTC;
@@ -76,12 +79,16 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
   }
 }
 
-void rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
+  int bytes_enqueued = 0;
+
   if (opcode == SET_DATE)
     rtc_set_date(data);
   if (opcode == GET_DATE)
-    rtc_get_date(data);
+    bytes_enqueued += rtc_get_date(data);
+
+  return bytes_enqueued;
 }
 
 void rtc_init()
@@ -112,7 +119,7 @@ void rtc_set_date(uint8_t *data)
     Error_Handler();
 }
 
-void rtc_get_date(uint8_t *data)
+int rtc_get_date(uint8_t *data)
 {
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
@@ -133,5 +140,5 @@ void rtc_get_date(uint8_t *data)
   now.tm_mday = sDate.Date;
   now.tm_year = sDate.Year;
 
-  enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now, true);
+  return enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now, true);
 }

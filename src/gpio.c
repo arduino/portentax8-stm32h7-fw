@@ -202,7 +202,7 @@ static uint8_t GPIO_PIN_to_index(uint32_t pin) {
   return index;
 }
 
-void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
+int gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
   uint16_t data = *((uint16_t*)pdata);
   enum Opcodes_GPIO action = opcode;
 
@@ -226,7 +226,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
 
       if      (value == GPIO_MODE_IN_RE) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
       else if (value == GPIO_MODE_IN_FE) GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-      else                               return;
+      else                               return 0;
 
       GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -266,6 +266,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       gpio_enable_irq(GPIO_pinmap[index].pin);
       break;
   }
+  return 0;
 }
 
 void gpio_init() {
