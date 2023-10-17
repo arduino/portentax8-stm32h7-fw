@@ -245,20 +245,20 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t size;      | sizeof(subpacket.header) = 4 Bytes
    * - uint8_t raw_data;
    */
-  struct subpacket pkt;
-  pkt.header.peripheral = peripheral;
-  pkt.header.opcode = opcode;
-  pkt.header.size = size;
+  struct subpacket subpkt;
+  subpkt.header.peripheral = peripheral;
+  subpkt.header.opcode = opcode;
+  subpkt.header.size = size;
   /* Copy subpacket.header at the end of the current complete_packet superframe. */
-  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, &pkt, sizeof(pkt.header));
-  tx_pkt->header.size += sizeof(pkt.header);
+  memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, &subpkt, sizeof(subpkt.header));
+  tx_pkt->header.size += sizeof(subpkt.header);
   /* Copy subpacket.raw_data at after subpacket.header. */
   memcpy((uint8_t*)&(tx_pkt->data) + tx_pkt->header.size, data, size);
   tx_pkt->header.size += size;
   /* Calculate a simple checksum to ensure bit flips in the length field can be recognized. */
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
   /* Update internal status variable of how many bytes have been enqueued. */
-  bytes_enqueued += sizeof(pkt.header) + size;
+  bytes_enqueued += sizeof(subpkt.header) + size;
 
 #ifdef DEBUG
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
