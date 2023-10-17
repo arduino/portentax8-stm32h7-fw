@@ -260,17 +260,19 @@ int can_handle_data()
    * implementing some peek method or by buffering messages in a ringbuffer.
    */
 
-  for (; can_read(&fdcan_1, &msg) &&
-         enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
-         bytes_enqueued++)
-  { }
+  for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
+  {
+    rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+    if (!rc_enq) break;
+  }
 
-  for (; can_read(&fdcan_2, &msg) &&
-         enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
-         bytes_enqueued++)
-  { }
+  for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
+  {
+    rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+    if (!rc_enq) break;
+  }
 
-  return bytes_enqueued; /* Fixme: those are not actually bytes enqueued, but frames enqeued. Nonetheless it serves its purpose for now, but must be cleaned up later. */
+  return bytes_enqueued;
 }
 
 /** Call all the init functions
