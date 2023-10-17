@@ -80,11 +80,10 @@ void handle_data()
 
   bytes_enqueued += can_handle_data();
   bytes_enqueued += gpio_handle_data();
+  bytes_enqueued += dma_handle_data();
 
   if (bytes_enqueued)
     trigger_packet();
-
-  dma_handle_data();
 }
 
 /**************************************************************************************
