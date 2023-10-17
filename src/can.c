@@ -183,7 +183,7 @@ int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
       union x8h7_can_frame_message msg;
       memcpy(&msg, data, size);
 
-      dbg_printf("fdcan1_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
+      dbg_printf("fdcan1_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
       return can_write(&fdcan_1, &msg);
     }
     else
@@ -222,7 +222,7 @@ int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size)
       union x8h7_can_frame_message msg;
       memcpy(&msg, data, size);
 
-      dbg_printf("fdcan2_handler: sending CAN message to %x, size %d, content[0]=0x%02X\n", msg.id, msg.len, msg.data[0]);
+      dbg_printf("fdcan2_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
       return can_write(&fdcan_2, &msg);
     }
     else
