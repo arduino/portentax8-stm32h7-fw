@@ -263,13 +263,13 @@ int can_handle_data()
   for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
   {
     rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
-    if (!rc_enq) break;
+    if (!rc_enq) return bytes_enqueued;
   }
 
   for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
   {
     rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
-    if (!rc_enq) break;
+    if (!rc_enq) return bytes_enqueued;
   }
 
   return bytes_enqueued;
