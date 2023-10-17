@@ -351,8 +351,7 @@ void dma_init() {
 void EXTI15_10_IRQHandler(void)
 {
   if (is_dma_transfer_complete_flag) {
-    spi_transmit_receive(PERIPH_SPI3, (uint8_t *)TX_Buffer,
-                         (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
+    spi_transmit_receive((uint8_t *)TX_Buffer, (uint8_t *)RX_Buffer, sizeof(uint16_t) * 2);
   }
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
@@ -373,7 +372,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
       return;
 
     // reconfigure the DMA to actually receive the data
-    spi_transmit_receive(PERIPH_SPI3, (uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), bytes_to_transfer);
+    spi_transmit_receive((uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), bytes_to_transfer);
     is_dma_transfer_complete_flag = false;
   }
   else

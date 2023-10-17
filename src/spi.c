@@ -37,7 +37,8 @@ DMA_HandleTypeDef hdma_spi3_rx;
  * FUNCTION DEFINIION
  **************************************************************************************/
 
-static void MX_SPI3_Init(void) {
+static void MX_SPI3_Init(void)
+{
 
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_SLAVE;
@@ -73,7 +74,8 @@ static void MX_SPI3_Init(void) {
  * @param hspi: SPI handle pointer
  * @retval None
  */
-void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
+void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
+{
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
@@ -155,7 +157,8 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi) {
  * @param hspi: SPI handle pointer
  * @retval None
  */
-void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi) {
+void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi)
+{
   __HAL_RCC_SPI3_CLK_DISABLE();
 
   HAL_GPIO_DeInit(GPIOA, GPIO_PIN_15);
@@ -168,18 +171,17 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi) {
   HAL_NVIC_DisableIRQ(SPI3_IRQn);
 }
 
-void spi_init() {
-
+void spi_init()
+{
   MX_SPI3_Init();
-
 }
 
-void spi_end() {
-
+void spi_end()
+{
   HAL_SPI_Abort(&hspi3);
 }
 
-
-inline void spi_transmit_receive(uint8_t peripheral, uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size) {
+void spi_transmit_receive(uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size)
+{
   HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, size);
 }
