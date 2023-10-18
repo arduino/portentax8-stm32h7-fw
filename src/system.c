@@ -61,12 +61,6 @@ typedef enum
 volatile eTransferState transaction_state = Idle;
 
 /**************************************************************************************
- * INTERNAL FUNCTION DECLARATION
- **************************************************************************************/
-
-static bool is_dma_transfer_complete();
-
-/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
@@ -496,11 +490,7 @@ void Error_Handler_Name(const char* name) {
   }
 }
 
-/**************************************************************************************
- * INTERNAL FUNCTION DEFINITION
- **************************************************************************************/
-
-static bool is_dma_transfer_complete()
+bool is_dma_transfer_complete()
 {
   bool is_dma_transfer_complete_flag_temp = false;
   /* Enter critical section. */

@@ -80,7 +80,7 @@ void handle_data()
   gpio_handle_data();
   dma_handle_data();
 
-  if (get_tx_packet_size() > 0)
+  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0))
     signal_irq_to_imx8();
 }
 
