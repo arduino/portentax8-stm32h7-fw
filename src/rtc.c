@@ -142,5 +142,5 @@ int rtc_get_date(uint8_t *data)
   now.tm_mday = sDate.Date;
   now.tm_year = sDate.Year;
 
-  return enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now, false);
+  return enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now);
 }

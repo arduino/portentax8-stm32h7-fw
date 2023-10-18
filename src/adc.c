@@ -119,7 +119,7 @@ int get_adc_value(enum AnalogPins name) {
 
   dbg_printf("ADC%d: %d\n", name-1, value);
 
-  return enqueue_packet(PERIPH_ADC, name, sizeof(value), &value, false);
+  return enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
 static void MX_ADC1_Init(void) {

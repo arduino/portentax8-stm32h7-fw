@@ -269,13 +269,13 @@ int can_handle_data()
 
   for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
   {
-    rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+    rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
     if (!rc_enq) return bytes_enqueued;
   }
 
   for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
   {
-    rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf, false);
+    rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
     if (!rc_enq) return bytes_enqueued;
   }
 
@@ -465,12 +465,12 @@ int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const *
       uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
 
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, false);
+      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
     }
     else
     {
       uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg, false);
+      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
     }
 }
 

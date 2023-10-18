@@ -251,7 +251,7 @@ int gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       response[0] = index;
       response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
-      return enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response, false);
+      return enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
       break;
     case IRQ_SIGNAL:
       // do nothing;
@@ -318,7 +318,7 @@ int gpio_handle_data()
     if (copy_int_event_flags & (1 << index))
     {
       uint8_t irq_pin = IRQ_pinmap[index].pin;
-      bytes_enqueued += enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin, false);
+      bytes_enqueued += enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
       __disable_irq();
       int_event_flags &= ~(1 << index); /*Clear this flag */
       __enable_irq();

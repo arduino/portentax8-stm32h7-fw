@@ -65,10 +65,11 @@ void system_init();
 
 void dma_init();
 
-int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data, bool const trigger_irq);
-void trigger_packet();
+int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
+void signal_irq_to_imx8();
+uint16_t get_tx_packet_size();
 
-int dma_handle_data();
+void dma_handle_data();
 
 typedef int (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
 void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);

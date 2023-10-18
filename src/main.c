@@ -70,20 +70,18 @@ void handle_data()
 
   watchdog_refresh();
 
-  int bytes_enqueued = 0;
-
   if (uart_data_available())
-    bytes_enqueued += uart_handle_data();
+    uart_handle_data();
 
   if (virtual_uart_data_available())
-    bytes_enqueued += virtual_uart_handle_data();
+    virtual_uart_handle_data();
 
-  bytes_enqueued += can_handle_data();
-  bytes_enqueued += gpio_handle_data();
-  bytes_enqueued += dma_handle_data();
+  can_handle_data();
+  gpio_handle_data();
+  dma_handle_data();
 
-  if (bytes_enqueued)
-    trigger_packet();
+  if (get_tx_packet_size() > 0)
+    signal_irq_to_imx8();
 }
 
 /**************************************************************************************

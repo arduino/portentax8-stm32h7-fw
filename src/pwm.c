@@ -428,7 +428,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
       capture.duty = capture_duty;
       capture.period = capture_period;
 
-      enqueue_packet(PERIPH_PWM, CAPTURE, sizeof(capture), &capture, true);
+      enqueue_packet(PERIPH_PWM, CAPTURE, sizeof(capture), &capture);
     }
   }
 }
