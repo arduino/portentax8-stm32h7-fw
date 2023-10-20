@@ -60,6 +60,8 @@ typedef enum
 } eTransferState;
 volatile eTransferState transaction_state = Idle;
 
+volatile bool is_rx_buf_userspace_processed = false;
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -414,6 +416,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     tx_pkt->header.checksum = 0;
 
     transaction_state = Complete;
+    is_rx_buf_userspace_processed = false;
 
     set_nirq_high();
   }
@@ -440,7 +443,7 @@ void dma_handle_data()
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  if (transaction_state == Complete)
+  if (transaction_state == Complete && !is_rx_buf_userspace_processed)
   {
     struct subpacket *rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
@@ -479,6 +482,8 @@ void dma_handle_data()
       /* Advance to the next package. */
       rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
     }
+
+    is_rx_buf_userspace_processed = true;
   }
 
   /* Leave critical section. */
