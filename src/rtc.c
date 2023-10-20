@@ -36,6 +36,9 @@ RTC_HandleTypeDef hrtc;
  * FUNCTION DEFINITION
  **************************************************************************************/
 
+static int rtc_set_date(uint8_t *data);
+static int rtc_get_date(uint8_t *data);
+
 static void MX_RTC_Init(void)
 {
   hrtc.Instance = RTC;
@@ -76,12 +79,16 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
   }
 }
 
-void rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
   if (opcode == SET_DATE)
-    rtc_set_date(data);
-  if (opcode == GET_DATE)
-    rtc_get_date(data);
+    return rtc_set_date(data);
+  else if (opcode == GET_DATE)
+    return rtc_get_date(data);
+  else
+    dbg_printf("rtc_handler: error invalid opcode (:%d)\n", opcode);
+
+  return 0;
 }
 
 void rtc_init()
@@ -90,7 +97,7 @@ void rtc_init()
   register_peripheral_callback(PERIPH_RTC, &rtc_handler);
 }
 
-void rtc_set_date(uint8_t *data)
+int rtc_set_date(uint8_t *data)
 {
   struct rtc_time *tm = (struct rtc_time*)data;
   RTC_TimeTypeDef sTime = {0};
@@ -110,9 +117,11 @@ void rtc_set_date(uint8_t *data)
   sDate.Year = tm->tm_year;
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
     Error_Handler();
+
+  return 0; /* no bytes enqueued */
 }
 
-void rtc_get_date(uint8_t *data)
+int rtc_get_date(uint8_t *data)
 {
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};
@@ -133,5 +142,5 @@ void rtc_get_date(uint8_t *data)
   now.tm_mday = sDate.Date;
   now.tm_year = sDate.Year;
 
-  enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now);
+  return enqueue_packet(PERIPH_RTC, GET_DATE, sizeof(now), &now);
 }

@@ -214,17 +214,19 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
   }
 }
 
-void uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode == CONFIGURE) {
     uart_configure(data);
   }
   if (opcode == DATA) {
     uart_write(data, size);
   }
+  return 0;
 }
 
-void virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   serial_rpc_write(data, size);
+  return 0;
 }
 
 
@@ -247,24 +249,24 @@ int uart_data_available() {
   return !ring_buffer_is_empty(&uart_ring_buffer);
 }
 
-void uart_handle_data() {
+int uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&uart_ring_buffer));
+  int const cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&uart_ring_buffer));
   __enable_irq();
-  enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
+  return enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
 }
 
 int virtual_uart_data_available() {
   return !ring_buffer_is_empty(&virtual_uart_ring_buffer);
 }
 
-void virtual_uart_handle_data() {
+int virtual_uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
   __enable_irq();
-  enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
+  return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }
 
 void UART2_enable_rx_irq() {

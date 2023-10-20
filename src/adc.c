@@ -63,20 +63,30 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_ADC3_Init(void);
 
+static int get_adc_value(enum AnalogPins name);
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void adc_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-  if (opcode == CONFIGURE) {
+int adc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  if (opcode == CONFIGURE)
+  {
     /* Note: ADC currently only supports polling mode.
      * uint16_t adc_sample_rate = *((uint16_t*)data);
      * dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
      */
-  } else if ((opcode >= A0) && (opcode <= A7)) {
-    get_adc_value(opcode);
-  } else {
-    dbg_printf("Invalid ADC opcode %02x\n", opcode);
+    return 0;
+  }
+  else if ((opcode >= A0) && (opcode <= A7))
+  {
+    return get_adc_value(opcode);
+  }
+  else
+  {
+    dbg_printf("adc_handler: invalid ADC opcode %02x\n", opcode);
+    return 0;
   }
 }
 
@@ -89,7 +99,7 @@ void adc_init() {
   register_peripheral_callback(PERIPH_ADC, &adc_handler);
 }
 
-void get_adc_value(enum AnalogPins name) {
+int get_adc_value(enum AnalogPins name) {
   ADC_ChannelConfTypeDef conf = {0};
   ADC_HandleTypeDef* peripheral;
 
@@ -109,7 +119,7 @@ void get_adc_value(enum AnalogPins name) {
 
   dbg_printf("ADC%d: %d\n", name-1, value);
 
-  enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
+  return enqueue_packet(PERIPH_ADC, name, sizeof(value), &value);
 }
 
 static void MX_ADC1_Init(void) {

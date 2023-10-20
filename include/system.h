@@ -65,17 +65,16 @@ void system_init();
 
 void dma_init();
 
-void enqueue_packet(uint8_t peripheral, uint8_t opcode, uint16_t size, void* data);
+int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
+void set_nirq_low();
+void set_nirq_high();
+uint16_t get_tx_packet_size();
+bool is_dma_transfer_complete();
 
-void dispatchPacket(uint8_t peripheral, uint8_t opcode, uint16_t size, uint8_t* data);
-
-struct complete_packet* get_dma_packet();
-
-int get_dma_packet_size();
 
 void dma_handle_data();
 
-typedef void (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
+typedef int (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
 void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);
 
 #endif //SYSTEM_H

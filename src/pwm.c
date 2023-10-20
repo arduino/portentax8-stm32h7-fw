@@ -132,7 +132,7 @@ static bool isValidPwmChannelNumber(unsigned int const channel_number);
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
+int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
   if (opcode & CAPTURE) {
     uint8_t const channel = opcode & 0x0F;
     if (isValidPwmChannelNumber(channel))
@@ -147,6 +147,7 @@ void pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
     else
       dbg_printf("Invalid PWM channel number provided for mode PWM: %d\n", channel);
   }
+  return 0;
 }
 
 void pwm_init() {

@@ -76,12 +76,12 @@ typedef enum {
  **************************************************************************************/
 
 void          can_init();
-void          can_handle_data();
+int           can_handle_data();
 
 void          can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
 int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
-void          can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg);
+int           can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg);
 int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg);
 int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id);
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);

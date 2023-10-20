@@ -40,12 +40,6 @@
 #include "m4_utilities.h"
 
 /**************************************************************************************
- * GLOBAL VARIABLE
- **************************************************************************************/
-
-volatile bool trigger_irq = false;
-
-/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
@@ -70,34 +64,24 @@ void peripheral_init() {
   can_init();
 }
 
-void handle_data() {
-
+void handle_data()
+{
   __WFI();
 
   watchdog_refresh();
 
-  if (uart_data_available()) {
+  if (uart_data_available())
     uart_handle_data();
-  }
 
-  if (virtual_uart_data_available()) {
+  if (virtual_uart_data_available())
     virtual_uart_handle_data();
-  }
 
   can_handle_data();
-
   gpio_handle_data();
-
   dma_handle_data();
 
-/*
-  if (trigger_irq) {
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-    trigger_irq = false;
-  }
-*/
-
+  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0))
+    set_nirq_low();
 }
 
 /**************************************************************************************

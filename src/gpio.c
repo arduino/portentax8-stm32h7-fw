@@ -202,7 +202,7 @@ static uint8_t GPIO_PIN_to_index(uint32_t pin) {
   return index;
 }
 
-void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
+int gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
   uint16_t data = *((uint16_t*)pdata);
   enum Opcodes_GPIO action = opcode;
 
@@ -226,7 +226,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
 
       if      (value == GPIO_MODE_IN_RE) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
       else if (value == GPIO_MODE_IN_FE) GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-      else                               return;
+      else                               return 0;
 
       GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -250,8 +250,8 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
     case READ:
       response[0] = index;
       response[1] = HAL_GPIO_ReadPin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin);
-      enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
       dbg_printf("GPIO%d: READ %d\n", index, response[1]);
+      return enqueue_packet(PERIPH_GPIO, opcode, sizeof(response), &response);
       break;
     case IRQ_SIGNAL:
       // do nothing;
@@ -266,6 +266,7 @@ void gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size) {
       gpio_enable_irq(GPIO_pinmap[index].pin);
       break;
   }
+  return 0;
 }
 
 void gpio_init() {
@@ -301,8 +302,10 @@ void gpio_set_initial_config() {
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
-void gpio_handle_data()
+int gpio_handle_data()
 {
+  int bytes_enqueued = 0;
+
   /* Take a threadsafe copy of the interrupt flags. */
   __disable_irq();
   uint16_t const copy_int_event_flags = int_event_flags;
@@ -315,10 +318,12 @@ void gpio_handle_data()
     if (copy_int_event_flags & (1 << index))
     {
       uint8_t irq_pin = IRQ_pinmap[index].pin;
-      enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
+      bytes_enqueued += enqueue_packet(PERIPH_GPIO, IRQ_SIGNAL, sizeof(irq_pin), &irq_pin);
       __disable_irq();
       int_event_flags &= ~(1 << index); /*Clear this flag */
       __enable_irq();
     }
   }
+
+  return bytes_enqueued;
 }
