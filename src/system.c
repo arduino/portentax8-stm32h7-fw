@@ -277,10 +277,15 @@ cleanup:
   return bytes_enqueued;
 }
 
-void signal_irq_to_imx8()
+void set_nirq_low()
 {
   /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
+}
+
+void set_nirq_high()
+{
+  /* Signal completion of transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
 }
 
@@ -409,6 +414,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     tx_pkt->header.checksum = 0;
 
     transaction_state = Complete;
+
+    set_nirq_high();
   }
 }
 
