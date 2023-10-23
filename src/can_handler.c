@@ -24,9 +24,10 @@
 
 #include <string.h>
 
-#include "main.h"
+#include "stm32h7xx_hal.h"
 
 #include "can.h"
+#include "debug.h"
 #include "peripherals.h"
 
 /**************************************************************************************

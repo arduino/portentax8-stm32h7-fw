@@ -26,6 +26,7 @@
 #include "main.h"
 #include "ringbuffer.h"
 #include "rpc.h"
+#include "debug.h"
 
 /**************************************************************************************
  * TYPEDEF

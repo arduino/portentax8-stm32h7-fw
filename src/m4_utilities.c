@@ -22,6 +22,7 @@
 
 #include "m4_utilities.h"
 #include "main.h"
+#include "debug.h"
 #include "rpc.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_ll_rcc.h"

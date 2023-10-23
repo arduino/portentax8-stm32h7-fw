@@ -25,7 +25,9 @@
 #include <stdio.h>
 
 #include "can.h"
+#include "stm32h7xx_hal.h"
 #include "stm32h7xx_ll_hsem.h"
+#include "debug.h"
 #include "system.h"
 #include "peripherals.h"
 

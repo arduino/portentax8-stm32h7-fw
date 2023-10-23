@@ -22,6 +22,7 @@
 
 #include "system.h"
 #include "main.h"
+#include "debug.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 #include <string.h>
