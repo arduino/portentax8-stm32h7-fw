@@ -20,29 +20,16 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "uart_handler.h"
+#include "virtual_uart_handler.h"
 
-#include "uart.h"
-#include "debug.h"
-#include "peripherals.h"
+#include "rpc.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
-  if (opcode == CONFIGURE)
-  {
-    uart_configure(data);
-  }
-  else if (opcode == DATA)
-  {
-    uart_write(data, size);
-  }
-  else
-  {
-    dbg_printf("uart_handler: error invalid opcode (:%d)\n", opcode);
-  }
+  serial_rpc_write(data, size);
   return 0;
 }

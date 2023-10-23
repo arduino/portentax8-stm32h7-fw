@@ -51,10 +51,6 @@ int uart_data_available();
 
 int uart_handle_data();
 
-int virtual_uart_data_available();
-
-int virtual_uart_handle_data();
-
 void UART2_enable_rx_irq();
 
 #endif//UART_H

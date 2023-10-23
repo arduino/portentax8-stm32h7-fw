@@ -20,29 +20,39 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "uart_handler.h"
+#include "virtual_uart.h"
 
-#include "uart.h"
-#include "debug.h"
+#include "stm32h7xx_hal.h"
+
+#include "system.h"
+#include "ringbuffer.h"
 #include "peripherals.h"
+
+/**************************************************************************************
+ * GLOBAL VARIABLES
+ **************************************************************************************/
+
+ring_buffer_t virtual_uart_ring_buffer; /* extern'ally referenced in rpc.c */
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+void virtual_uart_init()
 {
-  if (opcode == CONFIGURE)
-  {
-    uart_configure(data);
-  }
-  else if (opcode == DATA)
-  {
-    uart_write(data, size);
-  }
-  else
-  {
-    dbg_printf("uart_handler: error invalid opcode (:%d)\n", opcode);
-  }
-  return 0;
+  ring_buffer_init(&virtual_uart_ring_buffer);
+}
+
+int virtual_uart_data_available()
+{
+  return !ring_buffer_is_empty(&virtual_uart_ring_buffer);
+}
+
+int virtual_uart_handle_data()
+{
+  uint8_t temp_buf[RING_BUFFER_SIZE];
+  __disable_irq();
+  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+  __enable_irq();
+  return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }

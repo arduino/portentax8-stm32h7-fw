@@ -33,6 +33,8 @@
 #include "adc_handler.h"
 #include "uart.h"
 #include "uart_handler.h"
+#include "virtual_uart.h"
+#include "virtual_uart_handler.h"
 #include "pwm.h"
 #include "pwm_handler.h"
 #include "gpio.h"
@@ -55,6 +57,8 @@ void peripheral_init()
 
   uart_init();
   register_peripheral_callback(PERIPH_UART, &uart_handler);
+
+  virtual_uart_init();
   register_peripheral_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 
   gpio_init();

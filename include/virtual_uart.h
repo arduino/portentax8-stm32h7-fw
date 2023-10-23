@@ -16,33 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**************************************************************************************
- * INCLUDE
- **************************************************************************************/
-
-#include "uart_handler.h"
-
-#include "uart.h"
-#include "debug.h"
-#include "peripherals.h"
+#ifndef PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H
+#define PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H
 
 /**************************************************************************************
- * FUNCTION DEFINITION
+ * FUNCTION DECLARATION
  **************************************************************************************/
 
-int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
-{
-  if (opcode == CONFIGURE)
-  {
-    uart_configure(data);
-  }
-  else if (opcode == DATA)
-  {
-    uart_write(data, size);
-  }
-  else
-  {
-    dbg_printf("uart_handler: error invalid opcode (:%d)\n", opcode);
-  }
-  return 0;
-}
+void virtual_uart_init();
+int  virtual_uart_data_available();
+int  virtual_uart_handle_data();
+
+#endif /* PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H */
