@@ -307,29 +307,6 @@ uint16_t get_tx_packet_size()
   return tx_packet_size;
 }
 
-#ifndef REALVERSION
-#define REALVERSION "dev " __DATE__ " " __TIME__
-#endif
-
-char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
-
-extern int m4_booted_correctly;
-
-int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
-{
-  if (opcode == FW_VERSION) {
-    const char* version = REAL_VERSION_FLASH;
-    return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
-  }
-  else if (opcode == BOOT_M4) {
-    return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
-  }
-  else {
-    dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
-    return 0;
-  }
-}
-
 void system_init() {
 
   MPU_Config();
@@ -342,8 +319,6 @@ void system_init() {
   SystemClock_Config();
 
   PeriphCommonClock_Config();
-
-  register_peripheral_callback(PERIPH_H7, &h7_handler);
 }
 
 void dma_init() {

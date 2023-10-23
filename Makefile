@@ -89,6 +89,7 @@ SRCS = \
 	src/spi.c \
 	src/system.c \
 	src/watchdog.c \
+	src/h7_handler.c \
 	src/m4_utilities.c \
 	libraries/openamp_arduino/src/condition.c \
 	libraries/openamp_arduino/src/device.c \

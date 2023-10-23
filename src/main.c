@@ -40,6 +40,7 @@
 #include "rtc_handler.h"
 #include "spi.h"
 #include "system.h"
+#include "h7_handler.h"
 #include "watchdog.h"
 #include "m4_utilities.h"
 
@@ -49,6 +50,7 @@
 
 void peripheral_init()
 {
+  register_peripheral_callback(PERIPH_H7, &h7_handler);
 
   uart_init();
 
