@@ -26,6 +26,7 @@
 
 #include "debug.h"
 #include "system.h"
+#include "m4_utilities.h"
 #include "peripherals.h"
 
 /**************************************************************************************
@@ -43,22 +44,19 @@
 char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
 
 /**************************************************************************************
- * EXTERN DECLARATION
- **************************************************************************************/
-
-extern int m4_booted_correctly;
-
-/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
 int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
-  if (opcode == FW_VERSION) {
+  if (opcode == FW_VERSION)
+  {
     const char* version = REAL_VERSION_FLASH;
     return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
   }
-  else if (opcode == BOOT_M4) {
+  else if (opcode == BOOT_M4)
+  {
+    int m4_booted_correctly = is_m4_booted_correctly();
     return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
   }
   else {
