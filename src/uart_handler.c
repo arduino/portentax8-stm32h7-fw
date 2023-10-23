@@ -16,26 +16,40 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <stdlib.h>
-#include <inttypes.h>
+#include "uart_handler.h"
+
+#include "rpc.h"
+#include "uart.h"
+#include "debug.h"
+#include "peripherals.h"
 
 /**************************************************************************************
- * FUNCTION DECLARATION
+ * FUNCTION DEFINITION
  **************************************************************************************/
 
-int serial_rpc_begin();
-void serial_rpc_available();
-void serial_rpc_read(uint8_t* buf);
-void serial_rpc_write(uint8_t* buf, size_t len);
-
-#ifdef __cplusplus
+int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  if (opcode == CONFIGURE)
+  {
+    uart_configure(data);
+  }
+  else if (opcode == DATA)
+  {
+    uart_write(data, size);
+  }
+  else
+  {
+    dbg_printf("uart_handler: error invalid opcode (:%d)\n", opcode);
+  }
+  return 0;
 }
-#endif
+
+int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  serial_rpc_write(data, size);
+  return 0;
+}

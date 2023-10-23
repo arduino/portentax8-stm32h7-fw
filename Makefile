@@ -80,6 +80,7 @@ SRCS = \
 	src/adc.c \
 	src/adc_handler.c \
 	src/uart.c \
+	src/uart_handler.c \
 	src/pwm.c \
 	src/pwm_handler.c \
 	src/gpio.c \

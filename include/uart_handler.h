@@ -16,26 +16,20 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef PORTENTAX8_STM32H7_FW_UART_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_UART_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <stdlib.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-int serial_rpc_begin();
-void serial_rpc_available();
-void serial_rpc_read(uint8_t* buf);
-void serial_rpc_write(uint8_t* buf, size_t len);
+int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size);
+int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size);
 
-#ifdef __cplusplus
-}
-#endif
+#endif /* PORTENTAX8_STM32H7_FW_UART_HANDLER_H */
