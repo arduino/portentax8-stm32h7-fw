@@ -50,16 +50,6 @@
 #define X8H7_CAN_STS_INT_RX      0x02
 #define X8H7_CAN_STS_INT_ERR     0x04
 
-/* Special address description flags for the CAN_ID */
-#define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
-#define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
-#define CAN_ERR_FLAG 0x20000000U /* error message frame */
-
-/* Valid bits in CAN ID for frame formats */
-#define CAN_SFF_MASK 0x000007FFU /* standard frame format (SFF) */
-#define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
-#define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
-
 /**************************************************************************************
  * GLOBAL CONSTANTS
  **************************************************************************************/
@@ -155,84 +145,6 @@ static void error(char* string) {
     while (1);
 }
 
-int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-    if (opcode == CONFIGURE)
-    {
-      uint32_t const can_bitrate = *((uint32_t *)data);
-      can_frequency(&fdcan_1, can_bitrate);
-      dbg_printf("fdcan1_handler: configuring fdcan1 with frequency %ld\n", can_bitrate);
-      return 0;
-    }
-    else if (opcode == CAN_FILTER)
-    {
-      union x8h7_can_filter_message x8h7_msg;
-      memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
-
-      if (!can_filter(&fdcan_1,
-                      x8h7_msg.field.idx,
-                      x8h7_msg.field.id,
-                      x8h7_msg.field.mask,
-                      x8h7_msg.field.id & CAN_EFF_FLAG))
-      {
-        dbg_printf("fdcan1_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
-      }
-      return 0;
-    }
-    else if (opcode == CAN_TX_FRAME)
-    {
-      union x8h7_can_frame_message msg;
-      memcpy(&msg, data, size);
-
-      dbg_printf("fdcan1_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
-      return can_write(&fdcan_1, &msg);
-    }
-    else
-    {
-      dbg_printf("fdcan1_handler: error invalid opcode (:%d)\n", opcode);
-      return 0;
-    }
-}
-
-int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size)
-{
-    if (opcode == CONFIGURE)
-    {
-      uint32_t const can_bitrate = *((uint32_t *)data);
-      can_frequency(&fdcan_2, can_bitrate);
-      dbg_printf("fdcan2_handler: configuring fdcan2 with frequency %ld\n", can_bitrate);
-      return 0;
-    }
-    else if (opcode == CAN_FILTER)
-    {
-      union x8h7_can_filter_message x8h7_msg;
-      memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
-
-      if (!can_filter(&fdcan_2,
-                      x8h7_msg.field.idx,
-                      x8h7_msg.field.id,
-                      x8h7_msg.field.mask,
-                      x8h7_msg.field.id & CAN_EFF_FLAG))
-      {
-        dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
-      }
-      return 0;
-    }
-    else if (opcode == CAN_TX_FRAME)
-    {
-      union x8h7_can_frame_message msg;
-      memcpy(&msg, data, size);
-
-      dbg_printf("fdcan2_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
-      return can_write(&fdcan_2, &msg);
-    }
-    else
-    {
-      dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
-      return 0;
-    }
-}
-
-
 void can_init()
 {
   CanNominalBitTimingResult default_can_bit_timing = {0};
@@ -253,9 +165,6 @@ void can_init()
 
   can_init_device(&fdcan_1, CAN_1, default_can_bit_timing);
   can_init_device(&fdcan_2, CAN_2, default_can_bit_timing);
-
-  register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
-  register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
 int can_handle_data()

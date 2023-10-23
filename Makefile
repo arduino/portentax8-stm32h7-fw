@@ -69,6 +69,7 @@ SRCS = \
 	src/system_stm32h7xx_dualcore_boot_cm4_cm7.c \
 	src/main.c \
 	src/can.c \
+	src/can_handler.c \
 	src/can_util.c \
 	src/peripherals.c \
 	src/ringbuffer.c \

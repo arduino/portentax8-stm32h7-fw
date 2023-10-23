@@ -27,6 +27,7 @@
 #include "peripherals.h"
 #include "ringbuffer.h"
 #include "can.h"
+#include "can_handler.h"
 #include "rpc.h"
 #include "adc.h"
 #include "uart.h"
@@ -43,7 +44,8 @@
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void peripheral_init() {
+void peripheral_init()
+{
 
   uart_init();
 
@@ -62,6 +64,8 @@ void peripheral_init() {
   adc_init();
 
   can_init();
+  register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
+  register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
 void handle_data()
