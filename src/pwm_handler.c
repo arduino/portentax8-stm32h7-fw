@@ -32,19 +32,26 @@
 
 int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size)
 {
-  if (opcode & CAPTURE) {
+  if (opcode == CAPTURE)
+  {
     uint8_t const channel = opcode & 0x0F;
     if (isValidPwmChannelNumber(channel))
       capturePwm(channel);
     else
-      dbg_printf("Invalid PWM channel number provided for mode CAPTURE: %d\n", channel);
-  } else {
+      dbg_printf("pwm_handler: invalid PWM channel number provided for mode CAPTURE: %d\n", channel);
+  }
+  else if (opcode == CONFIGURE)
+  {
     uint8_t const channel = opcode;
     struct pwmPacket config = *((struct pwmPacket*)data);
     if (isValidPwmChannelNumber(channel))
       configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
     else
-      dbg_printf("Invalid PWM channel number provided for mode PWM: %d\n", channel);
+      dbg_printf("pwm_handler: invalid PWM channel number provided for mode PWM: %d\n", channel);
+  }
+  else
+  {
+    dbg_printf("pwm_handler: error invalid opcode (:%d)\n", opcode);
   }
   return 0;
 }
