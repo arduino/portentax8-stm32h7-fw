@@ -33,6 +33,7 @@
 #include "adc_handler.h"
 #include "uart.h"
 #include "pwm.h"
+#include "pwm_handler.h"
 #include "gpio.h"
 #include "timer.h"
 #include "rtc.h"
@@ -54,6 +55,7 @@ void peripheral_init()
   gpio_init();
 
   pwm_init();
+  register_peripheral_callback(PERIPH_PWM, &pwm_handler);
 
   dma_init();
 

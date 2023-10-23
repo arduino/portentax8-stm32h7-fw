@@ -81,6 +81,7 @@ SRCS = \
 	src/adc_handler.c \
 	src/uart.c \
 	src/pwm.c \
+	src/pwm_handler.c \
 	src/gpio.c \
 	src/timer.c \
 	src/rtc.c \

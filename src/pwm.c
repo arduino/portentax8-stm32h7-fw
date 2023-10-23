@@ -124,36 +124,11 @@ struct CAPTURE_numbers CAPTURE_pinmap[] = {
 };
 
 /**************************************************************************************
- * INTERNAL FUNCTION DECLARATION
- **************************************************************************************/
-
-static bool isValidPwmChannelNumber(unsigned int const channel_number);
-
-/**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-  if (opcode & CAPTURE) {
-    uint8_t const channel = opcode & 0x0F;
-    if (isValidPwmChannelNumber(channel))
-      capturePwm(channel);
-    else
-      dbg_printf("Invalid PWM channel number provided for mode CAPTURE: %d\n", channel);
-  } else {
-    uint8_t const channel = opcode;
-    struct pwmPacket config = *((struct pwmPacket*)data);
-    if (isValidPwmChannelNumber(channel))
-      configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
-    else
-      dbg_printf("Invalid PWM channel number provided for mode PWM: %d\n", channel);
-  }
-  return 0;
-}
-
-void pwm_init() {
-  register_peripheral_callback(PERIPH_PWM, &pwm_handler);
-
+void pwm_init()
+{
   uint32_t clocksource = __HAL_RCC_GET_HRTIM1_SOURCE();
   switch (clocksource) {
     case RCC_HRTIM1CLK_TIMCLK:

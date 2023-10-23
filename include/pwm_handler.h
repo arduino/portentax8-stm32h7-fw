@@ -16,44 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PWM_H
-#define PWM_H
+#ifndef PORTENTAX8_STM32H7_FW_PWM_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_PWM_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
-#include <stdbool.h>
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-struct __attribute__((packed, aligned(4))) pwmPacket {
-  uint8_t enable: 1;
-  uint8_t polarity: 1;
-  uint32_t duty: 30;
-  uint32_t period: 32;
-};
-
-struct __attribute__((packed, aligned(4))) pwmCapture {
-  uint8_t enable: 1;
-  uint8_t polarity: 1;
-  uint32_t duty: 30;
-  uint32_t period: 32;
-};
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void pwm_init();
+int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size);
 
-void capturePwm(uint8_t channel);
-
-void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns);
-
-bool isValidPwmChannelNumber(unsigned int const channel_number);
-
-#endif  //PWM_H
+#endif /* PORTENTAX8_STM32H7_FW_PWM_HANDLER_H */

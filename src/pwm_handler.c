@@ -16,44 +16,35 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PWM_H
-#define PWM_H
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include "pwm_handler.h"
+
+#include "pwm.h"
+#include "debug.h"
+#include "peripherals.h"
 
 /**************************************************************************************
- * TYPEDEF
+ * FUNCTION DEFINITION
  **************************************************************************************/
 
-struct __attribute__((packed, aligned(4))) pwmPacket {
-  uint8_t enable: 1;
-  uint8_t polarity: 1;
-  uint32_t duty: 30;
-  uint32_t period: 32;
-};
-
-struct __attribute__((packed, aligned(4))) pwmCapture {
-  uint8_t enable: 1;
-  uint8_t polarity: 1;
-  uint32_t duty: 30;
-  uint32_t period: 32;
-};
-
-/**************************************************************************************
- * FUNCTION DECLARATION
- **************************************************************************************/
-
-void pwm_init();
-
-void capturePwm(uint8_t channel);
-
-void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns, uint32_t period_ns);
-
-bool isValidPwmChannelNumber(unsigned int const channel_number);
-
-#endif  //PWM_H
+int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  if (opcode & CAPTURE) {
+    uint8_t const channel = opcode & 0x0F;
+    if (isValidPwmChannelNumber(channel))
+      capturePwm(channel);
+    else
+      dbg_printf("Invalid PWM channel number provided for mode CAPTURE: %d\n", channel);
+  } else {
+    uint8_t const channel = opcode;
+    struct pwmPacket config = *((struct pwmPacket*)data);
+    if (isValidPwmChannelNumber(channel))
+      configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
+    else
+      dbg_printf("Invalid PWM channel number provided for mode PWM: %d\n", channel);
+  }
+  return 0;
+}
