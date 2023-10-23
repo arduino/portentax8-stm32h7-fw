@@ -16,35 +16,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RTC_H
-#define RTC_H
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
+#include "rtc_handler.h"
+
+#include "rtc.h"
+#include "debug.h"
+#include "peripherals.h"
 
 /**************************************************************************************
- * TYPEDEF
+ * FUNCTION DEFINITION
  **************************************************************************************/
 
-struct rtc_time {
-  uint8_t tm_sec;
-  uint8_t tm_min;
-  uint8_t tm_hour;
-  uint8_t tm_mday;
-  uint8_t tm_mon;
-  uint8_t tm_year;
-  uint8_t tm_wday;
-};
+int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  if (opcode == SET_DATE)
+    return rtc_set_date(data);
+  else if (opcode == GET_DATE)
+    return rtc_get_date(data);
+  else
+    dbg_printf("rtc_handler: error invalid opcode (:%d)\n", opcode);
 
-/**************************************************************************************
- * FUNCTION DECLARATION
- **************************************************************************************/
-
-void rtc_init();
-int  rtc_set_date(uint8_t const * data);
-int  rtc_get_date(uint8_t * data);
-
-#endif //RTC_H
+  return 0;
+}

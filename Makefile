@@ -84,6 +84,7 @@ SRCS = \
 	src/gpio.c \
 	src/timer.c \
 	src/rtc.c \
+	src/rtc_handler.c \
 	src/spi.c \
 	src/system.c \
 	src/watchdog.c \

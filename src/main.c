@@ -36,6 +36,7 @@
 #include "gpio.h"
 #include "timer.h"
 #include "rtc.h"
+#include "rtc_handler.h"
 #include "spi.h"
 #include "system.h"
 #include "watchdog.h"
@@ -59,6 +60,7 @@ void peripheral_init()
   timer_init();
 
   rtc_init();
+  register_peripheral_callback(PERIPH_RTC, &rtc_handler);
 
   spi_init();
 

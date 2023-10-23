@@ -16,35 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RTC_H
-#define RTC_H
+#ifndef PORTENTAX8_STM32H7_FW_RTC_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_RTC_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-struct rtc_time {
-  uint8_t tm_sec;
-  uint8_t tm_min;
-  uint8_t tm_hour;
-  uint8_t tm_mday;
-  uint8_t tm_mon;
-  uint8_t tm_year;
-  uint8_t tm_wday;
-};
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void rtc_init();
-int  rtc_set_date(uint8_t const * data);
-int  rtc_get_date(uint8_t * data);
+int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size);
 
-#endif //RTC_H
+#endif /* PORTENTAX8_STM32H7_FW_RTC_HANDLER_H */
