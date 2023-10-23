@@ -78,6 +78,7 @@ SRCS = \
 	src/syscalls.c \
 	src/sysmem.c \
 	src/adc.c \
+	src/adc_handler.c \
 	src/uart.c \
 	src/pwm.c \
 	src/gpio.c \

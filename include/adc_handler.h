@@ -16,35 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ADC_H
-#define ADC_H
+#ifndef PORTENTAX8_STM32H7_FW_ADC_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_ADC_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-enum AnalogPins {
-  A0 = 0x1,
-  A1,
-  A2,
-  A3,
-  A4,
-  A5,
-  A6,
-  A7,
-};
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void adc_init();
-int get_adc_value(enum AnalogPins name);
+int adc_handler(uint8_t opcode, uint8_t *data, uint16_t size);
 
-#endif  //ADC_H
+#endif /* PORTENTAX8_STM32H7_FW_ADC_HANDLER_H */

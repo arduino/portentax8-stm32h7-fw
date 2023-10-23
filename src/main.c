@@ -30,6 +30,7 @@
 #include "can_handler.h"
 #include "rpc.h"
 #include "adc.h"
+#include "adc_handler.h"
 #include "uart.h"
 #include "pwm.h"
 #include "gpio.h"
@@ -62,6 +63,7 @@ void peripheral_init()
   spi_init();
 
   adc_init();
+  register_peripheral_callback(PERIPH_ADC, &adc_handler);
 
   can_init();
   register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);

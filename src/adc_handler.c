@@ -16,35 +16,37 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ADC_H
-#define ADC_H
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
+#include "adc_handler.h"
+
+#include "adc.h"
+#include "debug.h"
+#include "peripherals.h"
 
 /**************************************************************************************
- * TYPEDEF
+ * FUNCTION DEFINITION
  **************************************************************************************/
 
-enum AnalogPins {
-  A0 = 0x1,
-  A1,
-  A2,
-  A3,
-  A4,
-  A5,
-  A6,
-  A7,
-};
-
-/**************************************************************************************
- * FUNCTION DECLARATION
- **************************************************************************************/
-
-void adc_init();
-int get_adc_value(enum AnalogPins name);
-
-#endif  //ADC_H
+int adc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+{
+  if (opcode == CONFIGURE)
+  {
+    /* Note: ADC currently only supports polling mode.
+     * uint16_t adc_sample_rate = *((uint16_t*)data);
+     * dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
+     */
+    return 0;
+  }
+  else if ((opcode >= A0) && (opcode <= A7))
+  {
+    return get_adc_value(opcode);
+  }
+  else
+  {
+    dbg_printf("adc_handler: invalid ADC opcode %02x\n", opcode);
+    return 0;
+  }
+}
