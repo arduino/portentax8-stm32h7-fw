@@ -126,9 +126,9 @@ int main(void) {
 
   watchdog_init(IWDG_PRESCALER_16);
 
-  while (1) {
-
+  for(;;) {
     handle_data();
-
   }
+
+  /* Never return. */
 }
