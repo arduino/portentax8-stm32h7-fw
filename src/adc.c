@@ -120,12 +120,12 @@ static void MX_ADC1_Init(void) {
   hadc1.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc1.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc1) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_Init failed.");
   }
 
   multimode.Mode = ADC_MODE_INDEPENDENT;
   if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADCEx_MultiModeConfigChannel failed.");
   }
 
   sConfig.Channel = ADC_CHANNEL_2;
@@ -136,7 +136,7 @@ static void MX_ADC1_Init(void) {
   sConfig.Offset = 0;
   sConfig.OffsetSignedSaturation = DISABLE;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_ConfigChannel failed.");
   }
 
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
@@ -163,7 +163,7 @@ static void MX_ADC2_Init(void) {
   hadc2.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc2.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc2) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_Init failed.");
   }
 
   sConfig.Channel = ADC_CHANNEL_3;
@@ -174,7 +174,7 @@ static void MX_ADC2_Init(void) {
   sConfig.Offset = 0;
   sConfig.OffsetSignedSaturation = DISABLE;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_ConfigChannel failed.");
   }
 
   HAL_ADCEx_Calibration_Start(&hadc2, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);
@@ -201,7 +201,7 @@ static void MX_ADC3_Init(void) {
   hadc3.Init.LeftBitShift = ADC_LEFTBITSHIFT_NONE;
   hadc3.Init.OversamplingMode = DISABLE;
   if (HAL_ADC_Init(&hadc3) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_Init failed.");
   }
 
   sConfig.Channel = ADC_CHANNEL_3;
@@ -212,7 +212,7 @@ static void MX_ADC3_Init(void) {
   sConfig.Offset = 0;
   sConfig.OffsetSignedSaturation = DISABLE;
   if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_ADC_ConfigChannel failed.");
   }
 
   HAL_ADCEx_Calibration_Start(&hadc3, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED);

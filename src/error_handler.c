@@ -22,16 +22,24 @@
 
 #include "error_handler.h"
 
-#include "debug.h"
+#include <stdio.h>
+#include <stdarg.h>
+
 #include "stm32h7xx_hal.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void Error_Handler_Name(const char * name)
+void Error_Handler_Func(const char * func, const char * fmt, ...)
 {
-  dbg_printf("Error_Handler called by %s\n", name);
+  printf("%s: ", func);
+
+  va_list args;
+  va_start(args, fmt);
+  printf(fmt, args);
+  va_end(args);
+
   __disable_irq();
   while (1) { }
 }

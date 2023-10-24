@@ -19,7 +19,6 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "error_handler.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
@@ -31,6 +30,7 @@
 #include "system.h"
 #include "opcodes.h"
 #include "peripherals.h"
+#include "error_handler.h"
 
 /**************************************************************************************
  * DEFINE
@@ -143,11 +143,6 @@ void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef *hfdcan)
   }
 }
 
-static void error(char* string) {
-    printf(string);
-    while (1);
-}
-
 void can_init()
 {
   CanNominalBitTimingResult default_can_bit_timing = {0};
@@ -162,8 +157,7 @@ void can_init()
                                    TSEG2_MAX,
                                    &default_can_bit_timing))
   {
-    printf("Could not calculate valid default CAN bit timing\n");
-    return;
+    Error_Handler("Could not calculate valid default CAN bit timing\n");
   }
 
   can_init_device(&fdcan_1, CAN_1, default_can_bit_timing);
@@ -194,35 +188,24 @@ int can_handle_data()
   return bytes_enqueued;
 }
 
-/** Call all the init functions
- *
- *  @returns
- *    0 if mode change failed or unsupported,
- *    1 if mode change was successful
- */
 int can_internal_init(FDCAN_HandleTypeDef * handle)
 {
-    if (HAL_FDCAN_Init(handle) != HAL_OK) {
-        error("HAL_FDCAN_Init error\n");
-    }
+  if (HAL_FDCAN_Init(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Init Error_Handler\n");
 
-    if (can_filter(handle, 0, 0, 0, false) == 0) {
-        error("can_filter error\n");
-    }
+  if (can_filter(handle, 0, 0, 0, false) == 0)
+    Error_Handler("can_filter Error_Handler\n");
 
-    if (can_filter(handle, 0, 0, 0, true) == 0) {
-        error("can_filter error\n");
-    }
+  if (can_filter(handle, 0, 0, 0, true) == 0)
+    Error_Handler("can_filter Error_Handler\n");
 
-    if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK) {
-        error("HAL_FDCAN_ConfigGlobalFilter error\n");
-    }
+  if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ConfigGlobalFilter Error_Handler\n");
 
-    if (HAL_FDCAN_Start(handle) != HAL_OK) {
-        error("HAL_FDCAN_Start error\n");
-    }
+  if (HAL_FDCAN_Start(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Start Error_Handler\n");
 
-    return 1;
+  return 1;
 }
 
 void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
@@ -271,16 +254,13 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
 
 int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 {
-    if (HAL_FDCAN_Stop(handle) != HAL_OK) {
-        error("HAL_FDCAN_Stop error\n");
-    }
-
-  uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+  if (HAL_FDCAN_Stop(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Stop Error_Handler\n");
 
   CanNominalBitTimingResult can_bit_timing = {0};
 
   if (!calc_can_nominal_bit_timing(can_bitrate,
-                                   can_clock_Hz,
+                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
                                    TQ_MAX,
                                    TQ_MIN,
                                    TSEG1_MIN,
@@ -289,8 +269,7 @@ int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
                                    TSEG2_MAX,
                                    &can_bit_timing))
   {
-    printf("Could not calculate valid CAN bit timing\n");
-    return 0;
+    Error_Handler("Could not calculate valid CAN bit timing\n");
   }
 
   dbg_printf("can_frequency:\n\r  can_bitrate = %ld\n\r  can_clock_Hz = %ld\n", can_bitrate, can_clock_Hz);
@@ -321,7 +300,6 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
 
   return 1;
 }
-
 
 int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
@@ -368,7 +346,7 @@ int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const *
     if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
-      printf("error: %ld\n", err_code);
+      printf("Error_Handler: %ld\n", err_code);
 
       uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
       if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
@@ -393,7 +371,7 @@ int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
   uint8_t RxData[64] = {0};
   if (HAL_FDCAN_GetRxMessage(handle, FDCAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
   {
-    error("HAL_FDCAN_GetRxMessage error\n"); // Should not occur as previous HAL_FDCAN_GetRxFifoFillLevel call reported some data
+    Error_Handler("HAL_FDCAN_GetRxMessage Error_Handler\n"); // Should not occur as previous HAL_FDCAN_GetRxFifoFillLevel call reported some data
     return 0;
   }
 
@@ -414,14 +392,14 @@ int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
   return 1;
 }
 
-unsigned char can_rderror(FDCAN_HandleTypeDef * handle)
+unsigned char can_rdError_Handler(FDCAN_HandleTypeDef * handle)
 {
   FDCAN_ErrorCountersTypeDef ErrorCounters;
   HAL_FDCAN_GetErrorCounters(handle, &ErrorCounters);
   return (unsigned char)ErrorCounters.RxErrorCnt;
 }
 
-unsigned char can_tderror(FDCAN_HandleTypeDef * handle)
+unsigned char can_tdError_Handler(FDCAN_HandleTypeDef * handle)
 {
   FDCAN_ErrorCountersTypeDef ErrorCounters;
   HAL_FDCAN_GetErrorCounters(handle, &ErrorCounters);

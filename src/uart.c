@@ -114,19 +114,19 @@ static void MX_USART2_UART_Init(void) {
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(&huart2) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_UART_Init failed.");
   }
 
   if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_2) !=
       HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_UARTEx_SetTxFifoThreshold failed.");
   }
   if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_2) !=
       HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_UARTEx_SetRxFifoThreshold failed.");
   }
   if (HAL_UARTEx_EnableFifoMode(&huart2) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_UARTEx_EnableFifoMode failed.");
   }
 
 /*
@@ -157,7 +157,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart) {
     PeriphClkInitStruct.Usart234578ClockSelection =
         RCC_USART234578CLKSOURCE_D2PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-      Error_Handler();
+      Error_Handler("HAL_RCCEx_PeriphCLKConfig failed.");
     }
 
     /* Peripheral clock enable */
@@ -336,7 +336,7 @@ void uart_configure(uint8_t const * data) {
   HAL_UART_DeInit(&huart2);
 
   if (HAL_UART_Init(&huart2) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_UART_Init failed.");
   }
 
   UART2_enable_rx_irq();

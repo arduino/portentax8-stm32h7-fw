@@ -23,7 +23,7 @@
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void Error_Handler_Name(const char *name);
-#define Error_Handler() Error_Handler_Name(__func__)
+void Error_Handler_Func(const char * name, const char * fmt, ...);
+#define Error_Handler(fmt, ...) Error_Handler_Func(__func__, fmt, ## __VA_ARGS__)
 
 #endif /* ERROR_HANDLER_H_ */

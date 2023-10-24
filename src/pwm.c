@@ -299,7 +299,7 @@ void capturePwm(uint8_t channel) {
   } else if (CAPTURE_pinmap[channel].timer_instance == TIM4) {
     configureTIM4(channel);
   } else {
-    Error_Handler();
+    Error_Handler("no timer instance found: %d", CAPTURE_pinmap[channel].timer_instance);
   }
 
 }
@@ -322,8 +322,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
   }
 
   if (pwm_idx == 0xFF) {
-    //No matching PWM configuration found!
-    Error_Handler();
+    Error_Handler("no matching PWM configuration found");
   } else {
 
     if(interrupt_count == 0)
@@ -354,9 +353,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
       }
       else
       {
-        /* If capture values are equal, we have reached the limit of frequency
-           measures */
-        Error_Handler();
+        Error_Handler("frequency measurement limit reached.");
       }
 
       if (first_edge_rising) {
@@ -371,9 +368,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         }
         else
         {
-          /* If capture values are equal, we have reached the limit of frequency
-            measures */
-          Error_Handler();
+          Error_Handler("frequency measurement limit reached.");
         }
       } else {
         if (capture_last > capture_second)
@@ -387,7 +382,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
         }
         else
         {
-          Error_Handler();
+          Error_Handler("capture_last (%d) = capture_second (%d)", capture_last, capture_second);
         }
       }
 
