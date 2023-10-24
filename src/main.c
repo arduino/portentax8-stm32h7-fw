@@ -20,48 +20,66 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "main.h"
-#include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
+
 #include "peripherals.h"
-#include "ringbuffer.h"
 #include "can.h"
+#include "can_handler.h"
 #include "rpc.h"
 #include "adc.h"
+#include "adc_handler.h"
 #include "uart.h"
+#include "uart_handler.h"
+#include "virtual_uart.h"
+#include "virtual_uart_handler.h"
 #include "pwm.h"
+#include "pwm_handler.h"
 #include "gpio.h"
+#include "gpio_handler.h"
 #include "timer.h"
 #include "rtc.h"
+#include "rtc_handler.h"
 #include "spi.h"
 #include "system.h"
+#include "h7_handler.h"
 #include "watchdog.h"
-#include "m4_utilities.h"
+#include "m4_util.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void peripheral_init() {
+void peripheral_init()
+{
+  peripheral_register_callback(PERIPH_H7, &h7_handler);
 
   uart_init();
+  peripheral_register_callback(PERIPH_UART, &uart_handler);
+
+  virtual_uart_init();
+  peripheral_register_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 
   gpio_init();
+  peripheral_register_callback(PERIPH_GPIO, &gpio_handler);
 
   pwm_init();
+  peripheral_register_callback(PERIPH_PWM, &pwm_handler);
 
   dma_init();
 
   timer_init();
 
   rtc_init();
+  peripheral_register_callback(PERIPH_RTC, &rtc_handler);
 
   spi_init();
 
   adc_init();
+  peripheral_register_callback(PERIPH_ADC, &adc_handler);
 
   can_init();
+  peripheral_register_callback(PERIPH_FDCAN1, &fdcan1_handler);
+  peripheral_register_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
 void handle_data()
@@ -105,9 +123,9 @@ int main(void) {
 
   watchdog_init(IWDG_PRESCALER_16);
 
-  while (1) {
-
+  for(;;) {
     handle_data();
-
   }
+
+  /* Never return. */
 }

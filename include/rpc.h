@@ -16,14 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
+#include <stdlib.h>
 #include <inttypes.h>
 
 /**************************************************************************************
@@ -33,8 +30,4 @@ extern "C" {
 int serial_rpc_begin();
 void serial_rpc_available();
 void serial_rpc_read(uint8_t* buf);
-void serial_rpc_write(uint8_t* buf, size_t len);
-
-#ifdef __cplusplus
-}
-#endif
+void serial_rpc_write(uint8_t const * buf, size_t len);

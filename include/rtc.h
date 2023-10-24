@@ -44,5 +44,7 @@ struct rtc_time {
  **************************************************************************************/
 
 void rtc_init();
+int  rtc_set_date(uint8_t const * data);
+int  rtc_get_date();
 
 #endif //RTC_H

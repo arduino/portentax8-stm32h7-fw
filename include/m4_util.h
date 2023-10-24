@@ -16,33 +16,23 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef M4_UTILITIES_H
+#define M4_UTILITIES_H
+
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#include <inttypes.h>
 
 /**************************************************************************************
- * GLOBAL VARIABLES
+ * FUNCTION DECLARATION
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+void disableCM4Autoboot();
 
-/**************************************************************************************
- * FUNCTION DEFINITION
- **************************************************************************************/
+void try_execute_m4_app();
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
+int is_m4_booted_correctly();
 
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
-}
+#endif /* M4_UTILITIES_H */

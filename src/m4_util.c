@@ -20,8 +20,9 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "m4_utilities.h"
-#include "main.h"
+#include "m4_util.h"
+#include "error_handler.h"
+#include "debug.h"
 #include "rpc.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_ll_rcc.h"
@@ -61,7 +62,7 @@ void disableCM4Autoboot() {
   }
 }
 
-int m4_booted_correctly = -1;
+static int m4_booted_correctly = -1;
 
 void try_execute_m4_app() {
   int m4_app_valid = (((*(__IO uint32_t *) FLASH_BANK2_BASE) & 0xFF000000) == 0x10000000);
@@ -72,4 +73,9 @@ void try_execute_m4_app() {
     m4_booted_correctly = serial_rpc_begin();
     dbg_printf("CM4 booted: %d\n", m4_booted_correctly);
   }
+}
+
+int is_m4_booted_correctly()
+{
+  return m4_booted_correctly;
 }

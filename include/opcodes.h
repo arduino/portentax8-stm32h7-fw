@@ -16,33 +16,60 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**************************************************************************************
- * INCLUDE
- **************************************************************************************/
-
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#ifndef PORTENTAX8_STM32H7_FW_OPCODES_H
+#define PORTENTAX8_STM32H7_FW_OPCODES_H
 
 /**************************************************************************************
- * GLOBAL VARIABLES
+ * TYPEDEF
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+enum Opcodes
+{
+  CONFIGURE = 0x10,
+  DATA      = 0x01,
+};
 
-/**************************************************************************************
- * FUNCTION DEFINITION
- **************************************************************************************/
+enum Opcodes_H7
+{
+  FW_VERSION = 0x10,
+  BOOT_M4    = 0x77,
+};
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
+enum Opcodes_UART
+{
+  GET_LINESTATE = 0x20,
+};
 
-  HAL_IWDG_Init(&watchdog);
-}
+enum Opcodes_RTC
+{
+  SET_DATE  = 0x01,
+  GET_DATE  = 0x02,
+  SET_ALARM = 0x11,
+  GET_ALARM = 0x12,
+};
 
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
-}
+enum Opcodes_CAN
+{
+  CAN_TX_FRAME = 0x01,
+  CAN_RX_FRAME = 0x01,
+  CAN_STATUS   = 0x40,
+  CAN_FILTER   = 0x50,
+};
+
+enum Opcodes_GPIO
+{
+  DIRECTION  = 0x10,
+  IRQ_TYPE   = 0x11,
+  WRITE      = 0x20,
+  READ       = 0x30,
+  IRQ_ENABLE = 0x40,
+  IRQ_SIGNAL = 0x50,
+  IRQ_ACK    = 0x60,
+};
+
+enum Opcodes_PWM
+{
+  CAPTURE = 0x60,
+};
+
+#endif //PORTENTAX8_STM32H7_FW_OPCODES_H

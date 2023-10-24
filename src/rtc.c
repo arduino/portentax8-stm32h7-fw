@@ -21,10 +21,14 @@
  **************************************************************************************/
 
 #include "rtc.h"
-#include "main.h"
-#include "system.h"
-#include "peripherals.h"
+
 #include "stm32h7xx_hal.h"
+
+#include "error_handler.h"
+#include "debug.h"
+#include "system.h"
+#include "opcodes.h"
+#include "peripherals.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLE
@@ -35,9 +39,6 @@ RTC_HandleTypeDef hrtc;
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
-
-static int rtc_set_date(uint8_t *data);
-static int rtc_get_date(uint8_t *data);
 
 static void MX_RTC_Init(void)
 {
@@ -79,25 +80,12 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
   }
 }
 
-int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
-{
-  if (opcode == SET_DATE)
-    return rtc_set_date(data);
-  else if (opcode == GET_DATE)
-    return rtc_get_date(data);
-  else
-    dbg_printf("rtc_handler: error invalid opcode (:%d)\n", opcode);
-
-  return 0;
-}
-
 void rtc_init()
 {
   MX_RTC_Init();
-  register_peripheral_callback(PERIPH_RTC, &rtc_handler);
 }
 
-int rtc_set_date(uint8_t *data)
+int rtc_set_date(uint8_t const * data)
 {
   struct rtc_time *tm = (struct rtc_time*)data;
   RTC_TimeTypeDef sTime = {0};
@@ -121,7 +109,7 @@ int rtc_set_date(uint8_t *data)
   return 0; /* no bytes enqueued */
 }
 
-int rtc_get_date(uint8_t *data)
+int rtc_get_date()
 {
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};

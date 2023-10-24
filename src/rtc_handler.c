@@ -20,29 +20,24 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#include "rtc_handler.h"
 
-/**************************************************************************************
- * GLOBAL VARIABLES
- **************************************************************************************/
-
-IWDG_HandleTypeDef watchdog;
+#include "rtc.h"
+#include "debug.h"
+#include "opcodes.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
+int rtc_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
+{
+  if (opcode == SET_DATE)
+    return rtc_set_date(data);
+  else if (opcode == GET_DATE)
+    return rtc_get_date();
+  else
+    dbg_printf("rtc_handler: error invalid opcode (:%d)\n", opcode);
 
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
+  return 0;
 }

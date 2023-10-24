@@ -17,12 +17,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef MBED_CAN_API_H
 #define MBED_CAN_API_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**************************************************************************************
  * INCLUDE
@@ -30,6 +27,8 @@ extern "C" {
 
 #include <stdbool.h>
 #include <inttypes.h>
+
+#include "stm32h7xx_hal.h"
 
 #include "can_util.h"
 
@@ -39,6 +38,16 @@ extern "C" {
 
 #define X8H7_CAN_HEADER_SIZE        5
 #define X8H7_CAN_FRAME_MAX_DATA_LEN	8
+
+/* Special address description flags for the CAN_ID */
+#define CAN_EFF_FLAG 0x80000000U /* EFF/SFF is set in the MSB */
+#define CAN_RTR_FLAG 0x40000000U /* remote transmission request */
+#define CAN_ERR_FLAG 0x20000000U /* error message frame */
+
+/* Valid bits in CAN ID for frame formats */
+#define CAN_SFF_MASK 0x000007FFU /* standard frame format (SFF) */
+#define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
+#define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
 
 /**************************************************************************************
  * TYPEDEF
@@ -87,10 +96,4 @@ int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_ind
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
 unsigned char can_tderror(FDCAN_HandleTypeDef * handle);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif    // MBED_CAN_API_H
-
-/** @}*/

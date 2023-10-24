@@ -16,33 +16,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**************************************************************************************
- * INCLUDE
- **************************************************************************************/
-
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#ifndef PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H
+#define PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H
 
 /**************************************************************************************
- * GLOBAL VARIABLES
+ * FUNCTION DECLARATION
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+void virtual_uart_init();
+int  virtual_uart_data_available();
+int  virtual_uart_handle_data();
 
-/**************************************************************************************
- * FUNCTION DEFINITION
- **************************************************************************************/
-
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
-}
+#endif /* PORTENTAX8_STM32H7_FW_VIRTUAL_UART_H */

@@ -16,33 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**************************************************************************************
- * INCLUDE
- **************************************************************************************/
-
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#ifndef PORTENTAX8_STM32H7_FW_DEBUG_H
+#define PORTENTAX8_STM32H7_FW_DEBUG_H
 
 /**************************************************************************************
- * GLOBAL VARIABLES
+ * DEFINE
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+#ifdef DEBUG
+#define dbg_printf(...)  printf(__VA_ARGS__)
+#else
+#define dbg_printf(...)
+#endif
 
-/**************************************************************************************
- * FUNCTION DEFINITION
- **************************************************************************************/
-
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
-}
+#endif /* PORTENTAX8_STM32H7_FW_DEBUG_H */

@@ -25,6 +25,21 @@
 
 #include <inttypes.h>
 
+#include "stm32h7xx_hal.h"
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
+
+struct GPIO_numbers {
+  GPIO_TypeDef * port;
+  uint16_t pin;
+};
+
+struct IRQ_numbers {
+  uint16_t pin;
+};
+
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
@@ -35,4 +50,10 @@ void gpio_set_initial_config();
 
 int  gpio_handle_data();
 
-#endif  //GPIO_H
+uint8_t GPIO_PIN_to_index(uint32_t pin);
+
+void gpio_enable_irq(uint8_t pin);
+void gpio_disable_irq(uint8_t pin);
+void gpio_set_handler(uint8_t pin);
+
+#endif /* GPIO_H */

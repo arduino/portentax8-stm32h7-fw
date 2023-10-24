@@ -71,10 +71,6 @@ void set_nirq_high();
 uint16_t get_tx_packet_size();
 bool is_dma_transfer_complete();
 
-
 void dma_handle_data();
-
-typedef int (*PeriphCallbackFunc) (uint8_t opcode, uint8_t *data, uint16_t size);
-void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);
 
 #endif //SYSTEM_H

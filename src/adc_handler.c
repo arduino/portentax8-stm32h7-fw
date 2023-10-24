@@ -20,29 +20,33 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#include "adc_handler.h"
 
-/**************************************************************************************
- * GLOBAL VARIABLES
- **************************************************************************************/
-
-IWDG_HandleTypeDef watchdog;
+#include "adc.h"
+#include "debug.h"
+#include "opcodes.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
+int adc_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
+{
+  if (opcode == CONFIGURE)
+  {
+    /* Note: ADC currently only supports polling mode.
+     * uint16_t adc_sample_rate = *((uint16_t*)data);
+     * dbg_printf("Setting ADC samplerate to %d milliseconds\n", adc_sample_rate);
+     */
+    return 0;
+  }
+  else if ((opcode >= A0) && (opcode <= A7))
+  {
+    return get_adc_value(opcode);
+  }
+  else
+  {
+    dbg_printf("adc_handler: invalid ADC opcode %02x\n", opcode);
+    return 0;
+  }
 }

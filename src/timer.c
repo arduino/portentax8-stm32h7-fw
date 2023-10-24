@@ -22,14 +22,20 @@
 
 #include "timer.h"
 #include "system.h"
-#include "peripherals.h"
-#include "main.h"
+#include "error_handler.h"
+#include "stm32h7xx_hal.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
 HRTIM_HandleTypeDef hhrtim;
+
+/**************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************/
+
+void HAL_HRTIM_MspPostInit(HRTIM_HandleTypeDef *hhrtim);
 
 /**************************************************************************************
  * FUNCTION DEFINITION

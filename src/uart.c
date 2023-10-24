@@ -23,9 +23,12 @@
 #include "uart.h"
 #include "system.h"
 #include "peripherals.h"
-#include "main.h"
+#include "error_handler.h"
 #include "ringbuffer.h"
 #include "rpc.h"
+#include "debug.h"
+#include "opcodes.h"
+#include "stm32h7xx_hal.h"
 
 /**************************************************************************************
  * TYPEDEF
@@ -47,7 +50,6 @@ UART_HandleTypeDef huart2;
 
 ring_buffer_t uart_ring_buffer;
 ring_buffer_t uart_tx_ring_buffer;
-ring_buffer_t virtual_uart_ring_buffer;
 
 static uint8_t uart_rxbuf[1024];
 
@@ -214,34 +216,14 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart) {
   }
 }
 
-int uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-  if (opcode == CONFIGURE) {
-    uart_configure(data);
-  }
-  if (opcode == DATA) {
-    uart_write(data, size);
-  }
-  return 0;
-}
-
-int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size) {
-  serial_rpc_write(data, size);
-  return 0;
-}
-
-
 void uart_init() {
   MX_USART2_UART_Init();
 
   ring_buffer_init(&uart_ring_buffer);
   ring_buffer_init(&uart_tx_ring_buffer);
-  ring_buffer_init(&virtual_uart_ring_buffer);
-
-  register_peripheral_callback(PERIPH_UART, &uart_handler);
-  register_peripheral_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 }
 
-int uart_write(uint8_t *data, uint16_t size) {
+int uart_write(uint8_t const * data, uint16_t size) {
   return _write(0, (char *)data, size);
 }
 
@@ -257,18 +239,6 @@ int uart_handle_data() {
   return enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
 }
 
-int virtual_uart_data_available() {
-  return !ring_buffer_is_empty(&virtual_uart_ring_buffer);
-}
-
-int virtual_uart_handle_data() {
-  uint8_t temp_buf[RING_BUFFER_SIZE];
-  __disable_irq();
-  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
-  __enable_irq();
-  return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
-}
-
 void UART2_enable_rx_irq() {
   //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXFNE);
   //__HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
@@ -277,7 +247,7 @@ void UART2_enable_rx_irq() {
 }
 
 
-void uart_configure(uint8_t *data) {
+void uart_configure(uint8_t const * data) {
 
   struct uartPacket config = *((struct uartPacket*)data);
 

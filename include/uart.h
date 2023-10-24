@@ -41,11 +41,9 @@ enum UARTParity {
 
 void uart_init();
 
-//void uart_handler(uint8_t opcode, uint8_t *data, uint8_t size);
+void uart_configure(uint8_t const * data);
 
-void uart_configure(uint8_t *data);
-
-int uart_write(uint8_t *data, uint16_t size);
+int uart_write(uint8_t const * data, uint16_t size);
 
 int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout);
 
@@ -53,10 +51,6 @@ int uart_data_available();
 
 int uart_handle_data();
 
-int virtual_uart_data_available();
-
-int virtual_uart_handle_data();
-
 void UART2_enable_rx_irq();
 
-#endif//UART_H
+#endif /* UART_H */

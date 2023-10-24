@@ -21,7 +21,8 @@
  **************************************************************************************/
 
 #include "system.h"
-#include "main.h"
+#include "error_handler.h"
+#include "debug.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 #include <string.h>
@@ -33,18 +34,6 @@
 #include "uart.h"
 #include "rpc.h"
 #include "spi.h"
-
-/**************************************************************************************
- * DEFINE
- **************************************************************************************/
-
-#define NUM_PERIPHERAL_CALLBACKS (20)
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-PeriphCallbackFunc PeriphCallbacks[NUM_PERIPHERAL_CALLBACKS];
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -264,7 +253,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
 
 #ifdef DEBUG
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
-      to_peripheral_string(peripheral), opcode, size);
+      peripheral_to_string(peripheral), opcode, size);
 
   for (int i = 0; i < size; i++)
     dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
@@ -306,29 +295,6 @@ uint16_t get_tx_packet_size()
   return tx_packet_size;
 }
 
-#ifndef REALVERSION
-#define REALVERSION "dev " __DATE__ " " __TIME__
-#endif
-
-char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
-
-extern int m4_booted_correctly;
-
-int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
-{
-  if (opcode == FW_VERSION) {
-    const char* version = REAL_VERSION_FLASH;
-    return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
-  }
-  else if (opcode == BOOT_M4) {
-    return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
-  }
-  else {
-    dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
-    return 0;
-  }
-}
-
 void system_init() {
 
   MPU_Config();
@@ -341,8 +307,6 @@ void system_init() {
   SystemClock_Config();
 
   PeriphCommonClock_Config();
-
-  register_peripheral_callback(PERIPH_H7, &h7_handler);
 }
 
 void dma_init() {
@@ -452,7 +416,7 @@ void dma_handle_data()
     {
 #ifdef DEBUG
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-                 to_peripheral_string(rx_pkt_userspace->header.peripheral),
+                 peripheral_to_string(rx_pkt_userspace->header.peripheral),
                  rx_pkt_userspace->header.opcode,
                  rx_pkt_userspace->header.size);
 
@@ -462,21 +426,15 @@ void dma_handle_data()
       dbg_printf("\n");
 #endif
 
-      if (rx_pkt_userspace->header.peripheral >= NUM_PERIPHERAL_CALLBACKS) {
-        printf("error, invalid peripheral id received: %d\n", rx_pkt_userspace->header.peripheral);
-        break; /* Leave this loop. */
-      }
-
-      /* Obtain the registered callback for the selected peripheral. */
-      PeriphCallbackFunc const peripheral_callback = PeriphCallbacks[rx_pkt_userspace->header.peripheral];
-
       /* Invoke the registered callback for the selected peripheral. */
-      int const rc = peripheral_callback(rx_pkt_userspace->header.opcode,
-                                         (uint8_t *)(&(rx_pkt_userspace->raw_data)),
-                                         rx_pkt_userspace->header.size);
+      int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
+                                                rx_pkt_userspace->header.opcode,
+                                                (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                                                rx_pkt_userspace->header.size);
+
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
-                   to_peripheral_string(rx_pkt_userspace->header.peripheral), rc);
+                   peripheral_to_string(rx_pkt_userspace->header.peripheral), rc);
       }
 
       /* Advance to the next package. */
@@ -488,18 +446,6 @@ void dma_handle_data()
 
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
-}
-
-void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)
-{
-  PeriphCallbacks[peripheral] = func;
-}
-
-void Error_Handler_Name(const char* name) {
-  dbg_printf("Error_Handler called by %s\n", name);
-  __disable_irq();
-  while (1) {
-  }
 }
 
 bool is_dma_transfer_complete()

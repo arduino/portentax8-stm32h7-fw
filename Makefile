@@ -69,7 +69,9 @@ SRCS = \
 	src/system_stm32h7xx_dualcore_boot_cm4_cm7.c \
 	src/main.c \
 	src/can.c \
+	src/can_handler.c \
 	src/can_util.c \
+	src/error_handler.c \
 	src/peripherals.c \
 	src/ringbuffer.c \
 	src/rpc.c \
@@ -77,15 +79,23 @@ SRCS = \
 	src/syscalls.c \
 	src/sysmem.c \
 	src/adc.c \
+	src/adc_handler.c \
 	src/uart.c \
+	src/uart_handler.c \
+	src/virtual_uart.c \
+	src/virtual_uart_handler.c \
 	src/pwm.c \
+	src/pwm_handler.c \
 	src/gpio.c \
+	src/gpio_handler.c \
 	src/timer.c \
 	src/rtc.c \
+	src/rtc_handler.c \
 	src/spi.c \
 	src/system.c \
 	src/watchdog.c \
-	src/m4_utilities.c \
+	src/h7_handler.c \
+	src/m4_util.c \
 	libraries/openamp_arduino/src/condition.c \
 	libraries/openamp_arduino/src/device.c \
 	libraries/openamp_arduino/src/generic_device.c \

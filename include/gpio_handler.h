@@ -16,21 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef M4_UTILITIES_H
-#define M4_UTILITIES_H
+#ifndef PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void disableCM4Autoboot();
+int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
-void try_execute_m4_app();
-
-#endif //M4_UTILITIES_H
+#endif /* PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H */

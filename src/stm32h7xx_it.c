@@ -19,7 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_it.h"
-#include "main.h"
+#include "stm32h7xx_hal.h"
 
 /* External variables --------------------------------------------------------*/
 extern FDCAN_HandleTypeDef fdcan_1;

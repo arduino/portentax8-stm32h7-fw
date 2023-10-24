@@ -20,29 +20,38 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#include "pwm_handler.h"
 
-/**************************************************************************************
- * GLOBAL VARIABLES
- **************************************************************************************/
-
-IWDG_HandleTypeDef watchdog;
+#include "pwm.h"
+#include "debug.h"
+#include "opcodes.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
+int pwm_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
+{
+  if (opcode == CAPTURE)
+  {
+    uint8_t const channel = opcode & 0x0F;
+    if (isValidPwmChannelNumber(channel))
+      capturePwm(channel);
+    else
+      dbg_printf("pwm_handler: invalid PWM channel number provided for mode CAPTURE: %d\n", channel);
+  }
+  else if (opcode == CONFIGURE)
+  {
+    uint8_t const channel = opcode;
+    struct pwmPacket config = *((struct pwmPacket*)data);
+    if (isValidPwmChannelNumber(channel))
+      configurePwm(channel, config.enable, config.polarity, config.duty, config.period);
+    else
+      dbg_printf("pwm_handler: invalid PWM channel number provided for mode PWM: %d\n", channel);
+  }
+  else
+  {
+    dbg_printf("pwm_handler: error invalid opcode (:%d)\n", opcode);
+  }
+  return 0;
 }

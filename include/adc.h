@@ -45,5 +45,6 @@ enum AnalogPins {
  **************************************************************************************/
 
 void adc_init();
+int get_adc_value(enum AnalogPins name);
 
 #endif  //ADC_H

@@ -100,7 +100,7 @@ void serial_rpc_available() {
   OPENAMP_check_for_message();
 }
 
-void serial_rpc_write(uint8_t* buf, size_t len) {
+void serial_rpc_write(uint8_t const * buf, size_t len) {
   // check second byte of the message to split requests and responses
   OPENAMP_send(&rp_endpoints[buf[1] == 1], buf, len);
 }

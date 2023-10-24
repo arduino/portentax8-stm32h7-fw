@@ -20,29 +20,48 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
-#include "stm32h7xx_hal.h"
+#include "h7_handler.h"
+
+#include <string.h>
+
+#include "debug.h"
+#include "system.h"
+#include "opcodes.h"
+#include "m4_util.h"
+#include "peripherals.h"
 
 /**************************************************************************************
- * GLOBAL VARIABLES
+ * DEFINE
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+#ifndef REALVERSION
+#define REALVERSION "dev " __DATE__ " " __TIME__
+#endif
+
+/**************************************************************************************
+ * GLOBAL CONST
+ **************************************************************************************/
+
+char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
-}
-
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
+int h7_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
+{
+  if (opcode == FW_VERSION)
+  {
+    const char* version = REAL_VERSION_FLASH;
+    return enqueue_packet(PERIPH_H7, FW_VERSION, strlen(version), (void*)version);
+  }
+  else if (opcode == BOOT_M4)
+  {
+    int m4_booted_correctly = is_m4_booted_correctly();
+    return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
+  }
+  else {
+    dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
+    return 0;
+  }
 }

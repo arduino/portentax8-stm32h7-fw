@@ -20,29 +20,40 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "watchdog.h"
-#include "error_handler.h"
+#include "virtual_uart.h"
+
 #include "stm32h7xx_hal.h"
+
+#include "system.h"
+#include "opcodes.h"
+#include "ringbuffer.h"
+#include "peripherals.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-IWDG_HandleTypeDef watchdog;
+ring_buffer_t virtual_uart_ring_buffer; /* extern'ally referenced in rpc.c */
 
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-void watchdog_init(int prescaler) {
-  watchdog.Instance = IWDG1;
-  watchdog.Init.Prescaler = prescaler;
-  watchdog.Init.Reload = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-  watchdog.Init.Window = (32000 * 2000) / (16 * 1000); /* 2000 ms */
-
-  HAL_IWDG_Init(&watchdog);
+void virtual_uart_init()
+{
+  ring_buffer_init(&virtual_uart_ring_buffer);
 }
 
-void watchdog_refresh() {
-  HAL_IWDG_Refresh(&watchdog);
+int virtual_uart_data_available()
+{
+  return !ring_buffer_is_empty(&virtual_uart_ring_buffer);
+}
+
+int virtual_uart_handle_data()
+{
+  uint8_t temp_buf[RING_BUFFER_SIZE];
+  __disable_irq();
+  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+  __enable_irq();
+  return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }
