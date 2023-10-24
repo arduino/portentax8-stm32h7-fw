@@ -256,12 +256,12 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
     handle->Init.StdFiltersNbr = 128; // to be aligned with the handle parameter in can_filter
     handle->Init.ExtFiltersNbr = 64; // to be aligned with the handle parameter in can_filter
 
-    handle->Init.RxFifo0ElmtsNbr = 8;
+    handle->Init.RxFifo0ElmtsNbr = 64;
     handle->Init.RxFifo0ElmtSize = FDCAN_DATA_BYTES_8;
-    handle->Init.RxFifo1ElmtsNbr = 0;
+    handle->Init.RxFifo1ElmtsNbr =  0;
     handle->Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
-    handle->Init.RxBuffersNbr = 0;
-    handle->Init.RxBufferSize = FDCAN_DATA_BYTES_8;
+    handle->Init.RxBuffersNbr    =  0;
+    handle->Init.RxBufferSize    = FDCAN_DATA_BYTES_8;
 
     handle->Init.TxEventsNbr         = 32;
     handle->Init.TxBuffersNbr        =  0;
