@@ -37,11 +37,8 @@ enum Peripherals {
   PERIPH_UART = 0x05,
   PERIPH_RTC = 0x06,
   PERIPH_GPIO = 0x07,
-  PERIPH_M4 = 0x08,
   PERIPH_H7 = 0x09,
   PERIPH_VIRTUAL_UART = 0x0A,
-  PERIPH_SPI2 = 0x0B,
-  PERIPH_SPI3 = 0x0C,
 };
 
 /**************************************************************************************
