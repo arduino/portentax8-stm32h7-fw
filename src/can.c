@@ -83,6 +83,9 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
+  __HAL_RCC_FDCAN_CLK_ENABLE();
+  HAL_RCC_FDCAN_CLK_ENABLED++;
+
   if (hfdcan->Instance == FDCAN1)
   {
     __HAL_RCC_GPIOD_CLK_ENABLE();
@@ -227,9 +230,6 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
 
 void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
-    __HAL_RCC_FDCAN_CLK_ENABLE();
-    HAL_RCC_FDCAN_CLK_ENABLED++;
-
     // Default values
     handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
 
