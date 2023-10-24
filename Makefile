@@ -94,7 +94,7 @@ SRCS = \
 	src/system.c \
 	src/watchdog.c \
 	src/h7_handler.c \
-	src/m4_utilities.c \
+	src/m4_util.c \
 	libraries/openamp_arduino/src/condition.c \
 	libraries/openamp_arduino/src/device.c \
 	libraries/openamp_arduino/src/generic_device.c \

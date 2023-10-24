@@ -20,7 +20,7 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "m4_utilities.h"
+#include "m4_util.h"
 #include "main.h"
 #include "debug.h"
 #include "rpc.h"

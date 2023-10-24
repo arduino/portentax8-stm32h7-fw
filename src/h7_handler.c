@@ -27,7 +27,7 @@
 #include "debug.h"
 #include "system.h"
 #include "opcodes.h"
-#include "m4_utilities.h"
+#include "m4_util.h"
 #include "peripherals.h"
 
 /**************************************************************************************

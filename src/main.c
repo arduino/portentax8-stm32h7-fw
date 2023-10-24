@@ -46,7 +46,7 @@
 #include "system.h"
 #include "h7_handler.h"
 #include "watchdog.h"
-#include "m4_utilities.h"
+#include "m4_util.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION
