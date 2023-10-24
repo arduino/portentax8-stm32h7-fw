@@ -56,4 +56,4 @@ void gpio_enable_irq(uint8_t pin);
 void gpio_disable_irq(uint8_t pin);
 void gpio_set_handler(uint8_t pin);
 
-#endif  //GPIO_H
+#endif /* GPIO_H */
