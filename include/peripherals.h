@@ -31,6 +31,7 @@
 
 enum Peripherals
 {
+  PERIPH_Reserved_0 = 0x00,
   PERIPH_ADC = 0x01,
   PERIPH_PWM = 0x02,
   PERIPH_FDCAN1 = 0x03,
@@ -38,6 +39,7 @@ enum Peripherals
   PERIPH_UART = 0x05,
   PERIPH_RTC = 0x06,
   PERIPH_GPIO = 0x07,
+  PERIPH_Reserved_1 = 0x08,
   PERIPH_H7 = 0x09,
   PERIPH_VIRTUAL_UART = 0x0A,
 };
