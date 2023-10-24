@@ -35,4 +35,4 @@ void try_execute_m4_app();
 
 int is_m4_booted_correctly();
 
-#endif //M4_UTILITIES_H
+#endif /* M4_UTILITIES_H */
