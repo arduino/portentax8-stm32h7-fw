@@ -31,6 +31,8 @@ extern "C" {
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "stm32h7xx_hal.h"
+
 #include "can_util.h"
 
 /**************************************************************************************

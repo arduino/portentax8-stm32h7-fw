@@ -20,12 +20,9 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "main.h"
-#include <stdbool.h>
-#include <string.h>
 #include <stdio.h>
+
 #include "peripherals.h"
-#include "ringbuffer.h"
 #include "can.h"
 #include "can_handler.h"
 #include "rpc.h"
