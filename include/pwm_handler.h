@@ -29,6 +29,6 @@
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-int pwm_handler(uint8_t opcode, uint8_t *data, uint16_t size);
+int pwm_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
 #endif /* PORTENTAX8_STM32H7_FW_PWM_HANDLER_H */

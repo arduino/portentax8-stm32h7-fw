@@ -28,7 +28,7 @@
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int virtual_uart_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int virtual_uart_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   serial_rpc_write(data, size);
   return 0;

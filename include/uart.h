@@ -41,9 +41,9 @@ enum UARTParity {
 
 void uart_init();
 
-void uart_configure(uint8_t *data);
+void uart_configure(uint8_t const * data);
 
-int uart_write(uint8_t *data, uint16_t size);
+int uart_write(uint8_t const * data, uint16_t size);
 
 int uart_write_with_timeout(uint8_t *data, uint16_t size, uint32_t timeout);
 

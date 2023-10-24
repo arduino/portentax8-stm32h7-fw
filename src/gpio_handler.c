@@ -48,13 +48,13 @@ extern struct IRQ_numbers IRQ_pinmap[];
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int gpio_handler(uint8_t opcode, uint8_t *pdata, uint16_t size)
+int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
-  uint16_t const data = *((uint16_t*)pdata);
-  enum Opcodes_GPIO action = opcode;
+  uint16_t const gpio_data = *((uint16_t*)data);
+  enum Opcodes_GPIO const action = opcode;
 
-  uint8_t const value = (data & 0xFF00) >> 8;
-  uint8_t const index = data & 0xFF;
+  uint8_t const value = (gpio_data & 0xFF00) >> 8;
+  uint8_t const index = gpio_data & 0xFF;
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   uint8_t response[2];

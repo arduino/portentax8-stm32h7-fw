@@ -30,12 +30,12 @@
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int rtc_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int rtc_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   if (opcode == SET_DATE)
     return rtc_set_date(data);
   else if (opcode == GET_DATE)
-    return rtc_get_date(data);
+    return rtc_get_date();
   else
     dbg_printf("rtc_handler: error invalid opcode (:%d)\n", opcode);
 

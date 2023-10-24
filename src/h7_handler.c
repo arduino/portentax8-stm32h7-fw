@@ -48,7 +48,7 @@ char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[]
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int h7_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int h7_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   if (opcode == FW_VERSION)
   {

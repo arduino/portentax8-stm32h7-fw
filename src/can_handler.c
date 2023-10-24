@@ -41,7 +41,7 @@ extern FDCAN_HandleTypeDef fdcan_2;
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   if (opcode == CONFIGURE)
   {
@@ -80,7 +80,7 @@ int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size)
   }
 }
 
-int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size)
+int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   if (opcode == CONFIGURE)
   {

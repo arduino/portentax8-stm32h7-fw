@@ -109,7 +109,7 @@ int rtc_set_date(uint8_t const * data)
   return 0; /* no bytes enqueued */
 }
 
-int rtc_get_date(uint8_t * data)
+int rtc_get_date()
 {
   RTC_TimeTypeDef sTime = {0};
   RTC_DateTypeDef sDate = {0};

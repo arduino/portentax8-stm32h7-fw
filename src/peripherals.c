@@ -71,7 +71,7 @@ void peripheral_register_callback(uint8_t const peripheral, PeriphCallbackFunc c
   PeriphCallbacks[peripheral] = func;
 }
 
-int peripheral_invoke_callback(uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size)
+int peripheral_invoke_callback(uint8_t const peripheral, uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   if (peripheral >= NUM_PERIPHERAL_CALLBACKS) {
     dbg_printf("error, invalid peripheral id received: %d\n", peripheral);

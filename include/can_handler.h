@@ -29,7 +29,7 @@
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-int fdcan1_handler(uint8_t opcode, uint8_t *data, uint16_t size);
-int fdcan2_handler(uint8_t opcode, uint8_t *data, uint16_t size);
+int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
+int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
 #endif /* PORTENTAX8_STM32H7_FW_CAN_HANDLER_H */

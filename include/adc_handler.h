@@ -29,6 +29,6 @@
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-int adc_handler(uint8_t opcode, uint8_t *data, uint16_t size);
+int adc_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
 #endif /* PORTENTAX8_STM32H7_FW_ADC_HANDLER_H */

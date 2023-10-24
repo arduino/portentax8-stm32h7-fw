@@ -222,7 +222,7 @@ void uart_init() {
   ring_buffer_init(&uart_tx_ring_buffer);
 }
 
-int uart_write(uint8_t *data, uint16_t size) {
+int uart_write(uint8_t const * data, uint16_t size) {
   return _write(0, (char *)data, size);
 }
 
@@ -246,7 +246,7 @@ void UART2_enable_rx_irq() {
 }
 
 
-void uart_configure(uint8_t *data) {
+void uart_configure(uint8_t const * data) {
 
   struct uartPacket config = *((struct uartPacket*)data);
 

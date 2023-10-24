@@ -44,7 +44,7 @@ enum Peripherals
   PERIPH_VIRTUAL_UART = 0x0A,
 };
 
-typedef int(*PeriphCallbackFunc)(uint8_t opcode, uint8_t * data, uint16_t size);
+typedef int(*PeriphCallbackFunc)(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
 /**************************************************************************************
  * FUNCTION DECLARATION
@@ -53,6 +53,6 @@ typedef int(*PeriphCallbackFunc)(uint8_t opcode, uint8_t * data, uint16_t size);
 const char* peripheral_to_string(enum Peripherals const peripheral);
 
 void peripheral_register_callback(uint8_t const peripheral, PeriphCallbackFunc const func);
-int  peripheral_invoke_callback  (uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size);
+int  peripheral_invoke_callback  (uint8_t const peripheral, uint8_t const opcode, uint8_t const * data, uint16_t const size);
 
 #endif /* PERIPHERALS_H */
