@@ -16,44 +16,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef GPIO_H
-#define GPIO_H
+#ifndef PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H
+#define PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H
 
 /**************************************************************************************
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
-
-#include "stm32h7xx_hal.h"
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-struct GPIO_numbers {
-  GPIO_TypeDef * port;
-  uint16_t pin;
-};
-
-struct IRQ_numbers {
-  uint16_t pin;
-};
+#include <stdint.h>
 
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void gpio_init();
+int gpio_handler(uint8_t opcode, uint8_t *data, uint16_t size);
 
-void gpio_set_initial_config();
-
-int  gpio_handle_data();
-
-uint8_t GPIO_PIN_to_index(uint32_t pin);
-
-void gpio_enable_irq(uint8_t pin);
-void gpio_disable_irq(uint8_t pin);
-void gpio_set_handler(uint8_t pin);
-
-#endif  //GPIO_H
+#endif /* PORTENTAX8_STM32H7_FW_GPIO_HANDLER_H */

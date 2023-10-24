@@ -38,6 +38,7 @@
 #include "pwm.h"
 #include "pwm_handler.h"
 #include "gpio.h"
+#include "gpio_handler.h"
 #include "timer.h"
 #include "rtc.h"
 #include "rtc_handler.h"
@@ -62,6 +63,7 @@ void peripheral_init()
   register_peripheral_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 
   gpio_init();
+  register_peripheral_callback(PERIPH_GPIO, &gpio_handler);
 
   pwm_init();
   register_peripheral_callback(PERIPH_PWM, &pwm_handler);
