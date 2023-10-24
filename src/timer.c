@@ -47,7 +47,7 @@ static void MX_HRTIM_Init(void) {
   hhrtim.Init.HRTIMInterruptResquests = HRTIM_IT_NONE;
   hhrtim.Init.SyncOptions = HRTIM_SYNCOPTION_NONE;
   if (HAL_HRTIM_Init(&hhrtim) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_HRTIM_Init failed.");
   }
   HAL_HRTIM_MspPostInit(&hhrtim);
 }
@@ -69,7 +69,7 @@ void HAL_HRTIM_MspInit(HRTIM_HandleTypeDef *hhrtim) {
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_HRTIM1;
     PeriphClkInitStruct.Hrtim1ClockSelection = RCC_HRTIM1CLK_TIMCLK;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-      Error_Handler();
+      Error_Handler("HAL_RCCEx_PeriphCLKConfig failed.");
     }
 
     /* Peripheral clock enable */

@@ -64,7 +64,7 @@ static void MX_SPI3_Init(void)
   hspi3.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
   hspi3.Init.IOSwap = SPI_IO_SWAP_DISABLE;
   if (HAL_SPI_Init(&hspi3) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_SPI_Init failed.");
   }
 }
 
@@ -82,7 +82,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI3;
   PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_RCCEx_PeriphCLKConfig failed.");
   }
 
   /* Peripheral clock enable */
@@ -124,7 +124,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
   hdma_spi3_tx.Init.Priority = DMA_PRIORITY_HIGH;
   hdma_spi3_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
   if (HAL_DMA_Init(&hdma_spi3_tx) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_DMA_Init failed.");
   }
 
   __HAL_LINKDMA(hspi, hdmatx, hdma_spi3_tx);
@@ -141,7 +141,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
   hdma_spi3_rx.Init.Priority = DMA_PRIORITY_HIGH;
   hdma_spi3_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
   if (HAL_DMA_Init(&hdma_spi3_rx) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_DMA_Init failed.");
   }
 
   __HAL_LINKDMA(hspi, hdmarx, hdma_spi3_rx);

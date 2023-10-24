@@ -52,7 +52,7 @@ static void MX_RTC_Init(void)
   hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
 
   if (HAL_RTC_Init(&hrtc) != HAL_OK) {
-    Error_Handler();
+    Error_Handler("HAL_RTC_Init failed.");
   }
 }
 
@@ -66,7 +66,7 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc)
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
     PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
-      Error_Handler();
+      Error_Handler("HAL_RCCEx_PeriphCLKConfig failed.");
     }
     /* Peripheral clock enable */
     __HAL_RCC_RTC_ENABLE();
@@ -97,14 +97,14 @@ int rtc_set_date(uint8_t const * data)
   sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
   sTime.StoreOperation = RTC_STOREOPERATION_RESET;
   if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-    Error_Handler();
+    Error_Handler("HAL_RTC_SetTime failed.");
 
   sDate.WeekDay = tm->tm_wday;
   sDate.Month = (tm->tm_mon + RTC_MONTH_JANUARY); /* tm_mon is 0-11 while RTC_DateTypeDef expects 1-12 */
   sDate.Date = tm->tm_mday;
   sDate.Year = tm->tm_year;
   if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-    Error_Handler();
+    Error_Handler("HAL_RTC_SetDate failed.");
 
   return 0; /* no bytes enqueued */
 }
@@ -117,10 +117,10 @@ int rtc_get_date()
   struct rtc_time now;
 
   if (HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK)
-    Error_Handler();
+    Error_Handler("HAL_RTC_GetTime failed.");
 
   if (HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK)
-    Error_Handler();
+    Error_Handler("HAL_RTC_GetDate failed.");
 
   now.tm_hour = sTime.Hours;
   now.tm_min = sTime.Minutes;
