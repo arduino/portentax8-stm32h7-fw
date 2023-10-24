@@ -73,15 +73,18 @@ static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
 FDCAN_HandleTypeDef fdcan_1;
 FDCAN_HandleTypeDef fdcan_2;
 
+static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
-
 void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_FDCAN_CLK_ENABLE();
+  HAL_RCC_FDCAN_CLK_ENABLED++;
 
   if (hfdcan->Instance == FDCAN1)
   {
@@ -123,21 +126,18 @@ void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan)
 
 void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef *hfdcan)
 {
+  HAL_RCC_FDCAN_CLK_ENABLED--;
+  if (HAL_RCC_FDCAN_CLK_ENABLED == 0) {
+    __HAL_RCC_FDCAN_CLK_DISABLE();
+  }
+
   if (hfdcan->Instance == FDCAN1)
   {
-    HAL_RCC_FDCAN_CLK_ENABLED--;
-    if (HAL_RCC_FDCAN_CLK_ENABLED == 0) {
-      __HAL_RCC_FDCAN_CLK_DISABLE();
-    }
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_1 | GPIO_PIN_0);
     HAL_NVIC_DisableIRQ(FDCAN1_IT0_IRQn);
   }
   else if (hfdcan->Instance == FDCAN2)
   {
-    HAL_RCC_FDCAN_CLK_ENABLED--;
-    if (HAL_RCC_FDCAN_CLK_ENABLED == 0) {
-      __HAL_RCC_FDCAN_CLK_DISABLE();
-    }
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_5 | GPIO_PIN_6);
     HAL_NVIC_DisableIRQ(FDCAN2_IT0_IRQn);
   }
@@ -227,9 +227,6 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
 
 void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
-    __HAL_RCC_FDCAN_CLK_ENABLE();
-    HAL_RCC_FDCAN_CLK_ENABLED++;
-
     // Default values
     handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
 
