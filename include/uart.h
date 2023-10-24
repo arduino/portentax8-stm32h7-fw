@@ -53,4 +53,4 @@ int uart_handle_data();
 
 void UART2_enable_rx_irq();
 
-#endif//UART_H
+#endif /* UART_H */
