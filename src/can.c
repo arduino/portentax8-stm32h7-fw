@@ -262,13 +262,12 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
     handle->Init.RxFifo1ElmtSize = FDCAN_DATA_BYTES_8;
     handle->Init.RxBuffersNbr = 0;
     handle->Init.RxBufferSize = FDCAN_DATA_BYTES_8;
-    handle->Init.TxEventsNbr = 3;
-    handle->Init.TxBuffersNbr = 0;
-    handle->Init.TxFifoQueueElmtsNbr = 3;
 
-    handle->Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
-
-    handle->Init.TxElmtSize = FDCAN_DATA_BYTES_8;
+    handle->Init.TxEventsNbr         = 32;
+    handle->Init.TxBuffersNbr        =  0;
+    handle->Init.TxFifoQueueElmtsNbr = 32;
+    handle->Init.TxFifoQueueMode     = FDCAN_TX_FIFO_OPERATION;
+    handle->Init.TxElmtSize          = FDCAN_DATA_BYTES_8;
 
     can_internal_init(handle);
 }
