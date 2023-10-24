@@ -50,8 +50,7 @@ typedef int(*PeriphCallbackFunc)(uint8_t opcode, uint8_t * data, uint16_t size);
 
 const char* to_peripheral_string(enum Peripherals peripheral);
 
-void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);
-
-int peripheral_invoke_callback(uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size);
+void peripheral_register_callback(uint8_t peripheral, PeriphCallbackFunc func);
+int  peripheral_invoke_callback  (uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size);
 
 #endif /* PERIPHERALS_H */

@@ -65,7 +65,7 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
   }
 }
 
-void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)
+void peripheral_register_callback(uint8_t peripheral, PeriphCallbackFunc func)
 {
   PeriphCallbacks[peripheral] = func;
 }

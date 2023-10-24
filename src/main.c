@@ -54,35 +54,35 @@
 
 void peripheral_init()
 {
-  register_peripheral_callback(PERIPH_H7, &h7_handler);
+  peripheral_register_callback(PERIPH_H7, &h7_handler);
 
   uart_init();
-  register_peripheral_callback(PERIPH_UART, &uart_handler);
+  peripheral_register_callback(PERIPH_UART, &uart_handler);
 
   virtual_uart_init();
-  register_peripheral_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
+  peripheral_register_callback(PERIPH_VIRTUAL_UART, &virtual_uart_handler);
 
   gpio_init();
-  register_peripheral_callback(PERIPH_GPIO, &gpio_handler);
+  peripheral_register_callback(PERIPH_GPIO, &gpio_handler);
 
   pwm_init();
-  register_peripheral_callback(PERIPH_PWM, &pwm_handler);
+  peripheral_register_callback(PERIPH_PWM, &pwm_handler);
 
   dma_init();
 
   timer_init();
 
   rtc_init();
-  register_peripheral_callback(PERIPH_RTC, &rtc_handler);
+  peripheral_register_callback(PERIPH_RTC, &rtc_handler);
 
   spi_init();
 
   adc_init();
-  register_peripheral_callback(PERIPH_ADC, &adc_handler);
+  peripheral_register_callback(PERIPH_ADC, &adc_handler);
 
   can_init();
-  register_peripheral_callback(PERIPH_FDCAN1, &fdcan1_handler);
-  register_peripheral_callback(PERIPH_FDCAN2, &fdcan2_handler);
+  peripheral_register_callback(PERIPH_FDCAN1, &fdcan1_handler);
+  peripheral_register_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
 void handle_data()
