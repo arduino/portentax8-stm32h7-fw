@@ -36,18 +36,6 @@
 #include "spi.h"
 
 /**************************************************************************************
- * DEFINE
- **************************************************************************************/
-
-#define NUM_PERIPHERAL_CALLBACKS (20)
-
-/**************************************************************************************
- * TYPEDEF
- **************************************************************************************/
-
-PeriphCallbackFunc PeriphCallbacks[NUM_PERIPHERAL_CALLBACKS];
-
-/**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
@@ -438,18 +426,12 @@ void dma_handle_data()
       dbg_printf("\n");
 #endif
 
-      if (rx_pkt_userspace->header.peripheral >= NUM_PERIPHERAL_CALLBACKS) {
-        printf("error, invalid peripheral id received: %d\n", rx_pkt_userspace->header.peripheral);
-        break; /* Leave this loop. */
-      }
-
-      /* Obtain the registered callback for the selected peripheral. */
-      PeriphCallbackFunc const peripheral_callback = PeriphCallbacks[rx_pkt_userspace->header.peripheral];
-
       /* Invoke the registered callback for the selected peripheral. */
-      int const rc = peripheral_callback(rx_pkt_userspace->header.opcode,
-                                         (uint8_t *)(&(rx_pkt_userspace->raw_data)),
-                                         rx_pkt_userspace->header.size);
+      int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
+                                                rx_pkt_userspace->header.opcode,
+                                                (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                                                rx_pkt_userspace->header.size);
+
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
                    to_peripheral_string(rx_pkt_userspace->header.peripheral), rc);
@@ -464,11 +446,6 @@ void dma_handle_data()
 
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
-}
-
-void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)
-{
-  PeriphCallbacks[peripheral] = func;
 }
 
 void Error_Handler_Name(const char* name) {

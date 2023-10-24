@@ -22,6 +22,20 @@
 
 #include "peripherals.h"
 
+#include "debug.h"
+
+/**************************************************************************************
+ * DEFINE
+ **************************************************************************************/
+
+#define NUM_PERIPHERAL_CALLBACKS (20)
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
+
+PeriphCallbackFunc PeriphCallbacks[NUM_PERIPHERAL_CALLBACKS];
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -49,4 +63,24 @@ const char* to_peripheral_string(enum Peripherals peripheral) {
     default:
       return "UNKNOWN";
   }
+}
+
+void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func)
+{
+  PeriphCallbacks[peripheral] = func;
+}
+
+int peripheral_invoke_callback(uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size)
+{
+  if (peripheral >= NUM_PERIPHERAL_CALLBACKS) {
+    dbg_printf("error, invalid peripheral id received: %d\n", peripheral);
+    return -1;
+  }
+
+  /* Obtain the registered callback for the selected peripheral. */
+  PeriphCallbackFunc const peripheral_callback = PeriphCallbacks[peripheral];
+
+  /* Invoke the registered callback for the selected peripheral. */
+  int const rc = peripheral_callback(opcode, data, size);
+  return rc;
 }

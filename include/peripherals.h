@@ -23,13 +23,14 @@
  * INCLUDE
  **************************************************************************************/
 
-#include <inttypes.h>
+#include <stdint.h>
 
 /**************************************************************************************
  * TYPEDEF
  **************************************************************************************/
 
-enum Peripherals {
+enum Peripherals
+{
   PERIPH_ADC = 0x01,
   PERIPH_PWM = 0x02,
   PERIPH_FDCAN1 = 0x03,
@@ -41,10 +42,16 @@ enum Peripherals {
   PERIPH_VIRTUAL_UART = 0x0A,
 };
 
+typedef int(*PeriphCallbackFunc)(uint8_t opcode, uint8_t * data, uint16_t size);
+
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
 
 const char* to_peripheral_string(enum Peripherals peripheral);
 
-#endif //PERIPHERALS_H
+void register_peripheral_callback(uint8_t peripheral, PeriphCallbackFunc func);
+
+int peripheral_invoke_callback(uint8_t const peripheral, uint8_t const opcode, uint8_t * data, uint16_t const size);
+
+#endif /* PERIPHERALS_H */
