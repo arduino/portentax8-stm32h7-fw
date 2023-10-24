@@ -188,35 +188,24 @@ int can_handle_data()
   return bytes_enqueued;
 }
 
-/** Call all the init functions
- *
- *  @returns
- *    0 if mode change failed or unsupported,
- *    1 if mode change was successful
- */
 int can_internal_init(FDCAN_HandleTypeDef * handle)
 {
-    if (HAL_FDCAN_Init(handle) != HAL_OK) {
-        Error_Handler("HAL_FDCAN_Init Error_Handler\n");
-    }
+  if (HAL_FDCAN_Init(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Init Error_Handler\n");
 
-    if (can_filter(handle, 0, 0, 0, false) == 0) {
-        Error_Handler("can_filter Error_Handler\n");
-    }
+  if (can_filter(handle, 0, 0, 0, false) == 0)
+    Error_Handler("can_filter Error_Handler\n");
 
-    if (can_filter(handle, 0, 0, 0, true) == 0) {
-        Error_Handler("can_filter Error_Handler\n");
-    }
+  if (can_filter(handle, 0, 0, 0, true) == 0)
+    Error_Handler("can_filter Error_Handler\n");
 
-    if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK) {
-        Error_Handler("HAL_FDCAN_ConfigGlobalFilter Error_Handler\n");
-    }
+  if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ConfigGlobalFilter Error_Handler\n");
 
-    if (HAL_FDCAN_Start(handle) != HAL_OK) {
-        Error_Handler("HAL_FDCAN_Start Error_Handler\n");
-    }
+  if (HAL_FDCAN_Start(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Start Error_Handler\n");
 
-    return 1;
+  return 1;
 }
 
 void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
