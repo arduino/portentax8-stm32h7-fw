@@ -17,12 +17,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef MBED_CAN_API_H
 #define MBED_CAN_API_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**************************************************************************************
  * INCLUDE
@@ -99,10 +96,4 @@ int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_ind
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
 unsigned char can_tderror(FDCAN_HandleTypeDef * handle);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif    // MBED_CAN_API_H
-
-/** @}*/
