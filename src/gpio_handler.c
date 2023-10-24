@@ -27,6 +27,7 @@
 #include "gpio.h"
 #include "debug.h"
 #include "system.h"
+#include "opcodes.h"
 #include "peripherals.h"
 
 /**************************************************************************************

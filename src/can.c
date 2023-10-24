@@ -29,6 +29,7 @@
 #include "stm32h7xx_ll_hsem.h"
 #include "debug.h"
 #include "system.h"
+#include "opcodes.h"
 #include "peripherals.h"
 
 /**************************************************************************************

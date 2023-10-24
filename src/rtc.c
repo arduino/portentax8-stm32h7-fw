@@ -21,11 +21,14 @@
  **************************************************************************************/
 
 #include "rtc.h"
+
+#include "stm32h7xx_hal.h"
+
 #include "main.h"
 #include "debug.h"
 #include "system.h"
+#include "opcodes.h"
 #include "peripherals.h"
-#include "stm32h7xx_hal.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLE

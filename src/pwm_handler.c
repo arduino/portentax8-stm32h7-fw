@@ -24,7 +24,7 @@
 
 #include "pwm.h"
 #include "debug.h"
-#include "peripherals.h"
+#include "opcodes.h"
 
 /**************************************************************************************
  * FUNCTION DEFINITION

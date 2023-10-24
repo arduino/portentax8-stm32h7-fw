@@ -27,6 +27,7 @@
 #include "main.h"
 #include "timer.h"
 #include "debug.h"
+#include "opcodes.h"
 
 /**************************************************************************************
  * CONSTANTS
