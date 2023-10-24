@@ -21,7 +21,7 @@
  **************************************************************************************/
 
 #include "spi.h"
-#include "main.h"
+#include "error_handler.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 

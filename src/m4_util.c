@@ -21,7 +21,7 @@
  **************************************************************************************/
 
 #include "m4_util.h"
-#include "main.h"
+#include "error_handler.h"
 #include "debug.h"
 #include "rpc.h"
 #include "stm32h7xx_hal.h"

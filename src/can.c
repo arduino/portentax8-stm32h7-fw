@@ -19,7 +19,7 @@
  * INCLUDE
  **************************************************************************************/
 
-#include "main.h"
+#include "error_handler.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>

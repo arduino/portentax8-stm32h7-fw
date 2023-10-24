@@ -21,7 +21,7 @@
  **************************************************************************************/
 
 #include "system.h"
-#include "main.h"
+#include "error_handler.h"
 #include "debug.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
@@ -446,13 +446,6 @@ void dma_handle_data()
 
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
-}
-
-void Error_Handler_Name(const char* name) {
-  dbg_printf("Error_Handler called by %s\n", name);
-  __disable_irq();
-  while (1) {
-  }
 }
 
 bool is_dma_transfer_complete()

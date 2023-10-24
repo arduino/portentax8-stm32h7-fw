@@ -21,7 +21,7 @@
  **************************************************************************************/
 
 #include "adc.h"
-#include "main.h"
+#include "error_handler.h"
 #include "debug.h"
 #include "system.h"
 #include "peripherals.h"

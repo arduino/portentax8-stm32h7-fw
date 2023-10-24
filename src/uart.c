@@ -23,11 +23,12 @@
 #include "uart.h"
 #include "system.h"
 #include "peripherals.h"
-#include "main.h"
+#include "error_handler.h"
 #include "ringbuffer.h"
 #include "rpc.h"
 #include "debug.h"
 #include "opcodes.h"
+#include "stm32h7xx_hal.h"
 
 /**************************************************************************************
  * TYPEDEF

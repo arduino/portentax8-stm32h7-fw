@@ -24,7 +24,7 @@
 
 #include "stm32h7xx_hal.h"
 
-#include "main.h"
+#include "error_handler.h"
 #include "debug.h"
 #include "system.h"
 #include "opcodes.h"

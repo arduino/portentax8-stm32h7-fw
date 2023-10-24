@@ -71,6 +71,7 @@ SRCS = \
 	src/can.c \
 	src/can_handler.c \
 	src/can_util.c \
+	src/error_handler.c \
 	src/peripherals.c \
 	src/ringbuffer.c \
 	src/rpc.c \
