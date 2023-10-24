@@ -254,16 +254,13 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
 
 int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 {
-    if (HAL_FDCAN_Stop(handle) != HAL_OK) {
-        Error_Handler("HAL_FDCAN_Stop Error_Handler\n");
-    }
-
-  uint32_t const can_clock_Hz = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+  if (HAL_FDCAN_Stop(handle) != HAL_OK)
+    Error_Handler("HAL_FDCAN_Stop Error_Handler\n");
 
   CanNominalBitTimingResult can_bit_timing = {0};
 
   if (!calc_can_nominal_bit_timing(can_bitrate,
-                                   can_clock_Hz,
+                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
                                    TQ_MAX,
                                    TQ_MIN,
                                    TSEG1_MIN,
@@ -272,8 +269,7 @@ int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
                                    TSEG2_MAX,
                                    &can_bit_timing))
   {
-    printf("Could not calculate valid CAN bit timing\n");
-    return 0;
+    Error_Handler("Could not calculate valid CAN bit timing\n");
   }
 
   dbg_printf("can_frequency:\n\r  can_bitrate = %ld\n\r  can_clock_Hz = %ld\n", can_bitrate, can_clock_Hz);
@@ -304,7 +300,6 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
 
   return 1;
 }
-
 
 int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
