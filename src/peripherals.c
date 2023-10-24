@@ -40,7 +40,8 @@ PeriphCallbackFunc PeriphCallbacks[NUM_PERIPHERAL_CALLBACKS];
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-const char* to_peripheral_string(enum Peripherals peripheral) {
+const char* peripheral_to_string(enum Peripherals const peripheral)
+{
   switch (peripheral) {
     case PERIPH_ADC:
       return "ADC";

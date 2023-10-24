@@ -253,7 +253,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
 
 #ifdef DEBUG
   dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
-      to_peripheral_string(peripheral), opcode, size);
+      peripheral_to_string(peripheral), opcode, size);
 
   for (int i = 0; i < size; i++)
     dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
@@ -416,7 +416,7 @@ void dma_handle_data()
     {
 #ifdef DEBUG
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-                 to_peripheral_string(rx_pkt_userspace->header.peripheral),
+                 peripheral_to_string(rx_pkt_userspace->header.peripheral),
                  rx_pkt_userspace->header.opcode,
                  rx_pkt_userspace->header.size);
 
@@ -434,7 +434,7 @@ void dma_handle_data()
 
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
-                   to_peripheral_string(rx_pkt_userspace->header.peripheral), rc);
+                   peripheral_to_string(rx_pkt_userspace->header.peripheral), rc);
       }
 
       /* Advance to the next package. */
