@@ -73,11 +73,11 @@ static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
 FDCAN_HandleTypeDef fdcan_1;
 FDCAN_HandleTypeDef fdcan_2;
 
+static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
-
-static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
 
 void HAL_FDCAN_MspInit(FDCAN_HandleTypeDef *hfdcan)
 {
