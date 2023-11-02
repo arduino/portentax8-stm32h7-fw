@@ -50,7 +50,7 @@ char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[]
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-static int on_H7_GET_UID();
+static int on_H7_GET_UID_Request();
 
 /**************************************************************************************
  * TYPEDEF
@@ -83,9 +83,9 @@ int h7_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
     int m4_booted_correctly = is_m4_booted_correctly();
     return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
   }
-  else if (opcode == H7_GET_UID)
+  else if (opcode == H7_GET_UID_REQ)
   {
-    return on_H7_GET_UID();
+    return on_H7_GET_UID_Request();
   }
   else {
     dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
@@ -97,7 +97,7 @@ int h7_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int on_H7_GET_UID()
+int on_H7_GET_UID_Request()
 {
   union x8h7_h7_uid_message msg;
 
@@ -105,5 +105,5 @@ int on_H7_GET_UID()
   msg.field.word1 = LL_GetUID_Word1();
   msg.field.word2 = LL_GetUID_Word2();
 
-  return enqueue_packet(PERIPH_H7, H7_GET_UID, sizeof(msg.buf), msg.buf);
+  return enqueue_packet(PERIPH_H7, H7_GET_UID_RSP, sizeof(msg.buf), msg.buf);
 }
