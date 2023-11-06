@@ -31,8 +31,10 @@ enum Opcodes
 
 enum Opcodes_H7
 {
-  FW_VERSION = 0x10,
-  BOOT_M4    = 0x77,
+  FW_VERSION     = 0x10,
+  BOOT_M4        = 0x77,
+  H7_GET_UID_REQ = 0x78,
+  H7_GET_UID_RSP = 0x78,
 };
 
 enum Opcodes_UART

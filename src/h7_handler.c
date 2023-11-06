@@ -30,6 +30,8 @@
 #include "m4_util.h"
 #include "peripherals.h"
 
+#include "stm32h7xx_ll_utils.h"
+
 /**************************************************************************************
  * DEFINE
  **************************************************************************************/
@@ -43,6 +45,27 @@
  **************************************************************************************/
 
 char const __attribute__((section (".fw_version_section"))) REAL_VERSION_FLASH[] = REALVERSION;
+
+/**************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************/
+
+static int on_H7_GET_UID_Request();
+
+/**************************************************************************************
+ * TYPEDEF
+ **************************************************************************************/
+
+union x8h7_h7_uid_message
+{
+  struct __attribute__((packed))
+  {
+    uint32_t word0;
+    uint32_t word1;
+    uint32_t word2;
+  } field;
+  uint8_t buf[sizeof(uint32_t) /* word0 */ + sizeof(uint32_t) /* word1 */ + sizeof(uint32_t) /* word2 */];
+};
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -60,8 +83,27 @@ int h7_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
     int m4_booted_correctly = is_m4_booted_correctly();
     return enqueue_packet(PERIPH_H7, BOOT_M4, sizeof(m4_booted_correctly), &m4_booted_correctly);
   }
+  else if (opcode == H7_GET_UID_REQ)
+  {
+    return on_H7_GET_UID_Request();
+  }
   else {
     dbg_printf("h7_handler: error invalid opcode (:%d)\n", opcode);
     return 0;
   }
+}
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
+
+int on_H7_GET_UID_Request()
+{
+  union x8h7_h7_uid_message msg;
+
+  msg.field.word0 = LL_GetUID_Word0();
+  msg.field.word1 = LL_GetUID_Word1();
+  msg.field.word2 = LL_GetUID_Word2();
+
+  return enqueue_packet(PERIPH_H7, H7_GET_UID_RSP, sizeof(msg.buf), msg.buf);
 }
