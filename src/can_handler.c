@@ -66,6 +66,7 @@ extern FDCAN_HandleTypeDef fdcan_2;
 static int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 static int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle);
 static int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask);
+static int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -86,11 +87,9 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   }
   else if (opcode == CAN_FILTER)
   {
-    dbg_printf("fdcan1_handler: CAN_FILTER\n");
-
     union x8h7_can_filter_message x8h7_msg;
     memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
-
+    dbg_printf("fdcan1_handler: CAN_FILTER\n");
     return on_CAN_FILTER_Request(&fdcan_1,
                                  x8h7_msg.field.idx,
                                  x8h7_msg.field.id,
@@ -100,9 +99,8 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   {
     union x8h7_can_frame_message msg;
     memcpy(&msg, data, size);
-
     dbg_printf("fdcan1_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
-    return can_write(&fdcan_1, &msg);
+    return on_CAN_TX_FRAME_Request(&fdcan_1, &msg);
   }
   else
   {
@@ -126,11 +124,9 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   }
   else if (opcode == CAN_FILTER)
   {
-    dbg_printf("fdcan2_handler: CAN_FILTER\n");
-
     union x8h7_can_filter_message x8h7_msg;
     memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
-
+    dbg_printf("fdcan2_handler: CAN_FILTER\n");
     return on_CAN_FILTER_Request(&fdcan_2,
                                  x8h7_msg.field.idx,
                                  x8h7_msg.field.id,
@@ -140,9 +136,8 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   {
     union x8h7_can_frame_message msg;
     memcpy(&msg, data, size);
-
     dbg_printf("fdcan2_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
-    return can_write(&fdcan_2, &msg);
+    return on_CAN_TX_FRAME_Request(&fdcan_2, &msg);
   }
   else
   {
@@ -190,4 +185,9 @@ int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_in
   if (!can_filter(handle, filter_index, id, mask, id & CAN_EFF_FLAG))
     dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", filter_index, id, mask);
   return 0;
+}
+
+int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
+{
+  return can_write(handle, msg);
 }
