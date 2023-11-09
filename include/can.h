@@ -64,17 +64,6 @@ static uint32_t const TSEG2_MAX = 128;
  * TYPEDEF
  **************************************************************************************/
 
-union x8h7_can_filter_message
-{
-  struct __attribute__((packed))
-  {
-    uint32_t idx;
-    uint32_t id;
-    uint32_t mask;
-  } field;
-  uint8_t buf[sizeof(uint32_t) /* idx */ + sizeof(uint32_t) /* id */ + sizeof(uint32_t) /* mask */];
-};
-
 union x8h7_can_frame_message
 {
   struct __attribute__((packed))
