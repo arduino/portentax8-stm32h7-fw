@@ -308,7 +308,7 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
     }
 }
 
-int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
+int can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data)
 {
   static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
@@ -324,18 +324,18 @@ int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
   }
 
   if (RxHeader.IdType == FDCAN_EXTENDED_ID)
-    msg->field.id = CAN_EFF_FLAG | (RxHeader.Identifier & CAN_EFF_MASK);
+    *id = CAN_EFF_FLAG | (RxHeader.Identifier & CAN_EFF_MASK);
   else
-    msg->field.id =                (RxHeader.Identifier & CAN_SFF_MASK);
+    *id =                (RxHeader.Identifier & CAN_SFF_MASK);
 
   if (RxHeader.RxFrameType == FDCAN_REMOTE_FRAME)
-    msg->field.id |= CAN_RTR_FLAG;
+    *id |= CAN_RTR_FLAG;
 
-  msg->field.len = DLCtoBytes[RxHeader.DataLength >> 16];
-  if (msg->field.len > sizeof(msg->field.data))
-    msg->field.len = sizeof(msg->field.data);
+  *len = DLCtoBytes[RxHeader.DataLength >> 16];
+  if (*len > X8H7_CAN_FRAME_MAX_DATA_LEN)
+    *len = X8H7_CAN_FRAME_MAX_DATA_LEN;
 
-  memcpy(msg->field.data, RxData, msg->field.len);
+  memcpy(data, RxData, *len);
 
   return 1;
 }

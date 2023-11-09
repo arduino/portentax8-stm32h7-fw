@@ -57,6 +57,17 @@ union x8h7_can_filter_message
   uint8_t buf[sizeof(uint32_t) /* idx */ + sizeof(uint32_t) /* id */ + sizeof(uint32_t) /* mask */];
 };
 
+union x8h7_can_frame_message
+{
+  struct __attribute__((packed))
+  {
+    uint32_t id;                           // 29 bit identifier
+    uint8_t  len;                          // Length of data field in bytes
+    uint8_t  data[X8H7_CAN_FRAME_MAX_DATA_LEN]; // Data field
+  } field;
+  uint8_t buf[X8H7_CAN_HEADER_SIZE + X8H7_CAN_FRAME_MAX_DATA_LEN];
+};
+
 /**************************************************************************************
  * GLOBAL CONSTANTS
  **************************************************************************************/
@@ -90,7 +101,9 @@ static int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_
 int can_handle_data()
 {
   int bytes_enqueued = 0;
-  union x8h7_can_frame_message msg;
+  uint32_t can_id = 0;
+  uint8_t can_len = 0;
+  uint8_t can_data[X8H7_CAN_FRAME_MAX_DATA_LEN] = {0};
 
   /* Note: the last read package is lost in this implementation. We need to fix this by
    * implementing some peek method or by buffering messages in a ringbuffer.
@@ -98,18 +111,30 @@ int can_handle_data()
 
   if (is_can1_init)
   {
-    for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
+    for (int rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
     {
-      rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
+      union x8h7_can_frame_message x8h7_msg;
+
+      x8h7_msg.field.id = can_id;
+      x8h7_msg.field.len = can_len;
+      memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
+
+      rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
       if (!rc_enq) return bytes_enqueued;
     }
   }
 
   if (is_can2_init)
   {
-    for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
+    for (int rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
     {
-      rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
+      union x8h7_can_frame_message x8h7_msg;
+
+      x8h7_msg.field.id = can_id;
+      x8h7_msg.field.len = can_len;
+      memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
+
+      rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
       if (!rc_enq) return bytes_enqueued;
     }
   }

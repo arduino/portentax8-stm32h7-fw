@@ -64,17 +64,6 @@ static uint32_t const TSEG2_MAX = 128;
  * TYPEDEF
  **************************************************************************************/
 
-union x8h7_can_frame_message
-{
-  struct __attribute__((packed))
-  {
-    uint32_t id;                           // 29 bit identifier
-    uint8_t  len;                          // Length of data field in bytes
-    uint8_t  data[X8H7_CAN_FRAME_MAX_DATA_LEN]; // Data field
-  } field;
-  uint8_t buf[X8H7_CAN_HEADER_SIZE + X8H7_CAN_FRAME_MAX_DATA_LEN];
-};
-
 typedef enum {
     CAN_1 = (int)FDCAN1_BASE,
     CAN_2 = (int)FDCAN2_BASE
@@ -89,7 +78,7 @@ void          can_deinit_device(FDCAN_HandleTypeDef * handle);
 int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
 int           can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data);
-int           can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg);
+int           can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data);
 int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id);
 unsigned char can_rderror(FDCAN_HandleTypeDef * handle);
 unsigned char can_tderror(FDCAN_HandleTypeDef * handle);
