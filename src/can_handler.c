@@ -213,9 +213,9 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate
     Error_Handler("Could not calculate valid CAN bit timing\n");
   }
 
-  can_init_device(handle,
-                  (handle == &fdcan_1) ? CAN_1 : CAN_2,
-                  can_bit_timing);
+  can_init(handle,
+           (handle == &fdcan_1) ? CAN_1 : CAN_2,
+           can_bit_timing);
 
   if      (handle == &fdcan_1) is_can1_init = true;
   else if (handle == &fdcan_1) is_can2_init = true;
@@ -225,7 +225,7 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate
 
 int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
 {
-  can_deinit_device(handle);
+  can_deinit(handle);
 
   if      (handle == &fdcan_1) is_can1_init = false;
   else if (handle == &fdcan_1) is_can2_init = false;

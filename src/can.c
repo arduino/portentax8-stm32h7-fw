@@ -150,7 +150,7 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   return 1;
 }
 
-void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
+void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     // Default values
     handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
@@ -194,7 +194,7 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
     can_internal_init(handle);
 }
 
-void can_deinit_device(FDCAN_HandleTypeDef * handle)
+void can_deinit(FDCAN_HandleTypeDef * handle)
 {
   HAL_FDCAN_Stop(handle);
   HAL_FDCAN_DeInit(handle);
