@@ -48,7 +48,7 @@ extern FDCAN_HandleTypeDef fdcan_2;
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-static int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
+static int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -56,11 +56,11 @@ static int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const
 
 int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
-  if (opcode == CONFIGURE)
+  if (opcode == CAN_INIT)
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
-    on_CAN_CONFIGURE_Request(&fdcan_1, can_bitrate);
-    dbg_printf("fdcan1_handler: initializing fdcan1 with frequency %ld\n", can_bitrate);
+    dbg_printf("fdcan1_handler: initializing with frequency %ld\n", can_bitrate);
+    on_CAN_INIT_Request(&fdcan_1, can_bitrate);
     return 0;
   }
   else if (opcode == CAN_DEINIT)
@@ -101,11 +101,11 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
 
 int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
-  if (opcode == CONFIGURE)
+  if (opcode == CAN_INIT)
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
-    on_CAN_CONFIGURE_Request(&fdcan_2, can_bitrate);
-    dbg_printf("fdcan2_handler: initializing fdcan2 with frequency %ld\n", can_bitrate);
+    dbg_printf("fdcan2_handler: initializing with frequency %ld\n", can_bitrate);
+    on_CAN_INIT_Request(&fdcan_2, can_bitrate);
     return 0;
   }
   else if (opcode == CAN_DEINIT)
@@ -148,7 +148,7 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
+int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 {
   CanNominalBitTimingResult can_bit_timing = {0};
 
