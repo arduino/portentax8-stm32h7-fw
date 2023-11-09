@@ -189,5 +189,8 @@ int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_in
 
 int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
-  return can_write(handle, msg);
+  return can_write(handle,
+                   msg->field.id,
+                   msg->field.len,
+                   msg->field.data);
 }

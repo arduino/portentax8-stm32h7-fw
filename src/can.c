@@ -292,23 +292,23 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
   return 1;
 }
 
-int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
+int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
-    FDCAN_TxHeaderTypeDef TxHeader = {0};
+  FDCAN_TxHeaderTypeDef TxHeader = {0};
 
-  if (msg->field.id & CAN_EFF_FLAG)
+  if (id & CAN_EFF_FLAG)
   {
     TxHeader.IdType     = FDCAN_EXTENDED_ID;
-    TxHeader.Identifier = msg->field.id & CAN_EFF_MASK;
+    TxHeader.Identifier = id & CAN_EFF_MASK;
   }
   else
   {
     TxHeader.IdType     = FDCAN_STANDARD_ID;
-    TxHeader.Identifier = msg->field.id & CAN_SFF_MASK;
+    TxHeader.Identifier = id & CAN_SFF_MASK;
   }
 
     TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    switch (msg->field.len)
+    switch (len)
     {
       default:
       case 0:  TxHeader.DataLength = FDCAN_DLC_BYTES_0;  break;
@@ -334,7 +334,7 @@ int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const *
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
       printf("Error_Handler: %ld\n", err_code);
