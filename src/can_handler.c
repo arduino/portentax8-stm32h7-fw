@@ -32,6 +32,12 @@
 #include "error_handler.h"
 
 /**************************************************************************************
+ * GLOBAL CONSTANTS
+ **************************************************************************************/
+
+static uint32_t const CAN_PERIPHERAL_CLOCK_Hz = 100*1000*1000UL;
+
+/**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
@@ -135,7 +141,7 @@ int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bi
   CanNominalBitTimingResult can_bit_timing = {0};
 
   if (!calc_can_nominal_bit_timing(can_bitrate,
-                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
+                                   CAN_PERIPHERAL_CLOCK_Hz,
                                    TQ_MAX,
                                    TQ_MIN,
                                    TSEG1_MIN,
