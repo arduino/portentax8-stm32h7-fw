@@ -60,8 +60,7 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
     dbg_printf("fdcan1_handler: initializing with frequency %ld\n", can_bitrate);
-    on_CAN_INIT_Request(&fdcan_1, can_bitrate);
-    return 0;
+    return on_CAN_INIT_Request(&fdcan_1, can_bitrate);
   }
   else if (opcode == CAN_DEINIT)
   {
@@ -105,8 +104,7 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
     dbg_printf("fdcan2_handler: initializing with frequency %ld\n", can_bitrate);
-    on_CAN_INIT_Request(&fdcan_2, can_bitrate);
-    return 0;
+    return on_CAN_INIT_Request(&fdcan_2, can_bitrate);
   }
   else if (opcode == CAN_DEINIT)
   {
