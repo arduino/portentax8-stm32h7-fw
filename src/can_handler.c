@@ -49,6 +49,7 @@ extern FDCAN_HandleTypeDef fdcan_2;
  **************************************************************************************/
 
 static int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
+static int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -65,8 +66,7 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   else if (opcode == CAN_DEINIT)
   {
     dbg_printf("fdcan1_handler: CAN_DEINIT\n");
-    can_deinit_device(&fdcan_1);
-    return 0;
+    return on_CAN_DEINIT_Request(&fdcan_1);
   }
   else if (opcode == CAN_FILTER)
   {
@@ -109,8 +109,7 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   else if (opcode == CAN_DEINIT)
   {
     dbg_printf("fdcan2_handler: CAN_DEINIT\n");
-    can_deinit_device(&fdcan_2);
-    return 0;
+    return on_CAN_DEINIT_Request(&fdcan_2);
   }
   else if (opcode == CAN_FILTER)
   {
@@ -167,5 +166,11 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate
                   (handle == &fdcan_1) ? CAN_1 : CAN_2,
                   can_bit_timing);
 
+  return 0;
+}
+
+int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
+{
+  can_deinit_device(handle);
   return 0;
 }
