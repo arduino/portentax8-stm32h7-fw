@@ -50,6 +50,7 @@ extern FDCAN_HandleTypeDef fdcan_2;
 
 static int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 static int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle);
+static int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -70,18 +71,15 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   }
   else if (opcode == CAN_FILTER)
   {
+    dbg_printf("fdcan1_handler: CAN_FILTER\n");
+
     union x8h7_can_filter_message x8h7_msg;
     memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
 
-    if (!can_filter(&fdcan_1,
-                    x8h7_msg.field.idx,
-                    x8h7_msg.field.id,
-                    x8h7_msg.field.mask,
-                    x8h7_msg.field.id & CAN_EFF_FLAG))
-    {
-      dbg_printf("fdcan1_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
-    }
-    return 0;
+    return on_CAN_FILTER_Request(&fdcan_1,
+                                 x8h7_msg.field.idx,
+                                 x8h7_msg.field.id,
+                                 x8h7_msg.field.mask);
   }
   else if (opcode == CAN_TX_FRAME)
   {
@@ -113,18 +111,15 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   }
   else if (opcode == CAN_FILTER)
   {
+    dbg_printf("fdcan2_handler: CAN_FILTER\n");
+
     union x8h7_can_filter_message x8h7_msg;
     memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
 
-    if (!can_filter(&fdcan_2,
-                    x8h7_msg.field.idx,
-                    x8h7_msg.field.id,
-                    x8h7_msg.field.mask,
-                    x8h7_msg.field.id & CAN_EFF_FLAG))
-    {
-      dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", x8h7_msg.field.idx, x8h7_msg.field.id, x8h7_msg.field.mask);
-    }
-    return 0;
+    return on_CAN_FILTER_Request(&fdcan_2,
+                                 x8h7_msg.field.idx,
+                                 x8h7_msg.field.id,
+                                 x8h7_msg.field.mask);
   }
   else if (opcode == CAN_TX_FRAME)
   {
@@ -172,5 +167,12 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate
 int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
 {
   can_deinit_device(handle);
+  return 0;
+}
+
+int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask)
+{
+  if (!can_filter(handle, filter_index, id, mask, id & CAN_EFF_FLAG))
+    dbg_printf("fdcan2_handler: can_filter failed for idx: %ld, id: %lX, mask: %lX\n", filter_index, id, mask);
   return 0;
 }
