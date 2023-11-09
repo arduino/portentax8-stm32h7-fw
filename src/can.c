@@ -62,9 +62,6 @@ FDCAN_HandleTypeDef fdcan_2;
 
 static uint32_t HAL_RCC_FDCAN_CLK_ENABLED = 0;
 
-static bool is_can1_init = false;
-static bool is_can2_init = false;
-
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -133,36 +130,6 @@ void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef *hfdcan)
   }
 }
 
-int can_handle_data()
-{
-  int bytes_enqueued = 0;
-  union x8h7_can_frame_message msg;
-
-  /* Note: the last read package is lost in this implementation. We need to fix this by
-   * implementing some peek method or by buffering messages in a ringbuffer.
-   */
-
-  if (is_can1_init)
-  {
-    for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
-    {
-      rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
-      if (!rc_enq) return bytes_enqueued;
-    }
-  }
-
-  if (is_can2_init)
-  {
-    for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
-    {
-      rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
-      if (!rc_enq) return bytes_enqueued;
-    }
-  }
-
-  return bytes_enqueued;
-}
-
 int can_internal_init(FDCAN_HandleTypeDef * handle)
 {
   if (HAL_FDCAN_Init(handle) != HAL_OK)
@@ -179,11 +146,6 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
 
   if (HAL_FDCAN_Start(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Start Error_Handler\n");
-
-  if (handle == &fdcan_1)
-    is_can1_init = true;
-  else if (handle == &fdcan_2)
-    is_can2_init = true;
 
   return 1;
 }
@@ -236,11 +198,6 @@ void can_deinit_device(FDCAN_HandleTypeDef * handle)
 {
   HAL_FDCAN_Stop(handle);
   HAL_FDCAN_DeInit(handle);
-
-  if (handle == &fdcan_1)
-    is_can1_init = true;
-  else if (handle == &fdcan_2)
-    is_can2_init = true;
 }
 
 int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)

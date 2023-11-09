@@ -29,6 +29,8 @@
  * FUNCTION DECLARATION
  **************************************************************************************/
 
+int can_handle_data();
+
 int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size);
 

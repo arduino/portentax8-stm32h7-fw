@@ -28,7 +28,9 @@
 
 #include "can.h"
 #include "debug.h"
+#include "system.h"
 #include "opcodes.h"
+#include "peripherals.h"
 #include "error_handler.h"
 
 /**************************************************************************************
@@ -68,6 +70,9 @@ static uint32_t const CAN_PERIPHERAL_CLOCK_Hz = 100*1000*1000UL;
 extern FDCAN_HandleTypeDef fdcan_1;
 extern FDCAN_HandleTypeDef fdcan_2;
 
+static bool is_can1_init = false;
+static bool is_can2_init = false;
+
 /**************************************************************************************
  * FUNCTION DECLARATION
  **************************************************************************************/
@@ -81,6 +86,36 @@ static int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
+
+int can_handle_data()
+{
+  int bytes_enqueued = 0;
+  union x8h7_can_frame_message msg;
+
+  /* Note: the last read package is lost in this implementation. We need to fix this by
+   * implementing some peek method or by buffering messages in a ringbuffer.
+   */
+
+  if (is_can1_init)
+  {
+    for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
+    {
+      rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
+      if (!rc_enq) return bytes_enqueued;
+    }
+  }
+
+  if (is_can2_init)
+  {
+    for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
+    {
+      rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
+      if (!rc_enq) return bytes_enqueued;
+    }
+  }
+
+  return bytes_enqueued;
+}
 
 int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
@@ -157,12 +192,19 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate
                   (handle == &fdcan_1) ? CAN_1 : CAN_2,
                   can_bit_timing);
 
+  if      (handle == &fdcan_1) is_can1_init = true;
+  else if (handle == &fdcan_1) is_can2_init = true;
+
   return 0;
 }
 
 int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
 {
   can_deinit_device(handle);
+
+  if      (handle == &fdcan_1) is_can1_init = false;
+  else if (handle == &fdcan_1) is_can2_init = false;
+
   return 0;
 }
 
