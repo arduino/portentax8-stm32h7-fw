@@ -29,6 +29,7 @@
 #include "can.h"
 #include "debug.h"
 #include "opcodes.h"
+#include "error_handler.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -36,6 +37,12 @@
 
 extern FDCAN_HandleTypeDef fdcan_1;
 extern FDCAN_HandleTypeDef fdcan_2;
+
+/**************************************************************************************
+ * FUNCTION DECLARATION
+ **************************************************************************************/
+
+static int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -46,8 +53,8 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   if (opcode == CONFIGURE)
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
-    can_frequency(&fdcan_1, can_bitrate);
-    dbg_printf("fdcan1_handler: configuring fdcan1 with frequency %ld\n", can_bitrate);
+    on_CAN_CONFIGURE_Request(&fdcan_1, can_bitrate);
+    dbg_printf("fdcan1_handler: initializing fdcan1 with frequency %ld\n", can_bitrate);
     return 0;
   }
   else if (opcode == CAN_FILTER)
@@ -85,8 +92,8 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
   if (opcode == CONFIGURE)
   {
     uint32_t const can_bitrate = *((uint32_t *)data);
-    can_frequency(&fdcan_2, can_bitrate);
-    dbg_printf("fdcan2_handler: configuring fdcan2 with frequency %ld\n", can_bitrate);
+    on_CAN_CONFIGURE_Request(&fdcan_2, can_bitrate);
+    dbg_printf("fdcan2_handler: initializing fdcan2 with frequency %ld\n", can_bitrate);
     return 0;
   }
   else if (opcode == CAN_FILTER)
@@ -117,4 +124,32 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
     dbg_printf("fdcan2_handler: error invalid opcode (:%d)\n", opcode);
     return 0;
   }
+}
+
+/**************************************************************************************
+ * FUNCTION DEFINITION
+ **************************************************************************************/
+
+int on_CAN_CONFIGURE_Request(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
+{
+  CanNominalBitTimingResult can_bit_timing = {0};
+
+  if (!calc_can_nominal_bit_timing(can_bitrate,
+                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
+                                   TQ_MAX,
+                                   TQ_MIN,
+                                   TSEG1_MIN,
+                                   TSEG1_MAX,
+                                   TSEG2_MIN,
+                                   TSEG2_MAX,
+                                   &can_bit_timing))
+  {
+    Error_Handler("Could not calculate valid CAN bit timing\n");
+  }
+
+  can_init_device(handle,
+                  (handle == &fdcan_1) ? CAN_1 : CAN_2,
+                  can_bit_timing);
+
+  return 0;
 }

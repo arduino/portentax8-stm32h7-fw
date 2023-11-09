@@ -50,6 +50,17 @@
 #define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
 
 /**************************************************************************************
+ * GLOBAL CONSTANTS
+ **************************************************************************************/
+
+static uint32_t const TQ_MIN    =   1;
+static uint32_t const TQ_MAX    = 512;
+static uint32_t const TSEG1_MIN =   1;
+static uint32_t const TSEG1_MAX = 256;
+static uint32_t const TSEG2_MIN =   1;
+static uint32_t const TSEG2_MAX = 128;
+
+/**************************************************************************************
  * TYPEDEF
  **************************************************************************************/
 
@@ -84,7 +95,6 @@ typedef enum {
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void          can_init();
 int           can_handle_data();
 
 void          can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);

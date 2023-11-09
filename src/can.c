@@ -54,19 +54,6 @@
 #define X8H7_CAN_STS_INT_ERR     0x04
 
 /**************************************************************************************
- * GLOBAL CONSTANTS
- **************************************************************************************/
-
-static uint32_t const TQ_MIN    =   1;
-static uint32_t const TQ_MAX    = 512;
-static uint32_t const TSEG1_MIN =   1;
-static uint32_t const TSEG1_MAX = 256;
-static uint32_t const TSEG2_MIN =   1;
-static uint32_t const TSEG2_MAX = 128;
-
-static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
-
-/**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
@@ -141,27 +128,6 @@ void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef *hfdcan)
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_5 | GPIO_PIN_6);
     HAL_NVIC_DisableIRQ(FDCAN2_IT0_IRQn);
   }
-}
-
-void can_init()
-{
-  CanNominalBitTimingResult default_can_bit_timing = {0};
-
-  if (!calc_can_nominal_bit_timing(DEFAULT_CAN_BIT_RATE,
-                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
-                                   TQ_MAX,
-                                   TQ_MIN,
-                                   TSEG1_MIN,
-                                   TSEG1_MAX,
-                                   TSEG2_MIN,
-                                   TSEG2_MAX,
-                                   &default_can_bit_timing))
-  {
-    Error_Handler("Could not calculate valid default CAN bit timing\n");
-  }
-
-  can_init_device(&fdcan_1, CAN_1, default_can_bit_timing);
-  can_init_device(&fdcan_2, CAN_2, default_can_bit_timing);
 }
 
 int can_handle_data()
