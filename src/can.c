@@ -232,6 +232,17 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
     can_internal_init(handle);
 }
 
+void can_deinit_device(FDCAN_HandleTypeDef * handle)
+{
+  HAL_FDCAN_Stop(handle);
+  HAL_FDCAN_DeInit(handle);
+
+  if (handle == &fdcan_1)
+    is_can1_init = true;
+  else if (handle == &fdcan_2)
+    is_can2_init = true;
+}
+
 int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
 {
   if (HAL_FDCAN_Stop(handle) != HAL_OK)

@@ -52,6 +52,7 @@ enum Opcodes_RTC
 
 enum Opcodes_CAN
 {
+  CAN_DEINIT   = 0x11,
   CAN_TX_FRAME = 0x01,
   CAN_RX_FRAME = 0x01,
   CAN_STATUS   = 0x40,

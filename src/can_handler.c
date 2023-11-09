@@ -63,6 +63,12 @@ int fdcan1_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
     dbg_printf("fdcan1_handler: initializing fdcan1 with frequency %ld\n", can_bitrate);
     return 0;
   }
+  else if (opcode == CAN_DEINIT)
+  {
+    dbg_printf("fdcan1_handler: CAN_DEINIT\n");
+    can_deinit_device(&fdcan_1);
+    return 0;
+  }
   else if (opcode == CAN_FILTER)
   {
     union x8h7_can_filter_message x8h7_msg;
@@ -100,6 +106,12 @@ int fdcan2_handler(uint8_t const opcode, uint8_t const * data, uint16_t const si
     uint32_t const can_bitrate = *((uint32_t *)data);
     on_CAN_CONFIGURE_Request(&fdcan_2, can_bitrate);
     dbg_printf("fdcan2_handler: initializing fdcan2 with frequency %ld\n", can_bitrate);
+    return 0;
+  }
+  else if (opcode == CAN_DEINIT)
+  {
+    dbg_printf("fdcan2_handler: CAN_DEINIT\n");
+    can_deinit_device(&fdcan_2);
     return 0;
   }
   else if (opcode == CAN_FILTER)
