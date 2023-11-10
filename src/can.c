@@ -54,19 +54,6 @@
 #define X8H7_CAN_STS_INT_ERR     0x04
 
 /**************************************************************************************
- * GLOBAL CONSTANTS
- **************************************************************************************/
-
-static uint32_t const TQ_MIN    =   1;
-static uint32_t const TQ_MAX    = 512;
-static uint32_t const TSEG1_MIN =   1;
-static uint32_t const TSEG1_MAX = 256;
-static uint32_t const TSEG2_MIN =   1;
-static uint32_t const TSEG2_MAX = 128;
-
-static uint32_t const DEFAULT_CAN_BIT_RATE = 100*1000UL; /* 100 kBit/s */
-
-/**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
@@ -143,51 +130,6 @@ void HAL_FDCAN_MspDeInit(FDCAN_HandleTypeDef *hfdcan)
   }
 }
 
-void can_init()
-{
-  CanNominalBitTimingResult default_can_bit_timing = {0};
-
-  if (!calc_can_nominal_bit_timing(DEFAULT_CAN_BIT_RATE,
-                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
-                                   TQ_MAX,
-                                   TQ_MIN,
-                                   TSEG1_MIN,
-                                   TSEG1_MAX,
-                                   TSEG2_MIN,
-                                   TSEG2_MAX,
-                                   &default_can_bit_timing))
-  {
-    Error_Handler("Could not calculate valid default CAN bit timing\n");
-  }
-
-  can_init_device(&fdcan_1, CAN_1, default_can_bit_timing);
-  can_init_device(&fdcan_2, CAN_2, default_can_bit_timing);
-}
-
-int can_handle_data()
-{
-  int bytes_enqueued = 0;
-  union x8h7_can_frame_message msg;
-
-  /* Note: the last read package is lost in this implementation. We need to fix this by
-   * implementing some peek method or by buffering messages in a ringbuffer.
-   */
-
-  for (int rc_enq = 0; can_read(&fdcan_1, &msg); bytes_enqueued += rc_enq)
-  {
-    rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
-    if (!rc_enq) return bytes_enqueued;
-  }
-
-  for (int rc_enq = 0; can_read(&fdcan_2, &msg); bytes_enqueued += rc_enq)
-  {
-    rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + msg.field.len, msg.buf);
-    if (!rc_enq) return bytes_enqueued;
-  }
-
-  return bytes_enqueued;
-}
-
 int can_internal_init(FDCAN_HandleTypeDef * handle)
 {
   if (HAL_FDCAN_Init(handle) != HAL_OK)
@@ -208,7 +150,7 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   return 1;
 }
 
-void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
+void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
 {
     // Default values
     handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
@@ -250,6 +192,12 @@ void can_init_device(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNomina
     handle->Init.TxElmtSize          = FDCAN_DATA_BYTES_8;
 
     can_internal_init(handle);
+}
+
+void can_deinit(FDCAN_HandleTypeDef * handle)
+{
+  HAL_FDCAN_Stop(handle);
+  HAL_FDCAN_DeInit(handle);
 }
 
 int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
@@ -301,23 +249,23 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
   return 1;
 }
 
-int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
+int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
-    FDCAN_TxHeaderTypeDef TxHeader = {0};
+  FDCAN_TxHeaderTypeDef TxHeader = {0};
 
-  if (msg->field.id & CAN_EFF_FLAG)
+  if (id & CAN_EFF_FLAG)
   {
     TxHeader.IdType     = FDCAN_EXTENDED_ID;
-    TxHeader.Identifier = msg->field.id & CAN_EFF_MASK;
+    TxHeader.Identifier = id & CAN_EFF_MASK;
   }
   else
   {
     TxHeader.IdType     = FDCAN_STANDARD_ID;
-    TxHeader.Identifier = msg->field.id & CAN_SFF_MASK;
+    TxHeader.Identifier = id & CAN_SFF_MASK;
   }
 
     TxHeader.TxFrameType = FDCAN_DATA_FRAME;
-    switch (msg->field.len)
+    switch (len)
     {
       default:
       case 0:  TxHeader.DataLength = FDCAN_DLC_BYTES_0;  break;
@@ -343,7 +291,7 @@ int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const *
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)msg->field.data) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
       printf("Error_Handler: %ld\n", err_code);
@@ -360,7 +308,7 @@ int can_write(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const *
     }
 }
 
-int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
+int can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data)
 {
   static const uint8_t DLCtoBytes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64};
 
@@ -376,18 +324,18 @@ int can_read(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message *msg)
   }
 
   if (RxHeader.IdType == FDCAN_EXTENDED_ID)
-    msg->field.id = CAN_EFF_FLAG | (RxHeader.Identifier & CAN_EFF_MASK);
+    *id = CAN_EFF_FLAG | (RxHeader.Identifier & CAN_EFF_MASK);
   else
-    msg->field.id =                (RxHeader.Identifier & CAN_SFF_MASK);
+    *id =                (RxHeader.Identifier & CAN_SFF_MASK);
 
   if (RxHeader.RxFrameType == FDCAN_REMOTE_FRAME)
-    msg->field.id |= CAN_RTR_FLAG;
+    *id |= CAN_RTR_FLAG;
 
-  msg->field.len = DLCtoBytes[RxHeader.DataLength >> 16];
-  if (msg->field.len > sizeof(msg->field.data))
-    msg->field.len = sizeof(msg->field.data);
+  *len = DLCtoBytes[RxHeader.DataLength >> 16];
+  if (*len > X8H7_CAN_FRAME_MAX_DATA_LEN)
+    *len = X8H7_CAN_FRAME_MAX_DATA_LEN;
 
-  memcpy(msg->field.data, RxData, msg->field.len);
+  memcpy(data, RxData, *len);
 
   return 1;
 }

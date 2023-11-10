@@ -77,7 +77,6 @@ void peripheral_init()
   adc_init();
   peripheral_register_callback(PERIPH_ADC, &adc_handler);
 
-  can_init();
   peripheral_register_callback(PERIPH_FDCAN1, &fdcan1_handler);
   peripheral_register_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
