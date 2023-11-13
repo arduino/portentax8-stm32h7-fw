@@ -150,7 +150,7 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   return 1;
 }
 
-void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing)
+void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
 {
     // Default values
     handle->Instance = (FDCAN_GlobalTypeDef *)peripheral;
@@ -160,10 +160,10 @@ void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTim
     handle->Init.AutoRetransmission = ENABLE;
     handle->Init.TransmitPause = DISABLE;
     handle->Init.ProtocolException = ENABLE;
-    handle->Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
-    handle->Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
-    handle->Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
-    handle->Init.NominalSyncJumpWidth = handle->Init.NominalTimeSeg2; // Synchronization_Jump_width
+    handle->Init.NominalPrescaler = baud_rate_prescaler;
+    handle->Init.NominalTimeSeg1 = time_segment_1;
+    handle->Init.NominalTimeSeg2 = time_segment_2;
+    handle->Init.NominalSyncJumpWidth = sync_jump_width;
     handle->Init.DataPrescaler = 0x1;       // Not used - only in FDCAN
     handle->Init.DataSyncJumpWidth = 0x1;   // Not used - only in FDCAN
     handle->Init.DataTimeSeg1 = 0x1;        // Not used - only in FDCAN

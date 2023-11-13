@@ -73,7 +73,7 @@ typedef enum {
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
+void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 void          can_deinit(FDCAN_HandleTypeDef * handle);
 int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
 
