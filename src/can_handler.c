@@ -247,7 +247,7 @@ int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
   return 0;
 }
 
-static int on_CAN_SET_BITTIMING_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
+int on_CAN_SET_BITTIMING_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
 {
   return can_set_bittiming(handle,
                            baud_rate_prescaler,
