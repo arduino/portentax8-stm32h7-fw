@@ -30,8 +30,6 @@
 
 #include "stm32h7xx_hal.h"
 
-#include "can_util.h"
-
 /**************************************************************************************
  * DEFINE
  **************************************************************************************/
@@ -50,17 +48,6 @@
 #define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
 
 /**************************************************************************************
- * GLOBAL CONSTANTS
- **************************************************************************************/
-
-static uint32_t const TQ_MIN    =   1;
-static uint32_t const TQ_MAX    = 512;
-static uint32_t const TSEG1_MIN =   1;
-static uint32_t const TSEG1_MAX = 256;
-static uint32_t const TSEG2_MIN =   1;
-static uint32_t const TSEG2_MAX = 128;
-
-/**************************************************************************************
  * TYPEDEF
  **************************************************************************************/
 
@@ -73,9 +60,9 @@ typedef enum {
  * FUNCTION DECLARATION
  **************************************************************************************/
 
-void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, CanNominalBitTimingResult const can_bit_timing);
+void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 void          can_deinit(FDCAN_HandleTypeDef * handle);
-int           can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate);
+int           can_set_bittiming(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 
 int           can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data);
 int           can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data);
