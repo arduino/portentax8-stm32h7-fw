@@ -30,8 +30,6 @@
 
 #include "stm32h7xx_hal.h"
 
-#include "can_util.h"
-
 /**************************************************************************************
  * DEFINE
  **************************************************************************************/
@@ -48,17 +46,6 @@
 #define CAN_SFF_MASK 0x000007FFU /* standard frame format (SFF) */
 #define CAN_EFF_MASK 0x1FFFFFFFU /* extended frame format (EFF) */
 #define CAN_ERR_MASK 0x1FFFFFFFU /* omit EFF, RTR, ERR flags */
-
-/**************************************************************************************
- * GLOBAL CONSTANTS
- **************************************************************************************/
-
-static uint32_t const TQ_MIN    =   1;
-static uint32_t const TQ_MAX    = 512;
-static uint32_t const TSEG1_MIN =   1;
-static uint32_t const TSEG1_MAX = 256;
-static uint32_t const TSEG2_MIN =   1;
-static uint32_t const TSEG2_MAX = 128;
 
 /**************************************************************************************
  * TYPEDEF
