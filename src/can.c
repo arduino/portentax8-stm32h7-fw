@@ -200,36 +200,18 @@ void can_deinit(FDCAN_HandleTypeDef * handle)
   HAL_FDCAN_DeInit(handle);
 }
 
-int can_frequency(FDCAN_HandleTypeDef * handle, uint32_t const can_bitrate)
+int can_set_bittiming(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
 {
   if (HAL_FDCAN_Stop(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Stop Error_Handler\n");
 
-  CanNominalBitTimingResult can_bit_timing = {0};
-
-  if (!calc_can_nominal_bit_timing(can_bitrate,
-                                   HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN),
-                                   TQ_MAX,
-                                   TQ_MIN,
-                                   TSEG1_MIN,
-                                   TSEG1_MAX,
-                                   TSEG2_MIN,
-                                   TSEG2_MAX,
-                                   &can_bit_timing))
-  {
-    Error_Handler("Could not calculate valid CAN bit timing\n");
-  }
-
-  dbg_printf("can_frequency:\n\r  can_bitrate = %ld\n\r  can_clock_Hz = %ld\n", can_bitrate, can_clock_Hz);
-
-  handle->Init.NominalPrescaler = can_bit_timing.baud_rate_prescaler;
-  handle->Init.NominalTimeSeg1 = can_bit_timing.time_segment_1;
-  handle->Init.NominalTimeSeg2 = can_bit_timing.time_segment_2;
-  handle->Init.NominalSyncJumpWidth = handle->Init.NominalTimeSeg2; // Synchronization_Jump_width
+  handle->Init.NominalPrescaler     = baud_rate_prescaler;
+  handle->Init.NominalTimeSeg1      = time_segment_1;
+  handle->Init.NominalTimeSeg2      = time_segment_2;
+  handle->Init.NominalSyncJumpWidth = sync_jump_width;
 
   return can_internal_init(handle);
 }
-
 
 int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id)
 {

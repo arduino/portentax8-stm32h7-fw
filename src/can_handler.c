@@ -48,6 +48,18 @@ union x8h7_can_init_message
   uint8_t buf[sizeof(uint32_t) /* can_bitrate_Hz */ + sizeof(uint32_t) /* time_segment_1 */ + sizeof(uint32_t) /* time_segment_2 */ + sizeof(uint32_t) /* sync_jump_width */];
 };
 
+union x8h7_can_bittiming_message
+{
+  struct __attribute__((packed))
+  {
+    uint32_t baud_rate_prescaler;
+    uint32_t time_segment_1;
+    uint32_t time_segment_2;
+    uint32_t sync_jump_width;
+  } field;
+  uint8_t buf[sizeof(uint32_t) /* can_bitrate_Hz */ + sizeof(uint32_t) /* time_segment_1 */ + sizeof(uint32_t) /* time_segment_2 */ + sizeof(uint32_t) /* sync_jump_width */];
+};
+
 union x8h7_can_filter_message
 {
   struct __attribute__((packed))
@@ -87,6 +99,7 @@ static bool is_can2_init = false;
 static int fdcan_handler(FDCAN_HandleTypeDef * handle, uint8_t const opcode, uint8_t const * data, uint16_t const size);
 static int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 static int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle);
+static int on_CAN_SET_BITTIMING_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 static int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask);
 static int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg);
 
@@ -169,6 +182,18 @@ int fdcan_handler(FDCAN_HandleTypeDef * handle, uint8_t const opcode, uint8_t co
     dbg_printf("fdcan_handler: CAN_DEINIT\n");
     return on_CAN_DEINIT_Request(handle);
   }
+  else if (opcode == CAN_SET_BITTIMING)
+  {
+    dbg_printf("fdcan_handler: CAN_SET_BITTIMING\n");
+    union x8h7_can_bittiming_message x8h7_msg;
+    memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
+
+    return on_CAN_SET_BITTIMING_Request(handle,
+                                        x8h7_msg.field.baud_rate_prescaler,
+                                        x8h7_msg.field.time_segment_1,
+                                        x8h7_msg.field.time_segment_2,
+                                        x8h7_msg.field.sync_jump_width);
+  }
   else if (opcode == CAN_FILTER)
   {
     union x8h7_can_filter_message x8h7_msg;
@@ -220,6 +245,15 @@ int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
   else if (handle == &fdcan_1) is_can2_init = false;
 
   return 0;
+}
+
+static int on_CAN_SET_BITTIMING_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
+{
+  return can_set_bittiming(handle,
+                           baud_rate_prescaler,
+                           time_segment_1,
+                           time_segment_2,
+                           sync_jump_width);
 }
 
 int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask)
