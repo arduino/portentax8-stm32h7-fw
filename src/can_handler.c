@@ -185,6 +185,15 @@ int fdcan_handler(FDCAN_HandleTypeDef * handle, uint8_t const opcode, uint8_t co
   else if (opcode == CAN_SET_BITTIMING)
   {
     dbg_printf("fdcan_handler: CAN_SET_BITTIMING\n");
+
+    /* The Linux driver likes to call "x8h7_can_hw_do_set_bittiming"
+     * before the CAN module has actually been initialized. This check
+     * prevents undue hardware manipulation before the module is up
+     * and running.
+     */
+    if (handle == &fdcan_1 && !is_can1_init) return 0;
+    if (handle == &fdcan_2 && !is_can2_init) return 0;
+
     union x8h7_can_bittiming_message x8h7_msg;
     memcpy(x8h7_msg.buf, data, sizeof(x8h7_msg.buf));
 
