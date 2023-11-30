@@ -64,6 +64,7 @@ void          can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, uint32_
 void          can_deinit(FDCAN_HandleTypeDef * handle);
 int           can_set_bittiming(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width);
 
+uint32_t      can_tx_fifo_available(FDCAN_HandleTypeDef * handle);
 int           can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data);
 int           can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data);
 int           can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32_t const id, uint32_t const mask, bool const is_extended_id);
