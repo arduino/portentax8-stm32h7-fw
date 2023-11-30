@@ -31,6 +31,7 @@
 #include "system.h"
 #include "opcodes.h"
 #include "peripherals.h"
+#include "can_msg_ringbuffer.h"
 
 /**************************************************************************************
  * TYPEDEF
@@ -91,6 +92,8 @@ extern FDCAN_HandleTypeDef fdcan_2;
 
 static bool is_can1_init = false;
 static bool is_can2_init = false;
+static struct CanMsgRingbuffer * can1_tx_buf;
+//static struct CanMsgRingbuffer * can2_tx_buf;
 
 /**************************************************************************************
  * FUNCTION DECLARATION
@@ -120,6 +123,13 @@ int can_handle_data()
 
   if (is_can1_init)
   {
+    while (can_tx_fifo_available(&fdcan_1) && can_msg_ringbuffer_available(can1_tx_buf))
+    {
+      union can_frame tx_frame;
+      can_msg_ringbuffer_dequeue(can1_tx_buf, &tx_frame);
+      can_write(&fdcan_1, tx_frame.field.id, tx_frame.field.len, tx_frame.field.data);
+    }
+
     for (int rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
     {
       union x8h7_can_frame_message x8h7_msg;
@@ -226,6 +236,8 @@ int fdcan_handler(FDCAN_HandleTypeDef * handle, uint8_t const opcode, uint8_t co
 
 int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_prescaler, uint32_t const time_segment_1, uint32_t const time_segment_2, uint32_t const sync_jump_width)
 {
+  can1_tx_buf = can_msg_ringbuffer_create();
+
   can_init(handle,
            (handle == &fdcan_1) ? CAN_1 : CAN_2,
            baud_rate_prescaler,
@@ -241,6 +253,8 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_p
 
 int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
 {
+  can_msg_ringbuffer_destroy(can1_tx_buf);
+
   can_deinit(handle);
 
   if      (handle == &fdcan_1) is_can1_init = false;
@@ -267,8 +281,28 @@ int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_in
 
 int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
-  return can_write(handle,
-                   msg->field.id,
-                   msg->field.len,
-                   msg->field.data);
+  int const rc = can_write(handle, msg->field.id, msg->field.len, msg->field.data);
+
+#define X8H7_CAN_STS_INT_TX      0x01
+#define X8H7_CAN_STS_INT_ERR     0x04
+#define X8H7_CAN_STS_FLG_TX_OVR  0x80  // Transmit Buffer Overflow
+
+  if (rc)
+  {
+    uint8_t status_msg[2] = {X8H7_CAN_STS_INT_TX, 0};
+    return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(status_msg), status_msg);
+  }
+
+  if (can_msg_ringbuffer_is_full(can1_tx_buf))
+  {
+    uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_OVR};
+    return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+  }
+
+  union can_frame frame;
+  memcpy(frame.buf, msg->buf, sizeof(frame.buf));
+  can_msg_ringbuffer_enqueue(can1_tx_buf, &frame);
+
+  uint8_t status_msg[2] = {X8H7_CAN_STS_INT_TX, 0};
+  return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(status_msg), status_msg);
 }

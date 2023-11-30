@@ -231,6 +231,11 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
   return 1;
 }
 
+uint32_t can_tx_fifo_available(FDCAN_HandleTypeDef * handle)
+{
+  return HAL_FDCAN_GetTxFifoFreeLevel(handle);
+}
+
 int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
   FDCAN_TxHeaderTypeDef TxHeader = {0};
@@ -278,15 +283,17 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
       printf("Error_Handler: %ld\n", err_code);
 
-      uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
-      if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
-
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+//      uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
+//      if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
+//
+//      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      return -1;
     }
     else
     {
-      uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+//      uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
+//      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      return 1;
     }
 }
 
