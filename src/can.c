@@ -40,19 +40,6 @@
 #define CFG_HW_RCC_SEMID    3
 #undef DUAL_CORE
 
-#define X8H7_CAN_STS_FLG_RX_OVR  0x01  // Receive Buffer Overflow
-#define X8H7_CAN_STS_FLG_TX_BO   0x02  // Bus-Off
-#define X8H7_CAN_STS_FLG_TX_EP   0x04  // Transmit Error-Passive
-#define X8H7_CAN_STS_FLG_RX_EP   0x08  // Receive Error-Passive
-#define X8H7_CAN_STS_FLG_TX_WAR  0x10  // Transmit Error Warning
-#define X8H7_CAN_STS_FLG_RX_WAR  0x20  // Receive Error Warning
-#define X8H7_CAN_STS_FLG_EWARN   0x40  // Error Warning
-#define X8H7_CAN_STS_FLG_TX_OVR  0x80  // Transmit Buffer Overflow
-
-#define X8H7_CAN_STS_INT_TX      0x01
-#define X8H7_CAN_STS_INT_RX      0x02
-#define X8H7_CAN_STS_INT_ERR     0x04
-
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
@@ -231,6 +218,11 @@ int can_filter(FDCAN_HandleTypeDef * handle, uint32_t const filter_index, uint32
   return 1;
 }
 
+uint32_t can_tx_fifo_available(FDCAN_HandleTypeDef * handle)
+{
+  return HAL_FDCAN_GetTxFifoFreeLevel(handle);
+}
+
 int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
   FDCAN_TxHeaderTypeDef TxHeader = {0};
@@ -276,18 +268,10 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
     if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
-      printf("Error_Handler: %ld\n", err_code);
-
-      uint8_t msg[2] = {X8H7_CAN_STS_INT_ERR, 0};
-      if (err_code == HAL_FDCAN_ERROR_FIFO_FULL) msg[1] = X8H7_CAN_STS_FLG_TX_OVR;
-
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
+      printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
+      return -err_code;
     }
-    else
-    {
-      uint8_t msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-      return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(msg), msg);
-    }
+    return 0;
 }
 
 int can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data)
