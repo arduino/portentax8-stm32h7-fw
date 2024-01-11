@@ -65,7 +65,7 @@ void new_service_cb(struct rpmsg_device *rdev, const char *name, uint32_t dest)
   if (strcmp(name, "raw") == 0) {
     OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RAW], name, dest, rpmsg_recv_raw_callback, NULL);
   }
-  if (strcmp(name, "response") == 0) {
+  if (strcmp(name, "rpc") == 0) {
     OPENAMP_create_endpoint(&rp_endpoints[ENDPOINT_RESPONSE], name, dest, rpmsg_recv_raw_callback, NULL);
   }
 }
@@ -79,7 +79,7 @@ int serial_rpc_begin() {
 
   /* Initialize the rpmsg endpoint to set default addresses to RPMSG_ADDR_ANY */
   rpmsg_init_ept(&rp_endpoints[0], "raw", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
-  rpmsg_init_ept(&rp_endpoints[1], "response", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+  rpmsg_init_ept(&rp_endpoints[1], "rpc", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
 
   /*
   * The rpmsg service is initiate by the remote processor, on H7 new_service_cb
@@ -101,8 +101,8 @@ void serial_rpc_available() {
 }
 
 void serial_rpc_write(uint8_t const * buf, size_t len) {
-  // check second byte of the message to split requests and responses
-  OPENAMP_send(&rp_endpoints[buf[1] == 1], buf, len);
+  // we'll only get rpc requests from "upstairs"
+  OPENAMP_send(&rp_endpoints[1], buf, len);
 }
 
 void HSEM1_IRQHandler(void)
