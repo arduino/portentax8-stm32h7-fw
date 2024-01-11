@@ -59,25 +59,19 @@ static int OPENAMP_shmem_init(int RPMsgRole)
 
   status = metal_register_generic_device(&shm_device);
   if (status != 0) {
-    printf("metal_register_generic_device failed\n");
     return status;
   }
 
   status = metal_device_open("generic", SHM_DEVICE_NAME, &device);
   if (status != 0) {
-    printf("metal_device_open failed\n");
     return status;
   }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-arith"
   metal_io_init(&device->regions[0], (void *)SHM_START_ADDRESS, shm_physmap,
                 SHM_SIZE, -1U, 0, NULL);
-#pragma GCC diagnostic pop
 
   shm_io = metal_device_io_region(device, 0);
   if (shm_io == NULL) {
-    printf("metal_device_io_region failed\n");
     return -1;
   }
 
@@ -86,7 +80,6 @@ static int OPENAMP_shmem_init(int RPMsgRole)
   rsc_table = (struct shared_resource_table *)rsc_tab_addr;
   if (!rsc_table)
   {
-    printf("resource_table_init failed\n");
     return -1;
   }
 
@@ -96,7 +89,6 @@ static int OPENAMP_shmem_init(int RPMsgRole)
   rsc_io = metal_device_io_region(device, 1);
 
   if (rsc_io == NULL) {
-    printf("metal_device_io_region 2 failed\n");
     return -1;
   }
 
@@ -142,12 +134,8 @@ int MX_OPENAMP_Init(int RPMsgRole, rpmsg_ns_bind_cb ns_bind_cb)
     return status;
   }
 
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpointer-arith"
   rpmsg_virtio_init_shm_pool(&shpool, (void *)VRING_BUFF_ADDRESS,
-                             (size_t)SHM_SIZE);
-#pragma GCC diagnostic pop
+                             (size_t)VRING_BUFF_SIZE);
   rpmsg_init_vdev(&rvdev, vdev, ns_bind_cb, shm_io, &shpool);
 
 
@@ -163,7 +151,7 @@ void OPENAMP_DeInit()
 
 void OPENAMP_init_ept(struct rpmsg_endpoint *ept)
 {
-  rpmsg_init_ept(ept, "", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
+  //rpmsg_init_ept(ept, "", RPMSG_ADDR_ANY, RPMSG_ADDR_ANY, NULL, NULL);
 }
 
 int OPENAMP_create_endpoint(struct rpmsg_endpoint *ept, const char *name,
@@ -174,21 +162,23 @@ int OPENAMP_create_endpoint(struct rpmsg_endpoint *ept, const char *name,
 		          unbind_cb);
   }
 
-void OPENAMP_check_for_message(void)
+int OPENAMP_check_for_message(void)
 {
-  MAILBOX_Poll(rvdev.vdev);
+  return MAILBOX_Poll(rvdev.vdev);
 }
 
-uint32_t HAL_GetTick(void);
+unsigned long millis();
 
-void OPENAMP_Wait_EndPointready(struct rpmsg_endpoint *rp_ept, size_t timeout)
+int OPENAMP_Wait_EndPointready(struct rpmsg_endpoint *rp_ept, size_t deadline)
 {
-  while(!is_rpmsg_ept_ready(rp_ept) && (HAL_GetTick() < timeout)) {
+  while(!is_rpmsg_ept_ready(rp_ept) && (millis() < deadline)) {
     MAILBOX_Poll(rvdev.vdev);
   }
-  if (HAL_GetTick() >= timeout) {
-    printf("OPENAMP_Wait_EndPointready %X timed out\n\r", (unsigned int)rp_ept);
+  if (millis() >= deadline) {
+    //printf("OPENAMP_Wait_EndPointready %X timed out\n\r", (unsigned int)rp_ept);
+    return -1;
   }
+  return 0;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
