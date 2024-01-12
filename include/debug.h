@@ -27,7 +27,7 @@
 #ifdef DEBUG
 #define dbg_printf(...)  printf(__VA_ARGS__)
 #else
-#define dbg_printf(...)
+#define dbg_printf(...)  do {} while (0)
 #endif
 
 #endif /* PORTENTAX8_STM32H7_FW_DEBUG_H */
