@@ -22,10 +22,12 @@ SIZE = $(CROSS_COMPILE)size
 
 LINKER_SCRIPT = linker/STM32H747AIIX_FLASH.ld
 
-CFLAGS  = -O2 -Wall -Werror -pedantic -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=gnu11 -g3 -ffunction-sections -fdata-sections -fstack-usage
+CFLAGS  = -O2 -Wall -Werror -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=gnu11 -g3 -ffunction-sections -fdata-sections -fstack-usage
 CXXFLAGS  = -O2 -Wall -Werror -pedantic -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -std=c++11 -g3 -ffunction-sections -fdata-sections -fstack-usage
 ASFLAGS = -O2 -mcpu=cortex-m7 -mfpu=fpv5-d16 -mfloat-abi=hard -mthumb -c -x assembler-with-cpp -g3 
 LDFLAGS = --specs=nosys.specs -Wl,--gc-sections -static --specs=nano.specs -T$(LINKER_SCRIPT) -Wl,--start-group -lc -lm -Wl,--end-group
+
+CFLAGS += -Wno-variadic-macros -Wno-discarded-qualifiers
 
 TAG_COMMIT := $(shell git rev-list --abbrev-commit --tags --max-count=1)
 TAG := $(shell git describe --abbrev=0 --tags ${TAG_COMMIT} 2>/dev/null || true)
@@ -48,7 +50,7 @@ DEFINES = \
 	  -DSTM32H747xx \
 	  -DVECT_TAB_SRAM \
 	  -DMETAL_INTERNAL \
-      -DVIRTIO_MASTER_ONLY \
+      -DVIRTIO_DRIVER_ONLY \
       -DNO_ATOMIC_64_SUPPORT \
       -DMETAL_MAX_DEVICE_REGIONS=2 \
       -DRPMSG_BUFFER_SIZE=2000 \

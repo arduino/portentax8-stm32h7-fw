@@ -161,6 +161,26 @@ void pwm_timer_config(uint32_t index, uint32_t channel,
   HAL_HRTIM_SimplePWMChannelConfig(&hhrtim, index, channel, pSimplePWMChannelCfg);
   HAL_HRTIM_SoftwareUpdate(&hhrtim, timers);
 
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  if (enable && index == 3) {
+    GPIO_InitStruct.Pin = GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF2_HRTIM1;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  }
+
+  if (enable && index == 5) {
+    GPIO_InitStruct.Pin = GPIO_PIN_6;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF2_HRTIM1;
+    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  }
+
   if (enable) {
     HAL_HRTIM_SimplePWMStart(&hhrtim, index, channel);
   } else {

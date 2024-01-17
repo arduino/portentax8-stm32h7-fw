@@ -48,6 +48,30 @@ extern struct IRQ_numbers IRQ_pinmap[];
  * FUNCTION DEFINITION
  **************************************************************************************/
 
+static void configure_pins_shorted_together(GPIO_TypeDef *GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) {
+  if (GPIO_InitStruct->Pin == GPIO_PIN_10 && GPIOx == GPIOB) {
+    GPIO_InitStruct->Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct->Pull = GPIO_NOPULL;
+    GPIO_InitStruct->Pin = GPIO_PIN_7;
+    HAL_GPIO_Init(GPIOG, GPIO_InitStruct);
+  }
+  if (GPIO_InitStruct->Pin == GPIO_PIN_15 && GPIOx == GPIOD) {
+    GPIO_InitStruct->Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct->Pull = GPIO_NOPULL;
+    GPIO_InitStruct->Pin = GPIO_PIN_6;
+    HAL_GPIO_Init(GPIOG, GPIO_InitStruct);
+  }
+}
+
+static void write_pins_shorted_together(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin, GPIO_PinState PinState) {
+  if (GPIO_Pin == GPIO_PIN_10 && GPIOx == GPIOB) {
+    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_7, PinState);
+  }
+  if (GPIO_Pin == GPIO_PIN_15 && GPIOx == GPIOD) {
+    HAL_GPIO_WritePin(GPIOG, GPIO_PIN_6, PinState);
+  }
+}
+
 int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
   uint16_t const gpio_data = *((uint16_t*)data);
@@ -66,6 +90,7 @@ int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size
       GPIO_InitStruct.Pull = GPIO_PULLUP;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       HAL_GPIO_Init(GPIO_pinmap[index].port, &GPIO_InitStruct);
+      configure_pins_shorted_together(GPIO_pinmap[index].port, &GPIO_InitStruct);
       dbg_printf("GPIO%d: CONFIGURE %d\n", index, value);
       break;
     case IRQ_TYPE:
@@ -92,6 +117,7 @@ int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size
       break;
     case WRITE:
       HAL_GPIO_WritePin(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
+      write_pins_shorted_together(GPIO_pinmap[index].port, GPIO_pinmap[index].pin, value);
       dbg_printf("GPIO%d: WRITE %d\n", index, value);
       break;
     case READ:
