@@ -251,7 +251,7 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_p
            sync_jump_width);
 
   if      (handle == &fdcan_1) is_can1_init = true;
-  else if (handle == &fdcan_1) is_can2_init = true;
+  else if (handle == &fdcan_2) is_can2_init = true;
 
   return 0;
 }
@@ -261,7 +261,7 @@ int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
   can_deinit(handle);
 
   if      (handle == &fdcan_1) is_can1_init = false;
-  else if (handle == &fdcan_1) is_can2_init = false;
+  else if (handle == &fdcan_2) is_can2_init = false;
 
   return 0;
 }
