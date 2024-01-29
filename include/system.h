@@ -67,7 +67,6 @@ void dma_init();
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
 void set_nirq_low();
-void set_nirq_high();
 uint16_t get_tx_packet_size();
 bool is_dma_transfer_complete();
 
