@@ -23,7 +23,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern FDCAN_HandleTypeDef fdcan_1;
-extern FDCAN_HandleTypeDef fdcan_1;
+extern FDCAN_HandleTypeDef fdcan_2;
 extern DMA_HandleTypeDef hdma_spi3_tx;
 extern DMA_HandleTypeDef hdma_spi3_rx;
 extern SPI_HandleTypeDef hspi3;
@@ -155,7 +155,7 @@ void FDCAN1_IT0_IRQHandler(void) {
  * @brief This function handles FDCAN2 interrupt 0.
  */
 void FDCAN2_IT0_IRQHandler(void) {
-  HAL_FDCAN_IRQHandler(&fdcan_1);
+  HAL_FDCAN_IRQHandler(&fdcan_2);
 }
 
 /**
