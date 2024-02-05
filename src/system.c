@@ -26,12 +26,6 @@
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
 #include <string.h>
-#include "adc.h"
-#include "pwm.h"
-#include "gpio.h"
-#include "can.h"
-#include "rtc.h"
-#include "uart.h"
 #include "rpc.h"
 #include "spi.h"
 
@@ -39,8 +33,9 @@
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer[SPI_DMA_BUFFER_SIZE];
-__attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_1[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_2[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer          [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 typedef enum
@@ -50,6 +45,10 @@ typedef enum
 volatile eTransferState transaction_state = Idle;
 
 volatile bool is_rx_buf_userspace_processed = false;
+
+volatile uint8_t * p_tx_buf_active   = TX_Buffer_1;
+volatile uint8_t * p_tx_buf_transfer = TX_Buffer_1;
+volatile struct subpacket * rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -137,7 +136,7 @@ static void MPU_Config(void)
   HAL_MPU_Disable();
 
   MPU_InitStruct.Enable = MPU_REGION_ENABLE;
-  MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer;
+  MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer_1;
   MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
   MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
@@ -149,12 +148,16 @@ static void MPU_Config(void)
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer;
+  MPU_InitStruct.BaseAddress = (uint32_t)TX_Buffer_2;
   MPU_InitStruct.Number = MPU_REGION_NUMBER1;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
-  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer_userspace;
+  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer;
   MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  MPU_InitStruct.BaseAddress = (uint32_t)RX_Buffer_userspace;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
   MPU_InitStruct.BaseAddress = D3_SRAM_BASE;
@@ -194,16 +197,14 @@ static void MX_DMA_Init(void)
 
 void clean_dma_buffer()
 {
-  memset((uint8_t*)TX_Buffer, 0, sizeof(TX_Buffer));
+  memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
+  memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
   memset((uint8_t*)RX_Buffer_userspace, 0, sizeof(RX_Buffer_userspace));
 }
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
-  /* Wait for transfer to be complete. */
-  while (!is_dma_transfer_complete()) { }
-
   /* Enter critical section: Since this function is called both from inside
    * interrupt context (handle_irq/gpio.c) as well as from normal execution
    * context it is necessary not only to blindly re-enable interrupts, but
@@ -227,8 +228,8 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
-  struct complete_packet * pkt = (struct complete_packet *)TX_Buffer;
-  if ((pkt->header.size + size) > sizeof(TX_Buffer))
+  struct complete_packet * pkt = (struct complete_packet *)p_tx_buf_active;
+  if ((pkt->header.size + size) > SPI_DMA_BUFFER_SIZE)
     goto cleanup;
 
   /* subpacket:
@@ -287,7 +288,7 @@ uint16_t get_tx_packet_size()
   uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  struct complete_packet * tx_pkt = (struct complete_packet *)TX_Buffer;
+  struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_active;
   uint16_t const tx_packet_size = tx_pkt->header.size;
 
   /* Exit critical section: restore previous priority mask */
@@ -310,9 +311,9 @@ void system_init() {
   PeriphCommonClock_Config();
 }
 
-void dma_init() {
+void dma_init()
+{
   MX_DMA_Init();
-
   clean_dma_buffer();
 }
 
@@ -323,7 +324,15 @@ void EXTI15_10_IRQHandler(void)
    */
   if (transaction_state == Idle || transaction_state == Complete)
   {
-    struct complete_packet * tx_pkt = (struct complete_packet *)TX_Buffer;
+    /* Perform the switch from active buffer pointer to
+     * processing buffer pointer. This allows the application
+     * to continue feeding data into the second transmit
+     * buffer.
+     */
+    p_tx_buf_transfer = p_tx_buf_active;
+    p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+
+    struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
     struct complete_packet * rx_pkt = (struct complete_packet *)RX_Buffer;
 
     spi_transmit_receive((uint8_t *)&(tx_pkt->header),
@@ -336,10 +345,10 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
-  struct complete_packet *tx_pkt = (struct complete_packet *)TX_Buffer;
 
   if (transaction_state == Header)
   {
@@ -371,10 +380,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
     /* Step #3:
      * The SPI transfer is now complete, copy to userspace memory.
      */
-    memcpy((void *)RX_Buffer_userspace, &(rx_pkt->data), rx_pkt->header.size);
+    memcpy((void *)rx_pkt_userspace, &(rx_pkt->data), rx_pkt->header.size);
 
     /* Mark the next packet as invalid. */
-    *((uint32_t*)((uint8_t *)RX_Buffer_userspace + rx_pkt->header.size)) = 0xFFFFFFFF; // INVALID;
+    *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
 
     /* Clean the transfer buffer size to restart. */
     tx_pkt->header.size = 0;
@@ -410,10 +419,8 @@ void dma_handle_data()
 
   if (transaction_state == Complete && !is_rx_buf_userspace_processed)
   {
-    struct subpacket *rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
-
-    while (rx_pkt_userspace->header.peripheral != 0xFF &&
-           rx_pkt_userspace->header.peripheral != 0x00)
+    if (rx_pkt_userspace->header.peripheral != 0xFF &&
+        rx_pkt_userspace->header.peripheral != 0x00)
     {
 #ifdef DEBUG
       dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
@@ -435,14 +442,19 @@ void dma_handle_data()
 
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
-                   peripheral_to_string(rx_pkt_userspace->header.peripheral), rc);
+                   peripheral_to_string(rx_pkt_userspace->header.peripheral) , rc);
       }
 
       /* Advance to the next package. */
-      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 + rx_pkt_userspace->header.size);
+      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 /* sizeof(subpacket.header) */ + rx_pkt_userspace->header.size);
     }
-
-    is_rx_buf_userspace_processed = true;
+    else
+    {
+      /* Mark the receive buffer as having been processed. */
+      is_rx_buf_userspace_processed = true;
+      /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
+      rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
+    }
   }
 
   /* Leave critical section. */
@@ -456,7 +468,7 @@ bool is_dma_transfer_complete()
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  is_dma_transfer_complete_flag_temp = (transaction_state == Idle) || (transaction_state == Complete);
+  is_dma_transfer_complete_flag_temp = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_SET);
 
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
