@@ -284,19 +284,23 @@ int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_in
 
 int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
-  if (!can_tx_fifo_available(handle))
-  {
-    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_OVR};
-    return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
-  }
-
   int const rc = can_write(handle, msg->field.id, msg->field.len, msg->field.data);
   if (rc < 0)
   {
-    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_EP};
+    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, (rc * -1)};
     return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
   }
+  return 0;
+}
 
-  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-  return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+void HAL_FDCAN_TxBufferCompleteCallback(FDCAN_HandleTypeDef * handle, uint32_t BufferIndexes)
+{
+  uint32_t const txb_idx = 0;
+  uint32_t const txb_bit_mask = (1 << txb_idx);
+
+  if (BufferIndexes & txb_bit_mask)
+  {
+    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX, txb_idx};
+    enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+  }
 }

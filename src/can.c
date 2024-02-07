@@ -131,6 +131,9 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
     Error_Handler("HAL_FDCAN_ConfigGlobalFilter Error_Handler\n");
 
+  if (HAL_FDCAN_ActivateNotification(handle, FDCAN_IT_TX_COMPLETE, 1) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ActivateNotification Error_Handler\n");
+
   if (HAL_FDCAN_Start(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Start Error_Handler\n");
 
@@ -173,8 +176,8 @@ void can_init(FDCAN_HandleTypeDef * handle, CANName peripheral, uint32_t const b
     handle->Init.RxBufferSize    = FDCAN_DATA_BYTES_8;
 
     handle->Init.TxEventsNbr         = 32;
-    handle->Init.TxBuffersNbr        =  0;
-    handle->Init.TxFifoQueueElmtsNbr = 32;
+    handle->Init.TxBuffersNbr        = 32;
+    handle->Init.TxFifoQueueElmtsNbr =  0;
     handle->Init.TxFifoQueueMode     = FDCAN_TX_FIFO_OPERATION;
     handle->Init.TxElmtSize          = FDCAN_DATA_BYTES_8;
 
@@ -265,13 +268,20 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
     TxHeader.TxEventFifoControl = FDCAN_STORE_TX_EVENTS;
     TxHeader.MessageMarker = 0;
 
-    if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
+    if (HAL_FDCAN_AddMessageToTxBuffer(handle, &TxHeader, (uint8_t *)data, 1) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
-      printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
+      printf("HAL_FDCAN_AddMessageToTxBuffer failed with %ld\n", err_code);
       return -err_code;
     }
-    return 0;
+    if (HAL_FDCAN_EnableTxBufferRequest(handle, 1) != HAL_OK)
+    {
+      uint32_t const err_code = HAL_FDCAN_GetError(handle);
+      printf("HAL_FDCAN_EnableTxBufferRequest failed with %ld\n", err_code);
+      return -err_code;
+    }
+
+  return 0;
 }
 
 int can_read(FDCAN_HandleTypeDef * handle, uint32_t * id, uint8_t * len, uint8_t * data)
