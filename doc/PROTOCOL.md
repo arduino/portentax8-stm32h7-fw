@@ -38,7 +38,7 @@ pinctrl_ecspi3: ecspi3grp {
 
 pinctrl_ecspi3_cs: ecspi3cs {
     fsl,pins = <
-        MX8MM_IOMUXC_UART2_TXD_ECSPI3_SS0		0x40000
+        MX8MM_IOMUXC_UART2_TXD_GPIO5_IO25		0x40000
     >;
 };
 ```
