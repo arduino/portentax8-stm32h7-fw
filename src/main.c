@@ -83,6 +83,8 @@ void peripheral_init()
 
 void handle_data()
 {
+  __WFI();
+
   watchdog_refresh();
 
   if (uart_data_available())
