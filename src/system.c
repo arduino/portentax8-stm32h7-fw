@@ -47,7 +47,7 @@ volatile eTransferState transaction_state = Idle;
 volatile bool is_rx_buf_userspace_processed = false;
 
 volatile uint8_t * p_tx_buf_active   = TX_Buffer_1;
-volatile uint8_t * p_tx_buf_transfer = TX_Buffer_1;
+volatile uint8_t * p_tx_buf_transfer = TX_Buffer_2;
 volatile struct subpacket * rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
 /**************************************************************************************
@@ -282,6 +282,11 @@ void set_nirq_high()
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
 }
 
+bool is_nirq_low()
+{
+  return (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_RESET);
+}
+
 uint16_t get_tx_packet_size()
 {
   /* Enter critical section. */
@@ -329,8 +334,11 @@ void EXTI15_10_IRQHandler(void)
      * to continue feeding data into the second transmit
      * buffer.
      */
-    p_tx_buf_transfer = p_tx_buf_active;
-    p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+    if (is_nirq_low())
+    {
+      p_tx_buf_transfer = p_tx_buf_active;
+      p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+    }
 
     struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
     struct complete_packet * rx_pkt = (struct complete_packet *)RX_Buffer;
@@ -386,8 +394,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
 
     /* Clean the transfer buffer size to restart. */
-    tx_pkt->header.size = 0;
-    tx_pkt->header.checksum = 0;
+    memset(p_tx_buf_transfer, 0, sizeof(TX_Buffer_1));
 
     transaction_state = Complete;
     is_rx_buf_userspace_processed = false;
