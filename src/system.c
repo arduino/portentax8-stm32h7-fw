@@ -336,6 +336,9 @@ void EXTI15_10_IRQHandler(void)
      */
     if (is_nirq_low())
     {
+      /* Only swap buffers and transmit data if the device has initiated
+       * communication by setting NIRQ low.
+       */
       p_tx_buf_transfer = p_tx_buf_active;
       p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
     }
@@ -379,7 +382,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
       return;
     }
 
-    // reconfigure the DMA to actually receive the data
+    /* Reconfigure the DMA to actually receive the data. */
     spi_transmit_receive((uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), bytes_to_transfer);
     transaction_state = Data;
   }
