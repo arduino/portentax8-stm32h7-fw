@@ -45,9 +45,11 @@
 #define X8H7_CAN_STS_FLG_EWARN   0x40  // Error Warning
 #define X8H7_CAN_STS_FLG_TX_OVR  0x80  // Transmit Buffer Overflow
 
-#define X8H7_CAN_STS_INT_TX      0x01
-#define X8H7_CAN_STS_INT_RX      0x02
-#define X8H7_CAN_STS_INT_ERR     0x04
+#define X8H7_CAN_STS_INT_TX_COMPLETE       0x01
+#define X8H7_CAN_STS_INT_RX                0x02
+#define X8H7_CAN_STS_INT_ERR               0x04
+#define X8H7_CAN_STS_INT_TX_ABORT_COMPLETE 0x08
+#define X8H7_CAN_STS_INT_TX_FIFO_EMPTY     0x10
 
 /**************************************************************************************
  * TYPEDEF
@@ -296,7 +298,24 @@ int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_m
     uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_EP};
     return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
   }
+  return 0;
+}
 
-  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX, 0};
-  return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+void HAL_FDCAN_TxBufferCompleteCallback(FDCAN_HandleTypeDef * handle, uint32_t BufferIndexes)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_COMPLETE, BufferIndexes};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+}
+
+void HAL_FDCAN_TxBufferAbortCallback(FDCAN_HandleTypeDef * handle, uint32_t BufferIndexes)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_ABORT_COMPLETE, BufferIndexes};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+}
+
+void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef * handle)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_FIFO_EMPTY, can_tx_fifo_available(handle)};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+
 }
