@@ -80,7 +80,15 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SPI3;
-  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL;
+  PeriphClkInitStruct.PLL3.PLL3M = 8;
+  PeriphClkInitStruct.PLL3.PLL3N = 100;
+  PeriphClkInitStruct.PLL3.PLL3P = 4;
+  PeriphClkInitStruct.PLL3.PLL3Q = 4;
+  PeriphClkInitStruct.PLL3.PLL3R = 4;
+  PeriphClkInitStruct.PLL3.PLL3RGE = RCC_PLL3VCIRANGE_3;
+  PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
+  PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
+  PeriphClkInitStruct.Spi123ClockSelection = RCC_SPI123CLKSOURCE_PLL3;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
     Error_Handler("HAL_RCCEx_PeriphCLKConfig failed.");
   }
