@@ -105,7 +105,9 @@ void handle_data()
  * MAIN
  **************************************************************************************/
 
-int main(void) {
+int main(void)
+{
+  gpio_init_nirq();
 
   system_init();
 
@@ -113,7 +115,7 @@ int main(void) {
 
   disableCM4Autoboot();
 
-  gpio_set_initial_config();
+  gpio_init_ncs();
 
   extern char const REAL_VERSION_FLASH[];
   printf("Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);

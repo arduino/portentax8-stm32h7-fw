@@ -46,7 +46,8 @@ struct IRQ_numbers {
 
 void gpio_init();
 
-void gpio_set_initial_config();
+void gpio_init_nirq();
+void gpio_init_ncs();
 
 int  gpio_handle_data();
 
