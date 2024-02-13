@@ -405,7 +405,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
 
     /* Clean the transfer buffer size to restart. */
-    memset((uint8_t *)tx_pkt, 0, sizeof(TX_Buffer_1));
     tx_pkt->header.size = 0;
     tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
