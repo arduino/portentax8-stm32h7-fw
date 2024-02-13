@@ -201,6 +201,14 @@ void clean_dma_buffer()
   memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
   memset((uint8_t*)RX_Buffer_userspace, 0, sizeof(RX_Buffer_userspace));
+
+  struct complete_packet * pkt = (struct complete_packet *)TX_Buffer_1;
+  pkt->header.size = 0;
+  pkt->header.checksum = pkt->header.size ^ 0x5555;
+
+  pkt = (struct complete_packet *)TX_Buffer_2;
+  pkt->header.size = 0;
+  pkt->header.checksum = pkt->header.size ^ 0x5555;
 }
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
@@ -376,7 +384,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     {
       /* Cleanup. */
       tx_pkt->header.size = 0;
-      tx_pkt->header.checksum = 0;
+      tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
       /* Transition to Idle state. */
       transaction_state = Idle;
       return;
@@ -397,7 +405,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
 
     /* Clean the transfer buffer size to restart. */
-    memset(p_tx_buf_transfer, 0, sizeof(TX_Buffer_1));
+    memset((uint8_t *)tx_pkt, 0, sizeof(TX_Buffer_1));
+    tx_pkt->header.size = 0;
+    tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
     transaction_state = Complete;
     is_rx_buf_userspace_processed = false;
