@@ -131,6 +131,17 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   if (HAL_FDCAN_ConfigGlobalFilter(handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE) != HAL_OK)
     Error_Handler("HAL_FDCAN_ConfigGlobalFilter Error_Handler\n");
 
+  for (uint32_t txb_idx = 0; txb_idx < 32; txb_idx++)
+  {
+    uint32_t const txb_bitmask = (1 << txb_idx);
+    if (HAL_FDCAN_ActivateNotification(handle, FDCAN_IT_TX_COMPLETE, txb_bitmask) != HAL_OK)
+      Error_Handler("HAL_FDCAN_ActivateNotification(FDCAN_IT_TX_COMPLETE) Error_Handler\n");
+    if (HAL_FDCAN_ActivateNotification(handle, FDCAN_FLAG_TX_ABORT_COMPLETE, txb_bitmask) != HAL_OK)
+      Error_Handler("HAL_FDCAN_ActivateNotification(FDCAN_FLAG_TX_ABORT_COMPLETE) Error_Handler\n");
+  }
+  if (HAL_FDCAN_ActivateNotification(handle, FDCAN_IT_TX_FIFO_EMPTY, 0) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ActivateNotification(FDCAN_IT_TX_FIFO_EMPTY) Error_Handler\n");
+
   if (HAL_FDCAN_Start(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Start Error_Handler\n");
 

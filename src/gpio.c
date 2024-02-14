@@ -185,11 +185,9 @@ void gpio_init()
   MX_GPIO_Init();
 }
 
-void gpio_set_initial_config() {
+void gpio_init_nirq()
+{
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-
-  // IRQ PIN from H7 to M8
-  // TODO: changeme when final HW is ready
 
   __HAL_RCC_GPIOC_CLK_ENABLE();
   GPIO_InitStruct.Pin = GPIO_PIN_1;
@@ -199,10 +197,14 @@ void gpio_set_initial_config() {
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
+}
+
+void gpio_init_ncs()
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  // Interrupt on CS LOW
   GPIO_InitStruct.Pin = GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
