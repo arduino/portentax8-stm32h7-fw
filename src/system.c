@@ -330,7 +330,7 @@ void dma_init()
   clean_dma_buffer();
 }
 
-void EXTI15_10_IRQHandler(void)
+__attribute__((section(".itcm"))) void EXTI15_10_IRQHandler(void)
 {
   /* Step #1:
    * This function is called when IMX8 is pulling CS -> LOW.
@@ -364,7 +364,7 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+__attribute__((section(".itcm"))) void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;

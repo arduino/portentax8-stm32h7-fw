@@ -99,6 +99,17 @@ SECTIONS
     . = ALIGN(4);
   } > DTCMRAM_BUFFERS
 
+  _siitcm = LOADADDR(.itcm_code);
+  .itcm_code (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _sitcm = .;        /* create a global symbol at itcm start */
+    *(.itcm)
+    *(.itcm*)
+    . = ALIGN(4);
+    _eitcm = .;        /* define a global symbol at itcm end */
+  } > ITCMRAM AT> FLASH
+
   .openamp_section (NOLOAD) : {
        . = ABSOLUTE(0x38000000);
        *(.resource_table)
