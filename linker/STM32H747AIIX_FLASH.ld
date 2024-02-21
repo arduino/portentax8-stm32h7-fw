@@ -60,13 +60,17 @@ __OPENAMP_region_end__ = 0x38000400 + LENGTH(RAM_D3) - 1K;
 /* Sections */
 SECTIONS
 {
-  /* The startup code into "FLASH" Rom type memory */
+  _siitcm = LOADADDR(.isr_vector);
   .isr_vector :
   {
     . = ALIGN(4);
+    _sitcm = .;        /* create a global symbol at itcm start */
     KEEP(*(.isr_vector)) /* Startup code */
+    *(.itcm)
+    *(.itcm*)
     . = ALIGN(4);
-  } >DTCMRAM  AT > FLASH
+    _eitcm = .;        /* define a global symbol at itcm end */
+  } > ITCMRAM AT> FLASH
 
   /* The program code and other data into "FLASH" Rom type memory */
   .text :
@@ -98,17 +102,6 @@ SECTIONS
     *(.dma*)
     . = ALIGN(4);
   } > DTCMRAM_BUFFERS
-
-  _siitcm = LOADADDR(.itcm_code);
-  .itcm_code (NOLOAD) :
-  {
-    . = ALIGN(4);
-    _sitcm = .;        /* create a global symbol at itcm start */
-    *(.itcm)
-    *(.itcm*)
-    . = ALIGN(4);
-    _eitcm = .;        /* define a global symbol at itcm end */
-  } > ITCMRAM AT> FLASH
 
   .openamp_section (NOLOAD) : {
        . = ABSOLUTE(0x38000000);

@@ -220,9 +220,6 @@ void SystemInit (void)
   #pragma GCC diagnostic ignored "-Warray-bounds"
   #pragma GCC diagnostic ignored "-Wstringop-overflow"
 
-  // Copy isr_vector to DTCMRAM
-  memcpy((uint32_t*)D1_DTCMRAM_BASE, (uint32_t*)FLASH_BANK1_BASE, 0x1000);
-
   #pragma GCC diagnostic pop
 
   if((DBGMCU->IDCODE & 0xFFFF0000U) < 0x20000000U)
@@ -255,7 +252,7 @@ void SystemInit (void)
 
   /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = D1_DTCMRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal D1 AXI-RAM */
+  SCB->VTOR = D1_ITCMRAM_BASE  | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal D1 AXI-RAM */
 #else
   SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
 #endif
