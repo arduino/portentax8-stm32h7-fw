@@ -133,42 +133,42 @@ void SysTick_Handler(void) {
 /**
  * @brief This function handles DMA1 stream0 global interrupt.
  */
-void DMA1_Stream0_IRQHandler(void) {
+__attribute__((section(".itcm"))) void DMA1_Stream0_IRQHandler(void) {
   HAL_DMA_IRQHandler(&hdma_spi3_tx);
 }
 
 /**
  * @brief This function handles DMA1 stream1 global interrupt.
  */
-void DMA1_Stream1_IRQHandler(void) {
+__attribute__((section(".itcm"))) void DMA1_Stream1_IRQHandler(void) {
   HAL_DMA_IRQHandler(&hdma_spi3_rx);
 }
 
 /**
  * @brief This function handles FDCAN1 interrupt 0.
  */
-void FDCAN1_IT0_IRQHandler(void) {
+__attribute__((section(".itcm"))) void FDCAN1_IT0_IRQHandler(void) {
   HAL_FDCAN_IRQHandler(&fdcan_1);
 }
 
 /**
  * @brief This function handles FDCAN2 interrupt 0.
  */
-void FDCAN2_IT0_IRQHandler(void) {
+__attribute__((section(".itcm"))) void FDCAN2_IT0_IRQHandler(void) {
   HAL_FDCAN_IRQHandler(&fdcan_2);
 }
 
 /**
  * @brief This function handles USART2 global interrupt.
  */
-void USART2_IRQHandler(void) {
+__attribute__((section(".itcm"))) void USART2_IRQHandler(void) {
   HAL_UART_IRQHandler(&huart2);
 }
 
 /**
  * @brief This function handles SPI3 global interrupt.
  */
-void SPI3_IRQHandler(void) {
+__attribute__((section(".itcm"))) void SPI3_IRQHandler(void) {
   HAL_SPI_IRQHandler(&hspi3);
 }
 
