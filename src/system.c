@@ -330,68 +330,41 @@ void dma_init()
   clean_dma_buffer();
 }
 
+void dma_load() {
+  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
+  struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
+  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), 1024);
+}
+
 void EXTI15_10_IRQHandler(void)
 {
-  /* Step #1:
-   * This function is called when IMX8 is pulling CS -> LOW.
-   */
-  if (transaction_state == Idle || transaction_state == Complete)
-  {
-    /* Perform the switch from active buffer pointer to
-     * processing buffer pointer. This allows the application
-     * to continue feeding data into the second transmit
-     * buffer.
-     */
-    if (is_nirq_low())
-    {
-      /* Only swap buffers and transmit data if the device has initiated
-       * communication by setting NIRQ low.
-       */
-      p_tx_buf_transfer = p_tx_buf_active;
-      p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
-    }
-
-    struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
-    struct complete_packet * rx_pkt = (struct complete_packet *)RX_Buffer;
-
-    spi_transmit_receive((uint8_t *)&(tx_pkt->header),
-                         (uint8_t *)&(rx_pkt->header),
-                         sizeof(tx_pkt->header));
-
-    transaction_state = Header;
+  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_RESET) {
+    dma_load();
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
   }
-
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
+  if (is_nirq_low())
+  {
+    /* Only swap buffers and transmit data if the device has initiated
+      * communication by setting NIRQ low.
+      */
+    p_tx_buf_transfer = p_tx_buf_active;
+    p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+  }
+
+  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
 
-  if (transaction_state == Header)
+  if (transaction_state == Idle)
   {
     /* Step #2:
      * Task the system with the transport of the actual data.
      */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-    uint16_t const bytes_to_transfer = max(tx_pkt->header.size, rx_pkt->header.size);
-#pragma GCC diagnostic pop
-
-    /* Nothing to transfer. */
-    if (bytes_to_transfer == 0)
-    {
-      /* Cleanup. */
-      tx_pkt->header.size = 0;
-      tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
-      /* Transition to Idle state. */
-      transaction_state = Idle;
-      return;
-    }
 
     /* Reconfigure the DMA to actually receive the data. */
-    spi_transmit_receive((uint8_t*)&(tx_pkt->data), (uint8_t*)&(rx_pkt->data), bytes_to_transfer);
     transaction_state = Data;
   }
   else if (transaction_state == Data)
@@ -417,6 +390,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
+  dbg_printf("HAL_SPI_ErrorCallback\n");
   transaction_state = Error;
   spi_end();
 }
@@ -473,6 +447,7 @@ void dma_handle_data()
       is_rx_buf_userspace_processed = true;
       /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
       rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
+      transaction_state = Idle;
     }
   }
 
