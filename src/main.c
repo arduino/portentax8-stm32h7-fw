@@ -74,6 +74,8 @@ void peripheral_init()
 
   spi_init();
 
+  dma_load();
+
   adc_init();
   peripheral_register_callback(PERIPH_ADC, &adc_handler);
 
@@ -97,15 +99,18 @@ void handle_data()
   gpio_handle_data();
   dma_handle_data();
 
-  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0))
+  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0)) {
     set_nirq_low();
+  }
 }
 
 /**************************************************************************************
  * MAIN
  **************************************************************************************/
 
-int main(void) {
+int main(void)
+{
+  gpio_init_nirq();
 
   system_init();
 
@@ -113,14 +118,14 @@ int main(void) {
 
   disableCM4Autoboot();
 
-  gpio_set_initial_config();
-
   extern char const REAL_VERSION_FLASH[];
   printf("Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
 
   try_execute_m4_app();
 
   watchdog_init(IWDG_PRESCALER_16);
+
+  gpio_init_ncs();
 
   for(;;) {
     handle_data();

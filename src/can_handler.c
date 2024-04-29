@@ -33,6 +33,25 @@
 #include "peripherals.h"
 
 /**************************************************************************************
+ * DEFINE
+ **************************************************************************************/
+
+#define X8H7_CAN_STS_FLG_RX_OVR  0x01  // Receive Buffer Overflow
+#define X8H7_CAN_STS_FLG_TX_BO   0x02  // Bus-Off
+#define X8H7_CAN_STS_FLG_TX_EP   0x04  // Transmit Error-Passive
+#define X8H7_CAN_STS_FLG_RX_EP   0x08  // Receive Error-Passive
+#define X8H7_CAN_STS_FLG_TX_WAR  0x10  // Transmit Error Warning
+#define X8H7_CAN_STS_FLG_RX_WAR  0x20  // Receive Error Warning
+#define X8H7_CAN_STS_FLG_EWARN   0x40  // Error Warning
+#define X8H7_CAN_STS_FLG_TX_OVR  0x80  // Transmit Buffer Overflow
+
+#define X8H7_CAN_STS_INT_TX_COMPLETE       0x01
+#define X8H7_CAN_STS_INT_RX                0x02
+#define X8H7_CAN_STS_INT_ERR               0x04
+#define X8H7_CAN_STS_INT_TX_ABORT_COMPLETE 0x08
+#define X8H7_CAN_STS_INT_TX_FIFO_EMPTY     0x10
+
+/**************************************************************************************
  * TYPEDEF
  **************************************************************************************/
 
@@ -234,7 +253,7 @@ int on_CAN_INIT_Request(FDCAN_HandleTypeDef * handle, uint32_t const baud_rate_p
            sync_jump_width);
 
   if      (handle == &fdcan_1) is_can1_init = true;
-  else if (handle == &fdcan_1) is_can2_init = true;
+  else if (handle == &fdcan_2) is_can2_init = true;
 
   return 0;
 }
@@ -244,7 +263,7 @@ int on_CAN_DEINIT_Request(FDCAN_HandleTypeDef * handle)
   can_deinit(handle);
 
   if      (handle == &fdcan_1) is_can1_init = false;
-  else if (handle == &fdcan_1) is_can2_init = false;
+  else if (handle == &fdcan_2) is_can2_init = false;
 
   return 0;
 }
@@ -267,8 +286,36 @@ int on_CAN_FILTER_Request(FDCAN_HandleTypeDef * handle, uint32_t const filter_in
 
 int on_CAN_TX_FRAME_Request(FDCAN_HandleTypeDef * handle, union x8h7_can_frame_message const * msg)
 {
-  return can_write(handle,
-                   msg->field.id,
-                   msg->field.len,
-                   msg->field.data);
+  if (!can_tx_fifo_available(handle))
+  {
+    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_OVR};
+    return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+  }
+
+  int const rc = can_write(handle, msg->field.id, msg->field.len, msg->field.data);
+  if (rc < 0)
+  {
+    uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_ERR, X8H7_CAN_STS_FLG_TX_EP};
+    return enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+  }
+  return 0;
+}
+
+void HAL_FDCAN_TxBufferCompleteCallback(FDCAN_HandleTypeDef * handle, uint32_t BufferIndexes)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_COMPLETE, BufferIndexes};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+}
+
+void HAL_FDCAN_TxBufferAbortCallback(FDCAN_HandleTypeDef * handle, uint32_t BufferIndexes)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_ABORT_COMPLETE, BufferIndexes};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+}
+
+void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef * handle)
+{
+  uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_FIFO_EMPTY, can_tx_fifo_available(handle)};
+  enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
+
 }
