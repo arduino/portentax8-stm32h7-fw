@@ -333,14 +333,15 @@ void dma_init()
 void dma_load() {
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
-  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), 1024);
+  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), 64);
 }
 
 void EXTI15_10_IRQHandler(void)
 {
-  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_RESET) {
-    dma_load();
+  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET) {
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+    spi_end();
+    dma_load();
   }
 }
 
