@@ -183,5 +183,5 @@ void spi_end()
 
 void spi_transmit_receive(uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size)
 {
-  HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, size);
+  HAL_SPI_TransmitReceive_IT(&hspi3, tx_buf, rx_buf, size);
 }
