@@ -364,15 +364,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
   if (transaction_state == Idle)
   {
-    /* Step #2:
-     * Task the system with the transport of the actual data.
-     */
-
-    /* Reconfigure the DMA to actually receive the data. */
-    transaction_state = Data;
-  }
-  else if (transaction_state == Data)
-  {
     /* Step #3:
      * The SPI transfer is now complete, copy to userspace memory.
      */
@@ -414,44 +405,49 @@ void dma_handle_data()
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  if (transaction_state == Complete && !is_rx_buf_userspace_processed)
-  {
-    if (rx_pkt_userspace->header.peripheral != 0xFF &&
-        rx_pkt_userspace->header.peripheral != 0x00)
-    {
-#ifdef DEBUG
-      dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-                 peripheral_to_string(rx_pkt_userspace->header.peripheral),
-                 rx_pkt_userspace->header.opcode,
-                 rx_pkt_userspace->header.size);
+  if (transaction_state == Complete) {
 
-      for (int i = 0; i < rx_pkt_userspace->header.size; i++)
-        dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
+    while (!is_rx_buf_userspace_processed) {
 
-      dbg_printf("\n");
-#endif
+      if (rx_pkt_userspace->header.peripheral != 0xFF &&
+          rx_pkt_userspace->header.peripheral != 0x00)
+      {
+  #ifdef DEBUG
+        dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
+                  peripheral_to_string(rx_pkt_userspace->header.peripheral),
+                  rx_pkt_userspace->header.opcode,
+                  rx_pkt_userspace->header.size);
 
-      /* Invoke the registered callback for the selected peripheral. */
-      int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
-                                                rx_pkt_userspace->header.opcode,
-                                                (uint8_t *)(&(rx_pkt_userspace->raw_data)),
-                                                rx_pkt_userspace->header.size);
+        for (int i = 0; i < rx_pkt_userspace->header.size; i++)
+          dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
 
-      if (rc < 0) {
-        dbg_printf("dma_handle_data: %s callback error: %d",
-                   peripheral_to_string(rx_pkt_userspace->header.peripheral) , rc);
+        dbg_printf("\n");
+  #endif
+
+        /* Invoke the registered callback for the selected peripheral. */
+        int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
+                                                  rx_pkt_userspace->header.opcode,
+                                                  (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                                                  rx_pkt_userspace->header.size);
+
+        if (rc < 0) {
+          dbg_printf("dma_handle_data: %s callback error: %d",
+                    peripheral_to_string(rx_pkt_userspace->header.peripheral) , rc);
+        }
+
+        /* Advance to the next package. */
+        rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 /* sizeof(subpacket.header) */ + rx_pkt_userspace->header.size);
       }
-
-      /* Advance to the next package. */
-      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 /* sizeof(subpacket.header) */ + rx_pkt_userspace->header.size);
-    }
-    else
-    {
-      /* Mark the receive buffer as having been processed. */
-      is_rx_buf_userspace_processed = true;
-      /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
-      rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
-      transaction_state = Idle;
+      else
+      {
+        /* Mark the receive buffer as having been processed. */
+        is_rx_buf_userspace_processed = true;
+        /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
+        rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
+        transaction_state = Idle;
+        spi_end();
+        dma_load();
+      }
     }
   }
 
