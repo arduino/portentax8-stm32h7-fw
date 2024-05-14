@@ -336,7 +336,7 @@ void dma_init()
 void dma_load() {
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
-  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), 64);
+  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), SPI_DMA_BUFFER_SIZE);
 }
 
 void EXTI15_10_IRQHandler(void)
