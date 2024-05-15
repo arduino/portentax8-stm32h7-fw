@@ -271,10 +271,11 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   dbg_printf("\n");
 #endif
 
+cleanup:
+
   spi_end();
   dma_load();
 
-cleanup:
   /* Exit critical section: restore previous priority mask */
   __set_PRIMASK(primask_bit);
 
