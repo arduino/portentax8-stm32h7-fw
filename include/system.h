@@ -30,7 +30,7 @@
  * DEFINE
  **************************************************************************************/
 
-#define SPI_DMA_BUFFER_SIZE   64
+#define SPI_DMA_BUFFER_SIZE   256
 
 __attribute__((packed, aligned(4))) struct subpacket {
   __attribute__((packed, aligned(4))) struct {

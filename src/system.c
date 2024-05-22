@@ -237,7 +237,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
   struct complete_packet * pkt = (struct complete_packet *)p_tx_buf_active;
-  if ((pkt->header.size + size) > SPI_DMA_BUFFER_SIZE)
+  if ((pkt->header.size + size) > (SPI_DMA_BUFFER_SIZE - 4))
     goto cleanup;
 
   /* subpacket:
@@ -273,9 +273,6 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
 
 cleanup:
 
-  spi_end();
-  dma_load();
-
   /* Exit critical section: restore previous priority mask */
   __set_PRIMASK(primask_bit);
 
@@ -284,6 +281,9 @@ cleanup:
 
 void set_nirq_low()
 {
+  spi_end();
+  dma_load();
+
   /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
 }
@@ -387,8 +387,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
   dbg_printf("HAL_SPI_ErrorCallback\n");
-  transaction_state = Error;
+  transaction_state = Idle;
   spi_end();
+  dma_load();
 }
 
 void dma_handle_data()
