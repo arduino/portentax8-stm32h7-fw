@@ -211,6 +211,11 @@ void clean_dma_buffer()
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 }
 
+int get_available_enqueue() {
+  struct complete_packet * pkt = (struct complete_packet *)p_tx_buf_active;
+  return (SPI_DMA_BUFFER_SIZE - 4) - pkt->header.size;
+}
+
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
   /* Enter critical section: Since this function is called both from inside

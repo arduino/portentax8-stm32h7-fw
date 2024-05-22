@@ -66,6 +66,7 @@ void system_init();
 void dma_init();
 void dma_load();
 
+int get_available_enqueue();
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
 void set_nirq_low();
 uint16_t get_tx_packet_size();

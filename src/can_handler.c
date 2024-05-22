@@ -136,10 +136,11 @@ int can_handle_data()
   /* Note: the last read package is lost in this implementation. We need to fix this by
    * implementing some peek method or by buffering messages in a ringbuffer.
    */
+  int rc_enq;
 
   if (is_can1_init)
   {
-    for (int rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+    for (rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
     {
       union x8h7_can_frame_message x8h7_msg;
 
@@ -148,13 +149,13 @@ int can_handle_data()
       memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
 
       rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
-      if (!rc_enq) return bytes_enqueued;
+      if (!rc_enq) break;
     }
   }
 
   if (is_can2_init)
   {
-    for (int rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+    for (rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
     {
       union x8h7_can_frame_message x8h7_msg;
 
@@ -163,8 +164,14 @@ int can_handle_data()
       memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
 
       rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
-      if (!rc_enq) return bytes_enqueued;
+      if (!rc_enq) break;
     }
+  }
+
+  if (!rc_enq) {
+    // Report dropped rx packets next time there's a slot
+    // uint8_t x8_msg[2] = {X8H7_CAN_STS_FLG_RX_OVR, can_tx_fifo_available(handle)};
+    // enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
   }
 
   return bytes_enqueued;
@@ -318,4 +325,30 @@ void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef * handle)
   uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_FIFO_EMPTY, can_tx_fifo_available(handle)};
   enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
 
+}
+
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+{
+  uint32_t can_id = 0;
+  uint8_t can_len = 0;
+  uint8_t can_data[X8H7_CAN_FRAME_MAX_DATA_LEN] = {0};
+
+  if(((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) || (RxFifo0ITs & FDCAN_IT_RX_FIFO0_WATERMARK)) != RESET)
+  {
+    while ((get_available_enqueue() >= 8) && can_read(hfdcan, &can_id, &can_len, can_data)) {
+      union x8h7_can_frame_message x8h7_msg;
+
+      x8h7_msg.field.id = can_id;
+      x8h7_msg.field.len = can_len;
+      memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
+
+      int ret = enqueue_packet(hfdcan == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
+      if (ret == 0) break;
+    }
+
+    if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_FULL | FDCAN_IT_RX_FIFO0_WATERMARK, 0) != HAL_OK)
+    {
+      /* Notification Error */
+    }
+  }
 }
