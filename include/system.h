@@ -74,4 +74,10 @@ bool is_dma_transfer_complete();
 
 void dma_handle_data();
 
+#define min(a,b) \
+  ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+    _a < _b ? _a : _b; })
+
+
 #endif //SYSTEM_H

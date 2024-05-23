@@ -88,15 +88,17 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
   if (ring_buffer_is_empty(&uart_tx_ring_buffer))
     return;
 
+  char tx_data[16] = {0};
   /* Dequeue the oldest data byte. */
-  char data[16] = {0};
-  uint16_t const bytes_read = ring_buffer_dequeue_arr(&uart_tx_ring_buffer, data, sizeof(data));
+  uint16_t const bytes_read = ring_buffer_dequeue_arr(&uart_tx_ring_buffer, tx_data, min(sizeof(tx_data), ring_buffer_num_items(&uart_tx_ring_buffer)));
   /* Transmit data. */
-  HAL_UART_Transmit_IT(&huart2, (const uint8_t *)data, bytes_read);
+  HAL_UART_Transmit_IT(&huart2, (const uint8_t *)tx_data, bytes_read);
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
+  __disable_irq();
   ring_buffer_queue_arr(&uart_ring_buffer, (char *)uart_rxbuf, Size);
+  __enable_irq();
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
 }
 
@@ -224,17 +226,21 @@ void uart_init() {
 }
 
 int uart_write(uint8_t const * data, uint16_t size) {
-  return _write(0, (char *)data, size);
+  __disable_irq();
+  ring_buffer_queue_arr(&uart_tx_ring_buffer, (const char*)data, size);
+  __enable_irq();
+  return size;
 }
 
 int uart_data_available() {
+  HAL_UART_TxCpltCallback(&huart2);
   return !ring_buffer_is_empty(&uart_ring_buffer);
 }
 
 int uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int const cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&uart_ring_buffer));
+  int const cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, min((SPI_DMA_BUFFER_SIZE/2), ring_buffer_num_items(&uart_ring_buffer)));
   __enable_irq();
   return enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
 }

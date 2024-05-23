@@ -53,7 +53,7 @@ int virtual_uart_handle_data()
 {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, ring_buffer_num_items(&virtual_uart_ring_buffer));
+  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, min((SPI_DMA_BUFFER_SIZE/2), ring_buffer_num_items(&virtual_uart_ring_buffer)));
   __enable_irq();
   return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }
