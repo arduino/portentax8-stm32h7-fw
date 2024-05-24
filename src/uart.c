@@ -89,14 +89,14 @@ static char tx_data[RING_BUFFER_SIZE] = {0};
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (ring_buffer_is_empty(&uart_tx_ring_buffer)) {
-    //tx_fifo_empty = true;
+    tx_fifo_empty = true;
     return;
   }
 
   /* Dequeue the oldest data byte. */
   uint16_t const bytes_read = ring_buffer_dequeue_arr(&uart_tx_ring_buffer, tx_data, min(sizeof(tx_data), ring_buffer_num_items(&uart_tx_ring_buffer)));
   /* Transmit data. */
-  //tx_fifo_empty = false;
+  tx_fifo_empty = false;
   HAL_UART_Transmit_IT(&huart2, (const uint8_t *)tx_data, bytes_read);
 }
 
@@ -105,7 +105,9 @@ void HAL_UARTEx_TxFifoEmptyCallback(UART_HandleTypeDef *huart) {
 }
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-  enqueue_packet(PERIPH_UART, DATA, min(Size, sizeof(uart_rxbuf)), uart_rxbuf);
+  if (enqueue_packet(PERIPH_UART, DATA, min(Size, sizeof(uart_rxbuf)), uart_rxbuf) == 0) {
+    ring_buffer_queue_arr(&uart_ring_buffer, (const char*)uart_rxbuf, Size);
+  }
   HAL_UARTEx_ReceiveToIdle_IT(&huart2, uart_rxbuf, sizeof(uart_rxbuf));
 }
 
@@ -233,8 +235,8 @@ void uart_init() {
 }
 
 int uart_write(uint8_t const * data, uint16_t size) {
-  _write(0, data, size);
-  //ring_buffer_queue_arr(&uart_tx_ring_buffer, (const char*)data, size);
+  //_write(0, data, size);
+  ring_buffer_queue_arr(&uart_tx_ring_buffer, (const char*)data, size);
   return size;
 }
 
@@ -242,14 +244,13 @@ int uart_data_available() {
   if (tx_fifo_empty) {
     HAL_UART_TxCpltCallback(&huart2);
   }
-  return 0;
-  //return !ring_buffer_is_empty(&uart_ring_buffer);
+  return (!ring_buffer_is_empty(&uart_ring_buffer)) && (get_available_enqueue() > 0);
 }
 
 int uart_handle_data() {
   uint8_t temp_buf[RING_BUFFER_SIZE];
   __disable_irq();
-  int const cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, min((SPI_DMA_BUFFER_SIZE/2), ring_buffer_num_items(&uart_ring_buffer)));
+  int const cnt = ring_buffer_dequeue_arr(&uart_ring_buffer, (char *)temp_buf, min(get_available_enqueue(), ring_buffer_num_items(&uart_ring_buffer)));
   __enable_irq();
   return enqueue_packet(PERIPH_UART, DATA, cnt, temp_buf);
 }
