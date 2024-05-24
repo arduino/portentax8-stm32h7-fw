@@ -89,8 +89,8 @@ void handle_data()
 
   watchdog_refresh();
 
-  if (uart_data_available())
-    uart_handle_data();
+  //if (uart_data_available())
+  //  uart_handle_data();
 
   if (virtual_uart_data_available())
     virtual_uart_handle_data();
