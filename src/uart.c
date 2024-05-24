@@ -46,7 +46,19 @@ struct __attribute__((packed, aligned(4))) uartPacket {
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart2 = {
+  .Instance = USART2,
+  .Init.BaudRate = 115200,
+  .Init.WordLength = UART_WORDLENGTH_8B,
+  .Init.StopBits = UART_STOPBITS_1,
+  .Init.Parity = UART_PARITY_NONE,
+  .Init.Mode = UART_MODE_TX_RX,
+  .Init.HwFlowCtl = UART_HWCONTROL_NONE,
+  .Init.OverSampling = UART_OVERSAMPLING_16,
+  .Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE,
+  .Init.ClockPrescaler = UART_PRESCALER_DIV1,
+  .AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT,
+};
 
 ring_buffer_t uart_ring_buffer;
 ring_buffer_t uart_tx_ring_buffer;
@@ -113,17 +125,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 static void MX_USART2_UART_Init(void) {
 
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
   if (HAL_UART_Init(&huart2) != HAL_OK) {
     Error_Handler("HAL_UART_Init failed.");
   }
@@ -346,14 +347,11 @@ void uart_configure(uint8_t const * data) {
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
-  dbg_printf("Reconfiguring UART with %d baud, %d%c%d , %s flow control\n",
-    config.baud, config.bits, parity_str, config.stop_bits, config.flow_control ? "" : "no");
-
   HAL_UART_DeInit(&huart2);
 
-  if (HAL_UART_Init(&huart2) != HAL_OK) {
-    Error_Handler("HAL_UART_Init failed.");
-  }
+  MX_USART2_UART_Init();
 
-  UART2_enable_rx_irq();
+  dbg_printf("UART reconfigured with %d baud, %d%c%d , %s flow control\n",
+    config.baud, config.bits, parity_str, config.stop_bits, config.flow_control ? "" : "no");
+
 }
