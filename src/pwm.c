@@ -158,6 +158,13 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
   HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
 
+  // invert 0% and 100% duty cycle (HRTIM special behaviour)
+  if (duty_ns == 0) {
+    duty_ns = period_ns;
+  } else if (duty_ns == period_ns) {
+    duty_ns = 0;
+  }
+
   pTimeBaseCfg.Period = period_ns / pwm_config_timer_unit_ns;
   pTimeBaseCfg.RepetitionCounter = 0x00;
   pTimeBaseCfg.PrescalerRatio = HRTIM_PRESCALERRATIO_DIV1;
