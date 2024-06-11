@@ -1,9 +1,9 @@
 #!/bin/sh
 
-echo 8 > /sys/class/gpio/export # SWDIO
-echo 15 > /sys/class/gpio/export # SWDCLK
-echo 10 > /sys/class/gpio/export # NRST
-echo 11 > /sys/class/gpio/export # BOOT0
+#echo 8 > /sys/class/gpio/export # SWDIO
+#echo 15 > /sys/class/gpio/export # SWDCLK
+#echo 10 > /sys/class/gpio/export # NRST
+#echo 11 > /sys/class/gpio/export # BOOT0
 
 # Try at least three times to read firmware version from sysfs
 for i in 1 2 3
