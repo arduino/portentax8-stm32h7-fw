@@ -6,7 +6,7 @@
 #echo 11 > /sys/class/gpio/export # BOOT0
 
 # Try at least three times to read firmware version from sysfs
-for i in 1 2 3
+for i in 1 2 3 4 5 6 7 8 9 10
 do
     FIRMWARE_H7_ON_MCU=$(cat /sys/kernel/x8h7_firmware/version)
     res=$?
