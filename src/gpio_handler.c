@@ -96,6 +96,11 @@ int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size
     case IRQ_TYPE:
       GPIO_InitStruct.Pin = GPIO_pinmap[index].pin;
 
+      if (GPIO_InitStruct.Pin > GPIO_PIN_9) {
+        // IRQs from 10 to 15 are exclusively used by SPI
+        return 0;
+      }
+
       if      (value == GPIO_MODE_IN_RE) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
       else if (value == GPIO_MODE_IN_FE) GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
       else                               return 0;
