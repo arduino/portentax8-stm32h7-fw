@@ -103,6 +103,7 @@ int gpio_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size
 
       if      (value == GPIO_MODE_IN_RE) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
       else if (value == GPIO_MODE_IN_FE) GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+      else if (value == (GPIO_MODE_IN_FE | GPIO_MODE_IN_RE)) GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
       else                               return 0;
 
       GPIO_InitStruct.Pull = GPIO_PULLUP;
