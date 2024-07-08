@@ -115,7 +115,7 @@ static void handle_irq() {
   }
 }
 
-void gpio_disable_irq(uint8_t pin) {
+void gpio_disable_irq(uint16_t pin) {
   dbg_printf("gpio_disable_irq: pin = %x\n", pin);
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_DisableIRQ(EXTI0_IRQn);
@@ -137,7 +137,7 @@ void gpio_disable_irq(uint8_t pin) {
   }
 }
 
-void gpio_enable_irq(uint8_t pin) {
+void gpio_enable_irq(uint16_t pin) {
   dbg_printf("gpio_enable_irq: pin = %x\n", pin);
   if (pin == GPIO_PIN_0) {
     HAL_NVIC_EnableIRQ(EXTI0_IRQn);
@@ -154,7 +154,7 @@ void gpio_enable_irq(uint8_t pin) {
   }
 }
 
-void gpio_set_handler(uint8_t pin)
+void gpio_set_handler(uint16_t pin)
 {
   if (pin == GPIO_PIN_0) {
     NVIC_SetVector(EXTI0_IRQn, (uint32_t)&handle_irq);

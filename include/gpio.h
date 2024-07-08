@@ -53,8 +53,8 @@ int  gpio_handle_data();
 
 uint8_t GPIO_PIN_to_index(uint32_t pin);
 
-void gpio_enable_irq(uint8_t pin);
-void gpio_disable_irq(uint8_t pin);
-void gpio_set_handler(uint8_t pin);
+void gpio_enable_irq(uint16_t pin);
+void gpio_disable_irq(uint16_t pin);
+void gpio_set_handler(uint16_t pin);
 
 #endif /* GPIO_H */
