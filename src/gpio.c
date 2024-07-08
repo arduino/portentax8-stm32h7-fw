@@ -105,10 +105,6 @@ static void handle_irq() {
       int_event_flags |= (1 << index);
       /* Clear interrupt flag for this specific GPIO interrupt. */
       HAL_GPIO_EXTI_IRQHandler(1 << index);
-      /* Disable the interrupt that just fired in order to
-       * prevent it from immediately firing again.
-       */
-      gpio_disable_irq(1 << index);
     }
     pr >>= 1;
     index++;
