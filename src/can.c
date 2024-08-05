@@ -239,6 +239,11 @@ uint32_t can_tx_fifo_available(FDCAN_HandleTypeDef * handle)
   return HAL_FDCAN_GetTxFifoFreeLevel(handle);
 }
 
+uint32_t can_rx_fifo_available(FDCAN_HandleTypeDef * handle, uint32_t const rx_fifo)
+{
+  return HAL_FDCAN_GetRxFifoFillLevel(handle, rx_fifo);
+}
+
 int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
   FDCAN_TxHeaderTypeDef TxHeader = {0};
