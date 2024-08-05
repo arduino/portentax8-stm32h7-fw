@@ -160,6 +160,8 @@ int can_handle_data()
 
         rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
         if (!rc_enq) break;
+
+        can_1_last_enqueue = now;
       }
     }
   }
@@ -181,6 +183,8 @@ int can_handle_data()
 
         rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
         if (!rc_enq) break;
+
+        can_2_last_enqueue = now;
       }
     }
   }
