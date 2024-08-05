@@ -335,9 +335,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
   if(((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) || (RxFifo0ITs & FDCAN_IT_RX_FIFO0_WATERMARK)) != RESET)
   {
-    while ((get_available_enqueue() >= 8) && can_read(hfdcan, &can_id, &can_len, can_data)) {
-      union x8h7_can_frame_message x8h7_msg;
+    union x8h7_can_frame_message x8h7_msg;
 
+    while ((get_available_enqueue() >= sizeof(x8h7_msg)) && can_read(hfdcan, &can_id, &can_len, can_data))
+    {
       x8h7_msg.field.id = can_id;
       x8h7_msg.field.len = can_len;
       memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
