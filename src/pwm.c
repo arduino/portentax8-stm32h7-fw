@@ -158,7 +158,7 @@ void configurePwm(uint8_t channel, bool enable, bool polarity, uint32_t duty_ns,
   HRTIM_SimplePWMChannelCfgTypeDef sConfig_Channel = {0};
   HRTIM_TimeBaseCfgTypeDef pTimeBaseCfg = {0};
 
-  // invert 0% and 100% duty cycle (HRTIM special behaviour)
+  // invert 0% and 100% duty cycle (HRTIM special behavior)
   if (duty_ns == 0) {
     duty_ns = period_ns;
   } else if (duty_ns == period_ns) {
