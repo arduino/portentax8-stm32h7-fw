@@ -145,7 +145,8 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   if (HAL_FDCAN_ActivateNotification(handle, FDCAN_IT_RX_FIFO0_FULL | FDCAN_IT_RX_FIFO0_WATERMARK, 0) != HAL_OK)
     Error_Handler("HAL_FDCAN_ActivateNotification(FDCAN_IT_RX_FIFO0_NEW_MESSAGE) Error_Handler\n");
 
-  HAL_FDCAN_ConfigFifoWatermark(handle, 0, 32);
+  if (HAL_FDCAN_ConfigFifoWatermark(handle, 0, 32) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ConfigFifoWatermark(...) Error_Handler\n");
 
   if (HAL_FDCAN_Start(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Start Error_Handler\n");
