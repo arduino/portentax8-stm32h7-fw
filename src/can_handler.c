@@ -150,10 +150,12 @@ int can_handle_data()
 
     if (can_1_rx_fifo_frames_available && can_1_should_enqueue)
     {
-      for (rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
-      {
-        union x8h7_can_frame_message x8h7_msg;
+      union x8h7_can_frame_message x8h7_msg;
 
+      for (rc_enq = 0;
+           (get_available_enqueue() >= sizeof(x8h7_msg)) && can_read(&fdcan_1, &can_id, &can_len, can_data);
+           bytes_enqueued += rc_enq)
+      {
         x8h7_msg.field.id = can_id;
         x8h7_msg.field.len = can_len;
         memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
@@ -173,10 +175,12 @@ int can_handle_data()
 
     if (can_2_rx_fifo_frames_available && can_2_should_enqueue)
     {
-      for (rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
-      {
-        union x8h7_can_frame_message x8h7_msg;
+      union x8h7_can_frame_message x8h7_msg;
 
+      for (rc_enq = 0;
+           (get_available_enqueue() >= sizeof(x8h7_msg)) && can_read(&fdcan_2, &can_id, &can_len, can_data);
+           bytes_enqueued += rc_enq)
+      {
         x8h7_msg.field.id = can_id;
         x8h7_msg.field.len = can_len;
         memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
