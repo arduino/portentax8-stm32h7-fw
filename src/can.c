@@ -289,7 +289,7 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
     if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
-      printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
+      dbg_printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
       return -err_code;
     }
     return 0;
