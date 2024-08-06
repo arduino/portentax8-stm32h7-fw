@@ -110,6 +110,8 @@ extern FDCAN_HandleTypeDef fdcan_2;
 
 static bool is_can1_init = false;
 static bool is_can2_init = false;
+static uint32_t can_1_last_enqueue = 0;
+static uint32_t can_2_last_enqueue = 0;
 
 /**************************************************************************************
  * FUNCTION DECLARATION
@@ -138,33 +140,52 @@ int can_handle_data()
    */
   int rc_enq;
 
+  uint32_t const now = HAL_GetTick();
+  static uint32_t const RX_CAN_FRAME_SYNC_TIMEOUT = 10;
+
   if (is_can1_init)
   {
-    for (rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+    bool const can_1_rx_fifo_frames_available = can_rx_fifo_available(&fdcan_1, FDCAN_RX_FIFO0) > 0;
+    bool const can_1_should_enqueue = (now - can_1_last_enqueue) > RX_CAN_FRAME_SYNC_TIMEOUT; /* At least every 10 ms CAN frames should be synced to the X8. */
+
+    if (can_1_rx_fifo_frames_available && can_1_should_enqueue)
     {
-      union x8h7_can_frame_message x8h7_msg;
+      for (rc_enq = 0; can_read(&fdcan_1, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+      {
+        union x8h7_can_frame_message x8h7_msg;
 
-      x8h7_msg.field.id = can_id;
-      x8h7_msg.field.len = can_len;
-      memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
+        x8h7_msg.field.id = can_id;
+        x8h7_msg.field.len = can_len;
+        memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
 
-      rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
-      if (!rc_enq) break;
+        rc_enq = enqueue_packet(PERIPH_FDCAN1, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
+        if (!rc_enq) break;
+
+        can_1_last_enqueue = now;
+      }
     }
   }
 
   if (is_can2_init)
   {
-    for (rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+    bool const can_2_rx_fifo_frames_available = can_rx_fifo_available(&fdcan_2, FDCAN_RX_FIFO0) > 0;
+    bool const can_2_should_enqueue = (now - can_2_last_enqueue) > RX_CAN_FRAME_SYNC_TIMEOUT; /* At least every 10 ms CAN frames should be synced to the X8. */
+
+    if (can_2_rx_fifo_frames_available && can_2_should_enqueue)
     {
-      union x8h7_can_frame_message x8h7_msg;
+      for (rc_enq = 0; can_read(&fdcan_2, &can_id, &can_len, can_data); bytes_enqueued += rc_enq)
+      {
+        union x8h7_can_frame_message x8h7_msg;
 
-      x8h7_msg.field.id = can_id;
-      x8h7_msg.field.len = can_len;
-      memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
+        x8h7_msg.field.id = can_id;
+        x8h7_msg.field.len = can_len;
+        memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
 
-      rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
-      if (!rc_enq) break;
+        rc_enq = enqueue_packet(PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
+        if (!rc_enq) break;
+
+        can_2_last_enqueue = now;
+      }
     }
   }
 
@@ -324,7 +345,6 @@ void HAL_FDCAN_TxFifoEmptyCallback(FDCAN_HandleTypeDef * handle)
 {
   uint8_t x8_msg[2] = {X8H7_CAN_STS_INT_TX_FIFO_EMPTY, can_tx_fifo_available(handle)};
   enqueue_packet(handle == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_STATUS, sizeof(x8_msg), x8_msg);
-
 }
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
@@ -335,15 +355,22 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
   if(((RxFifo0ITs & FDCAN_IT_RX_FIFO0_FULL) || (RxFifo0ITs & FDCAN_IT_RX_FIFO0_WATERMARK)) != RESET)
   {
-    while ((get_available_enqueue() >= 8) && can_read(hfdcan, &can_id, &can_len, can_data)) {
-      union x8h7_can_frame_message x8h7_msg;
+    union x8h7_can_frame_message x8h7_msg;
 
+    while ((get_available_enqueue() >= sizeof(x8h7_msg)) && can_read(hfdcan, &can_id, &can_len, can_data))
+    {
       x8h7_msg.field.id = can_id;
       x8h7_msg.field.len = can_len;
       memcpy(x8h7_msg.field.data, can_data, x8h7_msg.field.len);
 
       int ret = enqueue_packet(hfdcan == &fdcan_1 ? PERIPH_FDCAN1 : PERIPH_FDCAN2, CAN_RX_FRAME, X8H7_CAN_HEADER_SIZE + x8h7_msg.field.len, x8h7_msg.buf);
       if (ret == 0) break;
+
+      /* Save the timestamp when we've last enqueued data using the RX FIFO watermark. */
+      if (hfdcan == &fdcan_1)
+        can_1_last_enqueue = HAL_GetTick();
+      else
+        can_2_last_enqueue = HAL_GetTick();
     }
 
     if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_FULL | FDCAN_IT_RX_FIFO0_WATERMARK, 0) != HAL_OK)

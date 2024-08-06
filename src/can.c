@@ -145,7 +145,8 @@ int can_internal_init(FDCAN_HandleTypeDef * handle)
   if (HAL_FDCAN_ActivateNotification(handle, FDCAN_IT_RX_FIFO0_FULL | FDCAN_IT_RX_FIFO0_WATERMARK, 0) != HAL_OK)
     Error_Handler("HAL_FDCAN_ActivateNotification(FDCAN_IT_RX_FIFO0_NEW_MESSAGE) Error_Handler\n");
 
-  HAL_FDCAN_ConfigFifoWatermark(handle, 0, 32);
+  if (HAL_FDCAN_ConfigFifoWatermark(handle, FDCAN_CFG_RX_FIFO0, 32) != HAL_OK)
+    Error_Handler("HAL_FDCAN_ConfigFifoWatermark(...) Error_Handler\n");
 
   if (HAL_FDCAN_Start(handle) != HAL_OK)
     Error_Handler("HAL_FDCAN_Start Error_Handler\n");
@@ -239,6 +240,11 @@ uint32_t can_tx_fifo_available(FDCAN_HandleTypeDef * handle)
   return HAL_FDCAN_GetTxFifoFreeLevel(handle);
 }
 
+uint32_t can_rx_fifo_available(FDCAN_HandleTypeDef * handle, uint32_t const rx_fifo)
+{
+  return HAL_FDCAN_GetRxFifoFillLevel(handle, rx_fifo);
+}
+
 int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len, uint8_t const * data)
 {
   FDCAN_TxHeaderTypeDef TxHeader = {0};
@@ -284,7 +290,7 @@ int can_write(FDCAN_HandleTypeDef * handle, uint32_t const id, uint8_t const len
     if (HAL_FDCAN_AddMessageToTxFifoQ(handle, &TxHeader, (uint8_t *)data) != HAL_OK)
     {
       uint32_t const err_code = HAL_FDCAN_GetError(handle);
-      printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
+      dbg_printf("HAL_FDCAN_AddMessageToTxFifoQ failed with %ld\n", err_code);
       return -err_code;
     }
     return 0;

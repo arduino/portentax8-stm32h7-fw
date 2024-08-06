@@ -95,7 +95,7 @@ void handle_data()
   if (virtual_uart_data_available())
     virtual_uart_handle_data();
 
-  //can_handle_data();
+  can_handle_data();
   gpio_handle_data();
   dma_handle_data();
 
