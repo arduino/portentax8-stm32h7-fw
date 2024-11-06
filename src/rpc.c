@@ -82,6 +82,10 @@ int serial_rpc_begin() {
   /* Initialize the rpmsg endpoint to set default addresses to RPMSG_ADDR_ANY */
   memset(rp_endpoints, 0, sizeof(rp_endpoints));
 
+  return 1;
+}
+
+int serial_rpc_ready() {
   /*
   * The rpmsg service is initiate by the remote processor, on H7 new_service_cb
   * callback is received on service creation. Wait for the callback
