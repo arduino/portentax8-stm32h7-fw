@@ -40,7 +40,7 @@ enum endpoints_t {
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-static struct rpmsg_endpoint rp_endpoints[4];
+static struct rpmsg_endpoint rp_endpoints[2];
 extern ring_buffer_t virtual_uart_ring_buffer;
 
 /**************************************************************************************
@@ -112,6 +112,6 @@ void serial_rpc_write(uint8_t const * buf, size_t len) {
 
 void HSEM1_IRQHandler(void)
 {
-  HAL_HSEM_IRQHandler();
   OPENAMP_check_for_message();
+  HAL_HSEM_IRQHandler();
 }
