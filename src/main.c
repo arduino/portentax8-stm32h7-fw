@@ -99,8 +99,19 @@ void handle_data()
   gpio_handle_data();
   dma_handle_data();
 
-  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0)) {
-    set_nirq_low();
+  {
+    /* Enter critical section. */
+    uint32_t primask_bit = __get_PRIMASK();
+    __set_PRIMASK(1) ;
+
+    /* Check if we are ready to transmit and fire away if so. */
+    if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0))
+    {
+      set_nirq_low();
+    }
+
+    /* Exit critical section: restore previous priority mask */
+    __set_PRIMASK(primask_bit);
   }
 }
 

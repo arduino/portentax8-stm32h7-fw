@@ -176,12 +176,3 @@ void spi_init()
   MX_SPI3_Init();
 }
 
-void spi_end()
-{
-  HAL_SPI_Abort(&hspi3);
-}
-
-void spi_transmit_receive(uint8_t *tx_buf, uint8_t *rx_buf, uint16_t size)
-{
-  HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, size);
-}
