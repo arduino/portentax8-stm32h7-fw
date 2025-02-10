@@ -74,7 +74,7 @@ void peripheral_init()
 
   spi_init();
 
-  dma_load();
+  dma_load(false);
 
   adc_init();
   peripheral_register_callback(PERIPH_ADC, &adc_handler);
@@ -104,9 +104,9 @@ void handle_data()
     uint32_t primask_bit = __get_PRIMASK();
     __set_PRIMASK(1) ;
 
-    /* Check if we are ready to transmit and fire away if so. */
     if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0))
     {
+      dma_load(true);
       set_nirq_low();
     }
 

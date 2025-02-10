@@ -318,7 +318,6 @@ uint16_t get_tx_packet_size()
 {
   struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_active;
   uint16_t const tx_packet_size = tx_pkt->header.size;
-
   return tx_packet_size;
 }
 
@@ -344,12 +343,15 @@ void dma_init()
 
 extern SPI_HandleTypeDef hspi3;
 
-void dma_load()
+void dma_load(bool const swap_tx_buf)
 {
   HAL_SPI_Abort(&hspi3);
 
-  p_tx_buf_transfer = p_tx_buf_active;
-  p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+  if (swap_tx_buf)
+  {
+    p_tx_buf_transfer = p_tx_buf_active;
+    p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
+  }
 
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
@@ -366,12 +368,7 @@ void dma_load()
 void EXTI15_10_IRQHandler(void)
 {
   /* PA15 = nCS */
-  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET)
-  {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-    dma_load();
-    set_nirq_high();
-  }
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -390,12 +387,19 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
 
   is_rx_buf_userspace_processed = false;
+
+  /* Preload buffers for next communication. */
+  dma_load(false);
+  set_nirq_high();
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
   dbg_printf("HAL_SPI_ErrorCallback: spi error code = 0x%lX\n", HAL_SPI_GetError(hspi));
-  dma_load();
+
+  /* Preload buffers for next communication. */
+  dma_load(false);
+  set_nirq_high();
 }
 
 void dma_handle_data()
