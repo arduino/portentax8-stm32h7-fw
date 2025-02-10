@@ -390,7 +390,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 
   /* Preload buffers for next communication. */
   dma_load(false);
-  set_nirq_high();
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
@@ -453,6 +452,8 @@ void dma_handle_data()
       is_rx_buf_userspace_processed = true;
       /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
       rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
+      /* Enable IRQs sent by device again. */
+      set_nirq_high();
     }
   }
 
