@@ -64,13 +64,14 @@ __attribute__((packed, aligned(4))) struct complete_packet {
 void system_init();
 
 void dma_init();
-void dma_load();
+void dma_load(bool const swap_tx_buf);
 
 int get_available_enqueue();
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data);
 void set_nirq_low();
+bool is_nirq_low();
+bool is_ncs_low();
 uint16_t get_tx_packet_size();
-bool is_dma_transfer_complete();
 
 void dma_handle_data();
 

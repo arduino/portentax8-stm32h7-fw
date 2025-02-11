@@ -32,8 +32,7 @@ sudo mv STM32H747AII6_CM7.bin /usr/lib/firmware/arduino/stm32h7-fw/STM32H747AII6
 ```
 #### Flash `STM32H747AIIX`/Cortex-M7 firmware
 ```bash
-cd /usr/arduino/extra
-sudo ./program.sh
+sudo bash -c /usr/arduino/extra/program.sh
 ```
 ### IMX8 / H7 Interface Block Diagram
 Every communication is initiated by the IMX8 who serves as SPI controller. This happens either by the user issuing a `write` call on any of the interfaces or by the H7 requesting the start of a communication by setting `IRQ` to `1`. A detailed description of the used protocol can be found [here](doc/protocol.md).

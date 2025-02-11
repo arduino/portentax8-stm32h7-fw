@@ -33,16 +33,10 @@
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_1[SPI_DMA_BUFFER_SIZE];
-__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_2[SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_1        [SPI_DMA_BUFFER_SIZE];
+__attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_2        [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer          [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
-
-typedef enum
-{
-  Idle, Header, Data, Complete, Error
-} eTransferState;
-volatile eTransferState transaction_state = Idle;
 
 volatile bool is_rx_buf_userspace_processed = false;
 
@@ -211,9 +205,19 @@ void clean_dma_buffer()
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 }
 
-int get_available_enqueue() {
+int get_available_enqueue()
+{
+  /* Enter critical section. */
+  uint32_t primask_bit = __get_PRIMASK();
+  __set_PRIMASK(1) ;
+
   struct complete_packet * pkt = (struct complete_packet *)p_tx_buf_active;
-  return (SPI_DMA_BUFFER_SIZE - 4) - pkt->header.size;
+  int const num_bytes_available = (SPI_DMA_BUFFER_SIZE - 4) - pkt->header.size;
+
+  /* Exit critical section: restore previous priority mask */
+  __set_PRIMASK(primask_bit);
+
+  return num_bytes_available;
 }
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
@@ -267,13 +271,16 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   bytes_enqueued += sizeof(subpkt.header) + size;
 
 #ifdef DEBUG
-  dbg_printf("Enqueued packet for peripheral: %s Opcode: %X Size: %X\n  data: ",
-      peripheral_to_string(peripheral), opcode, size);
+  char dbg_msg[64] = {0};
+  snprintf(dbg_msg, sizeof(dbg_msg), "%s op: %02X size: %d", peripheral_to_string(peripheral), opcode, size);
 
-  for (int i = 0; i < size; i++)
-    dbg_printf("0x%02X ", *(((uint8_t*)data) + i));
+  char data_msg[64] = {0};
+  uint16_t data_msg_len = 0;
 
-  dbg_printf("\n");
+  for (uint16_t i = 0; i < size && i < sizeof(data_msg); i++)
+    data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *(((uint8_t*)data) + i));
+
+  dbg_printf("enqueue_packet: %s data: %s\n", dbg_msg, data_msg);
 #endif
 
 cleanup:
@@ -284,38 +291,33 @@ cleanup:
   return bytes_enqueued;
 }
 
+/* Trigger transfer. */
 void set_nirq_low()
 {
-  spi_end();
-  dma_load();
-
-  /* Trigger transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 0);
 }
 
+/* Signal completion of transfer. */
 void set_nirq_high()
 {
-  /* Signal completion of transfer. */
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_1, 1);
 }
 
+/* Check if there is an ongoing transfer. */
 bool is_nirq_low()
 {
   return (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_RESET);
 }
 
+bool is_ncs_low()
+{
+  return (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_RESET);
+}
+
 uint16_t get_tx_packet_size()
 {
-  /* Enter critical section. */
-  uint32_t primask_bit = __get_PRIMASK();
-  __set_PRIMASK(1) ;
-
   struct complete_packet * tx_pkt = (struct complete_packet *)p_tx_buf_active;
   uint16_t const tx_packet_size = tx_pkt->header.size;
-
-  /* Exit critical section: restore previous priority mask */
-  __set_PRIMASK(primask_bit);
-
   return tx_packet_size;
 }
 
@@ -339,140 +341,122 @@ void dma_init()
   clean_dma_buffer();
 }
 
-void dma_load() {
-  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
-  struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
-  spi_transmit_receive((uint8_t*)&(tx_pkt->header), (uint8_t*)&(rx_pkt->header), SPI_DMA_BUFFER_SIZE);
-}
+extern SPI_HandleTypeDef hspi3;
 
-void EXTI15_10_IRQHandler(void)
+void dma_load(bool const swap_tx_buf)
 {
-  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET) {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-    spi_end();
-    dma_load();
-  }
-}
+  HAL_SPI_Abort(&hspi3);
 
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
-{
-  if (is_nirq_low())
+  if (swap_tx_buf)
   {
-    /* Only swap buffers and transmit data if the device has initiated
-      * communication by setting NIRQ low.
-      */
     p_tx_buf_transfer = p_tx_buf_active;
     p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
   }
 
-  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_active;
+  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
 
-  if (transaction_state == Idle)
-  {
-    /* Step #3:
-     * The SPI transfer is now complete, copy to userspace memory.
-     */
-    memcpy((void *)rx_pkt_userspace, &(rx_pkt->data), rx_pkt->header.size);
+  uint8_t * tx_buf = (uint8_t*)&(tx_pkt->header);
+  uint8_t * rx_buf = (uint8_t*)&(rx_pkt->header);
 
-    /* Mark the next packet as invalid. */
-    *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
-
-    /* Clean the transfer buffer size to restart. */
-    tx_pkt->header.size = 0;
-    tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
-
-    transaction_state = Complete;
-    is_rx_buf_userspace_processed = false;
-
-    set_nirq_high();
+  HAL_StatusTypeDef const rc = HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, SPI_DMA_BUFFER_SIZE);
+  if (rc != HAL_OK) {
+    dbg_printf("HAL_SPI_TransmitReceive_DMA failed with %d, spi error code = 0x%lX\n", rc, HAL_SPI_GetError(&hspi3));
   }
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+  /* PA15 = nCS */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
+  struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
+
+  /* The SPI transfer is now complete, copy to userspace memory. */
+  memcpy((void *)rx_pkt_userspace, &(rx_pkt->data), rx_pkt->header.size);
+
+  /* Mark the next packet as invalid. */
+  *((uint32_t*)((uint8_t *)rx_pkt_userspace + rx_pkt->header.size)) = 0xFFFFFFFF;
+
+  /* Clean the transfer buffer size to restart. */
+  tx_pkt->header.size = 0;
+  tx_pkt->header.checksum = tx_pkt->header.size ^ 0x5555;
+
+  is_rx_buf_userspace_processed = false;
+
+  /* Preload buffers for next communication. */
+  dma_load(false);
 }
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
-  dbg_printf("HAL_SPI_ErrorCallback\n");
-  transaction_state = Idle;
-  spi_end();
-  dma_load();
+  dbg_printf("HAL_SPI_ErrorCallback: spi error code = 0x%lX\n", HAL_SPI_GetError(hspi));
+
+  /* Preload buffers for next communication. */
+  dma_load(false);
+  set_nirq_high();
 }
 
 void dma_handle_data()
 {
-  if (transaction_state == Error)
-  {
-    dbg_printf("dma_handle_data: got transfer error, recovering\n");
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 0);
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, 1);
-    transaction_state = Idle;
-    return;
-  }
-
   /* Enter critical section. */
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  if (transaction_state == Complete) {
-
-    while (!is_rx_buf_userspace_processed) {
-
-      if (rx_pkt_userspace->header.peripheral != 0xFF &&
-          rx_pkt_userspace->header.peripheral != 0x00)
-      {
+  while (!is_rx_buf_userspace_processed)
+  {
+    if (rx_pkt_userspace->header.peripheral != 0xFF &&
+        rx_pkt_userspace->header.peripheral != 0x00)
+    {
   #ifdef DEBUG
-        dbg_printf("Peripheral: %s Opcode: %X Size: %X\n  data: ",
-                  peripheral_to_string(rx_pkt_userspace->header.peripheral),
-                  rx_pkt_userspace->header.opcode,
-                  rx_pkt_userspace->header.size);
+      {
+        char dbg_msg[64] = {0};
+        snprintf(dbg_msg,
+                 sizeof(dbg_msg),
+                 "dma_handle_data: %s op: %02X size: %d",
+                 peripheral_to_string(rx_pkt_userspace->header.peripheral),
+                 rx_pkt_userspace->header.opcode,
+                 rx_pkt_userspace->header.size);
 
-        for (int i = 0; i < rx_pkt_userspace->header.size; i++)
-          dbg_printf("0x%02X ", *((&rx_pkt_userspace->raw_data) + i));
+        char data_msg[64] = {0};
+        uint16_t data_msg_len = 0;
 
-        dbg_printf("\n");
+        for (uint16_t i = 0; i < rx_pkt_userspace->header.size && i < sizeof(data_msg); i++)
+          data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *((&rx_pkt_userspace->raw_data) + i));
+
+        dbg_printf("%s data: %s\n", dbg_msg, data_msg);
+      }
   #endif
 
-        /* Invoke the registered callback for the selected peripheral. */
-        int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
-                                                  rx_pkt_userspace->header.opcode,
-                                                  (uint8_t *)(&(rx_pkt_userspace->raw_data)),
-                                                  rx_pkt_userspace->header.size);
+      /* Invoke the registered callback for the selected peripheral. */
+      int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
+                                                rx_pkt_userspace->header.opcode,
+                                                (uint8_t *)(&(rx_pkt_userspace->raw_data)),
+                                                rx_pkt_userspace->header.size);
 
-        if (rc < 0) {
-          dbg_printf("dma_handle_data: %s callback error: %d",
-                    peripheral_to_string(rx_pkt_userspace->header.peripheral) , rc);
-        }
+      if (rc < 0) {
+        dbg_printf("dma_handle_data: %s callback error: %d",
+                  peripheral_to_string(rx_pkt_userspace->header.peripheral) , rc);
+      }
 
-        /* Advance to the next package. */
-        rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 /* sizeof(subpacket.header) */ + rx_pkt_userspace->header.size);
-      }
-      else
-      {
-        /* Mark the receive buffer as having been processed. */
-        is_rx_buf_userspace_processed = true;
-        /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
-        rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
-        transaction_state = Idle;
-        spi_end();
-        dma_load();
-      }
+      /* Advance to the next package. */
+      rx_pkt_userspace = (struct subpacket *)((uint8_t *)rx_pkt_userspace + 4 /* sizeof(subpacket.header) */ + rx_pkt_userspace->header.size);
+    }
+    else
+    {
+      /* Mark the receive buffer as having been processed. */
+      is_rx_buf_userspace_processed = true;
+      /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
+      rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
+      /* Enable IRQs sent by device again. */
+      set_nirq_high();
     }
   }
 
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
-}
-
-bool is_dma_transfer_complete()
-{
-  bool is_dma_transfer_complete_flag_temp = false;
-  /* Enter critical section. */
-  volatile uint32_t primask_bit = __get_PRIMASK();
-  __set_PRIMASK(1) ;
-
-  is_dma_transfer_complete_flag_temp = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_1) == GPIO_PIN_SET);
-
-  /* Leave critical section. */
-  __set_PRIMASK(primask_bit);
-
-  return is_dma_transfer_complete_flag_temp;
 }

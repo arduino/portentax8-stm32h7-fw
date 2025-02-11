@@ -74,7 +74,7 @@ void peripheral_init()
 
   spi_init();
 
-  dma_load();
+  dma_load(false);
 
   adc_init();
   peripheral_register_callback(PERIPH_ADC, &adc_handler);
@@ -99,8 +99,19 @@ void handle_data()
   gpio_handle_data();
   dma_handle_data();
 
-  if (is_dma_transfer_complete() && (get_tx_packet_size() > 0)) {
-    set_nirq_low();
+  {
+    /* Enter critical section. */
+    uint32_t primask_bit = __get_PRIMASK();
+    __set_PRIMASK(1) ;
+
+    if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0))
+    {
+      dma_load(true);
+      set_nirq_low();
+    }
+
+    /* Exit critical section: restore previous priority mask */
+    __set_PRIMASK(primask_bit);
   }
 }
 
