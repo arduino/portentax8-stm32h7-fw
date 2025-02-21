@@ -372,8 +372,6 @@ void EXTI15_10_IRQHandler(void)
   /* PA15 = nCS */
   if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET && LL_EXTI_ReadFlag_0_31(LL_EXTI_LINE_15)) {
     HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-    spi_end();
-    dma_load();
   } else {
     gpio_handle_irq();
   }
