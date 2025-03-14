@@ -382,6 +382,10 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
   struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
 
+  /* Limit the amount of data copied to prevent buffer overflow. */
+  if (rx_pkt->header.size > sizeof(rx_pkt_userspace))
+    rx_pkt->header.size = sizeof(rx_pkt_userspace);
+
   /* The SPI transfer is now complete, copy to userspace memory. */
   memcpy((void *)rx_pkt_userspace, &(rx_pkt->data), rx_pkt->header.size);
 
