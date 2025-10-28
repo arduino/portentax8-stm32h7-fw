@@ -45,6 +45,8 @@
 #include "watchdog.h"
 #include "m4_util.h"
 
+#include "debug.h"
+
 /**************************************************************************************
  * FUNCTION DEFINITION
  **************************************************************************************/
@@ -83,10 +85,13 @@ void peripheral_init()
   peripheral_register_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
+extern int debug_callback_invocation;
+extern unsigned int debug_size;
+
 void handle_data()
 {
   __WFI();
-
+  static int previous = -1;
   watchdog_refresh();
 
   if (uart_data_available())
@@ -99,6 +104,12 @@ void handle_data()
   gpio_handle_data();
   dma_handle_data();
 
+  if(previous != debug_callback_invocation) {
+    dbg_printf("a %i size %i\n", debug_callback_invocation, debug_size);
+
+  }
+  previous = debug_callback_invocation;
+
   {
     /* Enter critical section. */
     uint32_t primask_bit = __get_PRIMASK();
@@ -106,6 +117,7 @@ void handle_data()
 
     if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0))
     {
+      //dbg_printf("dma_load true\n");
       dma_load(true);
       set_nirq_low();
     }
@@ -130,13 +142,14 @@ int main(void)
   disableCM4Autoboot();
 
   extern char const REAL_VERSION_FLASH[];
-  printf("Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
+  printf("Porca Paletta ! Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
+  dbg_printf("Cazzarola impestata 1");
 
   try_execute_m4_app();
 
   watchdog_init(IWDG_PRESCALER_16);
 
-  gpio_init_ncs();
+  //gpio_init_ncs();
 
   for(;;) {
     handle_data();

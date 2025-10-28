@@ -26,6 +26,7 @@
 #include "ringbuffer.h"
 #include "stm32h7xx_ll_rcc.h"
 #include "debug.h"
+//#include <cstdint>
 
 /**************************************************************************************
  * TYPEDEF
@@ -50,6 +51,13 @@ extern ring_buffer_t virtual_uart_ring_buffer;
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
+  // dbg_printf(">> 1. raw callback addr %X, dest %X, len = %i\n", (unsigned int)ept->addr, (unsigned int)ept->dest_addr, len);
+  /*
+  for(int i = 0; i < len; i++) {
+    dbg_printf("%X ", *((char *)data+i));
+  }
+  dbg_printf("\n");
+  */
   ring_buffer_queue_arr(&virtual_uart_ring_buffer, (const char *)data, len);
 
   return 0;

@@ -98,7 +98,7 @@ void gpio_handle_irq() {
   uint8_t index = 0;
   while (pr != 0) {
     if (pr & 0x1) {
-      dbg_printf("gpio_handle_irq: index = %d (%x)\n", index, 1<<index);
+      //dbg_printf("gpio_handle_irq: index = %d (%x)\n", index, 1<<index);
       /* Set the flag variable which leads to a transmission
        * of a interrupt event within gpio_handle_data.
        */

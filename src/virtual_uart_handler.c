@@ -28,8 +28,13 @@
  * FUNCTION DEFINITION
  **************************************************************************************/
 
+extern int debug_callback_invocation;
+unsigned int debug_size = 0;
+
 int virtual_uart_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
 {
+  debug_callback_invocation++;
+  debug_size += size;
   serial_rpc_write(data, size);
   return 0;
 }

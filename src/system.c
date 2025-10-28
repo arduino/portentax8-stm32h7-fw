@@ -25,6 +25,7 @@
 #include "debug.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
+#include <stdio.h>
 #include <string.h>
 #include "rpc.h"
 #include "spi.h"
@@ -193,6 +194,7 @@ static void MX_DMA_Init(void)
 
 void clean_dma_buffer()
 {
+  dbg_printf("+++ buffer clean up\n");
   memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
   memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
@@ -224,6 +226,8 @@ int get_available_enqueue()
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
+  dbg_printf("Enqueue to X8 %i\n", size);
+
   /* Enter critical section: Since this function is called both from inside
    * interrupt context (gpio_handle_irq/gpio.c) as well as from normal execution
    * context it is necessary not only to blindly re-enable interrupts, but
@@ -272,7 +276,14 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   /* Update internal status variable of how many bytes have been enqueued. */
   bytes_enqueued += sizeof(subpkt.header) + size;
 
-#ifdef DEBUG
+  if(subpkt.header.peripheral == PERIPH_VIRTUAL_UART) {
+    dbg_printf("  M4 to X8 %i bytes (encoded %i)\n", subpkt.header.size, bytes_enqueued);
+  }
+
+
+
+#ifdef DEBUG_no
+  //dbg_printf("EQ>>");
   char dbg_msg[64] = {0};
   snprintf(dbg_msg, sizeof(dbg_msg), "%s op: %02X size: %d", peripheral_to_string(peripheral), opcode, size);
 
@@ -283,6 +294,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
     data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *(((uint8_t*)data) + i));
 
   dbg_printf("enqueue_packet: %s data: %s\n", dbg_msg, data_msg);
+  //dbg_printf("<<EQ");
 #endif
 
 cleanup:
@@ -361,6 +373,8 @@ void dma_load(bool const swap_tx_buf)
   uint8_t * tx_buf = (uint8_t*)&(tx_pkt->header);
   uint8_t * rx_buf = (uint8_t*)&(rx_pkt->header);
 
+  dbg_printf("Tx to X8 %i\n",tx_pkt->header.size);
+
   HAL_StatusTypeDef const rc = HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, SPI_DMA_BUFFER_SIZE);
   if (rc != HAL_OK) {
     dbg_printf("HAL_SPI_TransmitReceive_DMA failed with %d, spi error code = 0x%lX\n", rc, HAL_SPI_GetError(&hspi3));
@@ -369,12 +383,7 @@ void dma_load(bool const swap_tx_buf)
 
 void EXTI15_10_IRQHandler(void)
 {
-  /* PA15 = nCS */
-  if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == GPIO_PIN_SET && LL_EXTI_ReadFlag_0_31(LL_EXTI_LINE_15)) {
-    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-  } else {
-    gpio_handle_irq();
-  }
+  gpio_handle_irq();
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -399,6 +408,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   is_rx_buf_userspace_processed = false;
 
   /* Preload buffers for next communication. */
+
   dma_load(false);
 }
 
@@ -408,12 +418,15 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 
   /* Preload buffers for next communication. */
   dma_load(false);
+  clean_dma_buffer();
   set_nirq_high();
 }
 
+int debug_callback_invocation = 0;
+
 void dma_handle_data()
 {
-  /* Enter critical section. */
+   /* Enter critical section. */
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
@@ -422,8 +435,10 @@ void dma_handle_data()
     if (rx_pkt_userspace->header.peripheral != 0xFF &&
         rx_pkt_userspace->header.peripheral != 0x00)
     {
-  #ifdef DEBUG
+
+  #ifdef DEBUG_no
       {
+        //dbg_printf("DHD>>");
         char dbg_msg[64] = {0};
         snprintf(dbg_msg,
                  sizeof(dbg_msg),
@@ -439,14 +454,20 @@ void dma_handle_data()
           data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *((&rx_pkt_userspace->raw_data) + i));
 
         dbg_printf("%s data: %s\n", dbg_msg, data_msg);
+        //dbg_printf("<<DHD");
       }
   #endif
 
+      if(rx_pkt_userspace->header.peripheral == PERIPH_VIRTUAL_UART) {
+        dbg_printf("--- X8 -> M4 ---\n");
+      }
       /* Invoke the registered callback for the selected peripheral. */
       int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
                                                 rx_pkt_userspace->header.opcode,
                                                 (uint8_t *)(&(rx_pkt_userspace->raw_data)),
                                                 rx_pkt_userspace->header.size);
+       
+
 
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",

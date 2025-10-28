@@ -29,6 +29,7 @@ Then open a shell to the X8 via `adb shell` and move the file from within `/home
 ```bash
 sudo mount -o remount,rw /usr
 sudo mv STM32H747AII6_CM7.bin /usr/lib/firmware/arduino/stm32h7-fw/STM32H747AII6_CM7.bin
+sudo cp STM32H747AII6_CM7.bin /usr/lib/firmware/arduino/stm32h7-fw/STM32H747AII6_CM7.bin
 ```
 #### Flash `STM32H747AIIX`/Cortex-M7 firmware
 ```bash

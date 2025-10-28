@@ -118,9 +118,9 @@ int MAILBOX_Poll(struct virtio_device *vdev)
 
   if (msg_received == RX_NEW_MSG)
   {
-#ifdef CORE_CM7   
+#ifdef CORE_CM7
     rproc_virtio_notified(vdev, VRING0_ID);
-#endif                
+#endif
 #ifdef CORE_CM4   
     rproc_virtio_notified(vdev, VRING1_ID);
 #endif                
