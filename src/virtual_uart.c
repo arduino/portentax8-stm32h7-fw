@@ -60,16 +60,16 @@ int virtual_uart_handle_data()
   int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, send_num);
   __enable_irq();
   
-  dbg_printf("+++ M4 -> H7 +++ (%i)\n", cnt);
-  if(cnt == 5) {
-    dbg_printf("+++ %X\n", temp_buf[4]);
-  }
-  //dbg_printf("2. virtual handle data requested num %i, cnt num = %i\n->",send_num,cnt);
-  /*
+  dbg_printf("M4 to H7: ");
+  
   for(int i = 0; i < cnt; i++) {
-    dbg_printf("%X ", *(temp_buf + i));
+    if(*(temp_buf + i) < 0) {
+      dbg_printf("0");
+    }
+    dbg_printf("%X ", *(temp_buf+i));
   }
-  */
-  printf("\n");
+  dbg_printf("\n");
+  
+  
   return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
 }

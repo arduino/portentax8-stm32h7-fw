@@ -25,6 +25,7 @@
 #include "debug.h"
 #include "peripherals.h"
 #include "stm32h7xx_hal.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "rpc.h"
@@ -194,7 +195,6 @@ static void MX_DMA_Init(void)
 
 void clean_dma_buffer()
 {
-  dbg_printf("+++ buffer clean up\n");
   memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
   memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
   memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
@@ -226,7 +226,7 @@ int get_available_enqueue()
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
-  dbg_printf("Enqueue to X8 %i\n", size);
+  
 
   /* Enter critical section: Since this function is called both from inside
    * interrupt context (gpio_handle_irq/gpio.c) as well as from normal execution
@@ -276,9 +276,9 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   /* Update internal status variable of how many bytes have been enqueued. */
   bytes_enqueued += sizeof(subpkt.header) + size;
 
-  if(subpkt.header.peripheral == PERIPH_VIRTUAL_UART) {
-    dbg_printf("  M4 to X8 %i bytes (encoded %i)\n", subpkt.header.size, bytes_enqueued);
-  }
+  //if(subpkt.header.peripheral == PERIPH_VIRTUAL_UART) {
+    //dbg_printf("  M4 to X8 %i bytes (encoded %i)\n", subpkt.header.size, bytes_enqueued);
+  //}
 
 
 
@@ -372,8 +372,18 @@ void dma_load(bool const swap_tx_buf)
 
   uint8_t * tx_buf = (uint8_t*)&(tx_pkt->header);
   uint8_t * rx_buf = (uint8_t*)&(rx_pkt->header);
-
-  dbg_printf("Tx to X8 %i\n",tx_pkt->header.size);
+  
+  if(tx_pkt->header.size) {
+  dbg_printf("Tx to X8 [%i]: ",tx_pkt->header.size);
+    uint8_t *data = (uint8_t *)tx_pkt;
+    for(int i = 0; i < tx_pkt->header.size; i++) {
+        if(*(data + i) < 0) {
+              dbg_printf("0");
+            }
+        dbg_printf("%X ", *(data+i));
+    }
+    dbg_printf("\n");
+  }
 
   HAL_StatusTypeDef const rc = HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, SPI_DMA_BUFFER_SIZE);
   if (rc != HAL_OK) {
@@ -458,9 +468,6 @@ void dma_handle_data()
       }
   #endif
 
-      if(rx_pkt_userspace->header.peripheral == PERIPH_VIRTUAL_UART) {
-        dbg_printf("--- X8 -> M4 ---\n");
-      }
       /* Invoke the registered callback for the selected peripheral. */
       int const rc = peripheral_invoke_callback(rx_pkt_userspace->header.peripheral,
                                                 rx_pkt_userspace->header.opcode,
