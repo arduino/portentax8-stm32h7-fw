@@ -32,6 +32,7 @@
 #include "spi.h"
 #include "gpio.h"
 #include "stm32h7xx_ll_exti.h"
+#include "double-buffer.h"
 
 /**************************************************************************************
  * GLOBAL VARIABLES
@@ -41,6 +42,9 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_1     
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_2        [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer          [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
+
+volatile DblBuffer_t *dblBufferSPI = NULL; 
+
 
 volatile bool is_rx_buf_userspace_processed = false;
 
@@ -195,16 +199,27 @@ static void MX_DMA_Init(void)
 
 void clean_dma_buffer()
 {
-  memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
-  memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
-  memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
-  memset((uint8_t*)RX_Buffer_userspace, 0, sizeof(RX_Buffer_userspace));
+  dblBufferSPI = dblBuffer_init(RX_Buffer,
+                                RX_Buffer_userspace,
+                                TX_Buffer_1,
+                                TX_Buffer_2,
+                                SPI_DMA_BUFFER_SIZE,
+                                SPI_DMA_BUFFER_SIZE);
 
-  struct complete_packet * pkt = (struct complete_packet *)TX_Buffer_1;
+  if(dblBufferSPI == NULL) {
+    return;
+  }
+
+  //memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
+  //memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
+  //memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
+  //memset((uint8_t*)RX_Buffer_userspace, 0, sizeof(RX_Buffer_userspace));
+
+  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
   pkt->header.size = 0;
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 
-  pkt = (struct complete_packet *)TX_Buffer_2;
+  pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(dblBufferSPI);
   pkt->header.size = 0;
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 }

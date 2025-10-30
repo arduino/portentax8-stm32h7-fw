@@ -1,7 +1,7 @@
 #include "double-buffer.h"
 
 /* --------------------------------------------------------------------------*/
-DblBuffer_t *dblBufferInit(void *rx1, void *rx2, void *tx1, void *tx2, uint16_t lrx, uint16_t ltx) {
+DblBuffer_t *dblBuffer_init(void *rx1, void *rx2, void *tx1, void *tx2, uint16_t lrx, uint16_t ltx) {
   DblBuffer_t *rv = (DblBuffer_t *)malloc(sizeof(DblBuffer_t));
   if(rv != NULL) {
     rv->len_rx         = lrx;
