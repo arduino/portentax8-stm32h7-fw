@@ -414,7 +414,7 @@ void EXTI15_10_IRQHandler(void)
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   struct complete_packet *tx_pkt = (struct complete_packet *)p_tx_buf_transfer;
-  struct complete_packet *rx_pkt = (struct complete_packet *)RX_Buffer;
+  struct complete_packet *rx_pkt = (struct complete_packet *)dblBuffer_getRXtoReceive(dblBufferSPI);
 
   /* Limit the amount of data copied to prevent buffer overflow. */
   if (rx_pkt->header.size > SPI_DMA_BUFFER_SIZE)
