@@ -1,7 +1,8 @@
 #include "double-buffer.h"
+#include <stdint.h>
 
 /* --------------------------------------------------------------------------*/
-DblBuffer_t *dblBuffer_init(void *rx1, void *rx2, void *tx1, void *tx2, uint16_t lrx, uint16_t ltx) {
+DblBuffer_t *dblBuffer_init(uint8_t *rx1, uint8_t *rx2, uint8_t *tx1, uint8_t *tx2, uint16_t lrx, uint16_t ltx) {
   DblBuffer_t *rv = (DblBuffer_t *)malloc(sizeof(DblBuffer_t));
   if(rv != NULL) {
     rv->len_rx         = lrx;
@@ -29,30 +30,37 @@ void dblBuffer_destructor(DblBuffer_t *db) {
 }
 
 /* --------------------------------------------------------------------------*/
-void *dblBuffer_getRXtoRead(DblBuffer_t *db) {
+uint8_t *dblBuffer_getRXtoRead(DblBuffer_t *db) {
   if(db != NULL) {
     return db->rx_to_read;
   }
   return NULL;
 }
 
-/* --------------------------------------------------------------------------*/
-void *dblBuffer_getRXtoReceive(DblBuffer_t *db) {
+
+void dblBuffer_increaseRXtoReceiveCurrentPos(DblBuffer_t *db, uint16_t offset) {
   if(db != NULL) {
-    return db->rx_to_receive;
+    db->current_pos_rx += offset;
+  }
+}
+
+/* --------------------------------------------------------------------------*/
+uint8_t *dblBuffer_getRXtoReceive(DblBuffer_t *db) {
+  if(db != NULL) {
+    return db->rx_to_receive + db->current_pos_rx;
   }
   return NULL;
 }
 
 /* --------------------------------------------------------------------------*/
-void *dblBuffer_getTXtoSend(DblBuffer_t *db) {
+uint8_t *dblBuffer_getTXtoSend(DblBuffer_t *db) {
   if(db != NULL) {
     return db->tx_to_send;
   }
   return NULL;
 }
 
-void *dblBuffer_getTXtoWrite(DblBuffer_t *db) {
+uint8_t *dblBuffer_getTXtoWrite(DblBuffer_t *db) {
   if(db != NULL) {
     return db->tx_to_write;
   }
@@ -74,6 +82,7 @@ void dblBuffer_swapRX(DblBuffer_t *db) {
     void *tmp = db->rx_to_read;
     db->rx_to_read = db->rx_to_receive;
     db->rx_to_receive = tmp;
+    db->current_pos_rx = 0;
   }
 }
 
