@@ -360,23 +360,8 @@ void dma_load(bool const swap_tx_buf)
   if (swap_tx_buf) {
     dblBuffer_swapTX(dblBufferSPI);
   }
-  struct complete_packet *tx_pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
-  struct complete_packet *rx_pkt = (struct complete_packet *)dblBuffer_getRXtoReceive(dblBufferSPI);
-
-  uint8_t * tx_buf = (uint8_t*)&(tx_pkt->header);
-  uint8_t * rx_buf = (uint8_t*)&(rx_pkt->header);
-  
-  if(tx_pkt->header.size) {
-  dbg_printf("Tx to X8 [%i]: ",tx_pkt->header.size);
-    uint8_t *data = (uint8_t *)tx_pkt;
-    for(int i = 0; i < tx_pkt->header.size; i++) {
-        if(*(data + i) < 0) {
-              dbg_printf("0");
-            }
-        dbg_printf("%X ", *(data+i));
-    }
-    dbg_printf("\n");
-  }
+  uint8_t *tx_buf = dblBuffer_getTXtoSend(dblBufferSPI);
+  uint8_t *rx_buf = dblBuffer_getRXtoReceive(dblBufferSPI);
 
   HAL_StatusTypeDef const rc = HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, SPI_DMA_BUFFER_SIZE);
   if (rc != HAL_OK) {
