@@ -252,7 +252,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
   struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(&dblBufferSPI,0);
-  if ((pkt->header.size + size) > (SPI_DMA_BUFFER_SIZE - 4))
+  if ((pkt->header.size + sizeof(struct subpacket) + size) > (SPI_DMA_BUFFER_SIZE - 4))
     goto cleanup;
 
   /* subpacket:
