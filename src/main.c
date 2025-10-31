@@ -85,39 +85,28 @@ void peripheral_init()
   peripheral_register_callback(PERIPH_FDCAN2, &fdcan2_handler);
 }
 
-extern int debug_callback_invocation;
-extern unsigned int debug_size;
 
-void handle_data()
-{
+void handle_data() {
   __WFI();
-  static int previous = -1;
   watchdog_refresh();
 
-  if (uart_data_available())
+  if (uart_data_available()) {
     uart_handle_data();
+  }
 
-  if (virtual_uart_data_available())
+  if (virtual_uart_data_available()) {
     virtual_uart_handle_data();
+  }
 
   can_handle_data();
   gpio_handle_data();
   dma_handle_data();
 
-  if(previous != debug_callback_invocation) {
-    dbg_printf("a %i size %i\n", debug_callback_invocation, debug_size);
-
-  }
-  previous = debug_callback_invocation;
-
-  {
-    /* Enter critical section. */
+  { /* Enter critical section. */
     uint32_t primask_bit = __get_PRIMASK();
     __set_PRIMASK(1) ;
 
-    if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0))
-    {
-      //dbg_printf("dma_load true\n");
+    if (!is_nirq_low() && !is_ncs_low() && (get_tx_packet_size() > 0)) {
       dma_load(true);
       set_nirq_low();
     }

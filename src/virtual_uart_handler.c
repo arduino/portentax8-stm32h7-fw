@@ -28,28 +28,8 @@
  * FUNCTION DEFINITION
  **************************************************************************************/
 
-extern int debug_callback_invocation;
-unsigned int debug_size = 0;
 
-int virtual_uart_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size)
-{
-  debug_callback_invocation++;
-  debug_size += size;
-  dbg_printf("X8 to M4: [%i] ", size);
-  for(int i = 0; i < size; i++) {
-    if(*(data + i) < 0) {
-      dbg_printf("0");
-    }
-    if(i >= 4) {
-
-       dbg_printf("%c ", (char)*(data+i));
-    } else  {
-      dbg_printf("%X ", *(data+i));
-    }
-  }
-  dbg_printf("\n");
-
-
+int virtual_uart_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size) {
   serial_rpc_write(data, size);
   return 0;
 }

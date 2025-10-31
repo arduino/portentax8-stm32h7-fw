@@ -427,8 +427,6 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
   set_nirq_high();
 }
 
-int debug_callback_invocation = 0;
-
 void dma_handle_data() {
   /* Get the pointer to the buffer that is ready for processing */
   struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(dblBufferSPI);
