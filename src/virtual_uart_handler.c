@@ -30,6 +30,10 @@
 
 
 int virtual_uart_handler(uint8_t const opcode, uint8_t const * data, uint16_t const size) {
+  if(data[0] == 0x94 && data[1] == 0 && data[4] == 't') {
+    dbg_printf("+> R: %i s: %i\n", data[2], size);
+  }
+
   serial_rpc_write(data, size);
   return 0;
 }
