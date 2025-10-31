@@ -120,8 +120,7 @@ void handle_data() {
  * MAIN
  **************************************************************************************/
 
-int main(void)
-{
+int main(void) {
   gpio_init_nirq();
 
   system_init();
@@ -138,12 +137,8 @@ int main(void)
 
   watchdog_init(IWDG_PRESCALER_16);
 
-  //gpio_init_ncs();
-
   for(;;) {
-    //dma_load(false);
     handle_data();
   }
-
   /* Never return. */
 }
