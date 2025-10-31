@@ -429,47 +429,26 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 
 int debug_callback_invocation = 0;
 
-void dma_handle_data()
-{
-  static int flag = true;
-
-  // Get the pointer to the buffer that is ready for processing
+void dma_handle_data() {
+  /* Get the pointer to the buffer that is ready for processing */
   struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(dblBufferSPI);
-  //
-  //Get the pointer to the *first subpacket* within that buffer's data
+  /* Get the pointer to the *first subpacket* within that buffer's data */
   struct subpacket * rx_sub_pkt = (struct subpacket *)&(rx_pkt_for_processing->data);
-  //
-  uint8_t *rx = (uint8_t *)rx_pkt_for_processing; // For debug print
-
-
-  if(flag && *rx != 0) {
-    dbg_printf("[d]: ");
-    for(int i = 0; i < 12; i++) {
-      dbg_printf("%X ", *(rx+i));
-    }
-    dbg_printf("<<\n");
-
-    flag = false;
-  }
-   /* Enter critical section. */
+  /* Enter critical section. */
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1);
-
   while (!is_rx_buf_userspace_processed) {
     if (rx_sub_pkt->header.peripheral != 0xFF &&
         rx_sub_pkt->header.peripheral != 0x00) {
-
       /* Invoke the registered callback for the selected peripheral. */
       int const rc = peripheral_invoke_callback(rx_sub_pkt->header.peripheral,
                                                 rx_sub_pkt->header.opcode,
                                                 (uint8_t *)(&(rx_sub_pkt->raw_data)),
                                                 rx_sub_pkt->header.size);
-
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
                   peripheral_to_string(rx_sub_pkt->header.peripheral) , rc);
       }
-
       /* Advance to the next package. */
       rx_sub_pkt = (struct subpacket *)((uint8_t *)rx_sub_pkt + 4 /* sizeof(subpacket.header) */ + rx_sub_pkt->header.size);
     }
@@ -480,7 +459,6 @@ void dma_handle_data()
       set_nirq_high();
     }
   }
-
   /* Leave critical section. */
   __set_PRIMASK(primask_bit);
 }
