@@ -28,14 +28,22 @@
 #include "opcodes.h"
 #include "ringbuffer.h"
 #include "peripherals.h"
+#include "double-buffer.h"
 
 #include "debug.h"
+#include <stdint.h>
 
 /**************************************************************************************
  * GLOBAL VARIABLES
  **************************************************************************************/
 
-ring_buffer_t virtual_uart_ring_buffer; /* extern'ally referenced in rpc.c */
+//ring_buffer_t virtual_uart_ring_buffer; /* extern'ally referenced in rpc.c */
+
+static uint8_t tx_virtual_uart_1[DBL_BUFF_UART_SIZE];
+static uint8_t tx_virtual_uart_2[DBL_BUFF_UART_SIZE];
+
+DblBuffer_t dblBuffer_VIRT_UART;
+
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -43,33 +51,34 @@ ring_buffer_t virtual_uart_ring_buffer; /* extern'ally referenced in rpc.c */
 
 void virtual_uart_init()
 {
-  dbg_printf("r r r r ring buffer init\n");
-  ring_buffer_init(&virtual_uart_ring_buffer);
+  dblBuffer_init(&dblBuffer_VIRT_UART, NULL, NULL, tx_virtual_uart_1, tx_virtual_uart_2, 0, DBL_BUFF_UART_SIZE);
+  //ring_buffer_init(&virtual_uart_ring_buffer);
 }
 
-int virtual_uart_data_available()
-{
-  return !ring_buffer_is_empty(&virtual_uart_ring_buffer);
-}
-
-int virtual_uart_handle_data()
-{
-  uint8_t temp_buf[RING_BUFFER_SIZE];
-  ring_buffer_size_t send_num = min((SPI_DMA_BUFFER_SIZE/2), ring_buffer_num_items(&virtual_uart_ring_buffer));
-  __disable_irq();
-  int const cnt = ring_buffer_dequeue_arr(&virtual_uart_ring_buffer, (char *)temp_buf, send_num);
-  __enable_irq();
-  
-  dbg_printf("M4 to H7: ");
-  
-  for(int i = 0; i < cnt; i++) {
-    if(*(temp_buf + i) < 0) {
-      dbg_printf("0");
-    }
-    dbg_printf("%X ", *(temp_buf+i));
+int virtual_uart_data_available() {
+  if (dblBuffer_numTxToRemove(&dblBuffer_VIRT_UART) > 0 ||
+      dblBuffer_getTXtoWriteWhenWriting(&dblBuffer_VIRT_UART) > 0) {
+        return 1;
   }
-  dbg_printf("\n");
-  
-  
-  return enqueue_packet(PERIPH_VIRTUAL_UART, DATA, cnt, temp_buf);
+  return 0;
+}
+
+int enqueue_remaining() {
+  int num_to_tx = dblBuffer_numTxToRemove(&dblBuffer_VIRT_UART);
+  if(num_to_tx > 0) {
+    uint16_t bytes_to_send = min((SPI_DMA_BUFFER_SIZE/2),num_to_tx);
+    enqueue_packet(PERIPH_VIRTUAL_UART, DATA, bytes_to_send, dblBuffer_getTXtoSend(&dblBuffer_VIRT_UART, 1));
+    dblBuffer_increaseTXtoWritePosWhenRemoving(&dblBuffer_VIRT_UART, bytes_to_send);
+  }
+  return num_to_tx;
+}
+
+int virtual_uart_handle_data() {
+  if(enqueue_remaining() <= 0) {
+    __disable_irq();
+    dblBuffer_swapTX(&dblBuffer_VIRT_UART);
+    __enable_irq();
+    enqueue_remaining();
+  }
+  return 0;
 }

@@ -26,6 +26,9 @@
 #include "ringbuffer.h"
 #include "stm32h7xx_ll_rcc.h"
 #include "debug.h"
+#include "double-buffer.h"
+#include <stdint.h>
+#include <string.h>
 //#include <cstdint>
 
 /**************************************************************************************
@@ -42,7 +45,9 @@ enum endpoints_t {
  **************************************************************************************/
 
 static struct rpmsg_endpoint rp_endpoints[2];
-extern ring_buffer_t virtual_uart_ring_buffer;
+extern DblBuffer_t dblBuffer_VIRT_UART;
+
+
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -51,15 +56,17 @@ extern ring_buffer_t virtual_uart_ring_buffer;
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
                                        size_t len, uint32_t src, void *priv)
 {
-  // dbg_printf(">> 1. raw callback addr %X, dest %X, len = %i\n", (unsigned int)ept->addr, (unsigned int)ept->dest_addr, len);
-  /*
-  for(int i = 0; i < len; i++) {
-    dbg_printf("%X ", *((char *)data+i));
+  dbg_printf("[VUART_RECV] len: %d\n", len);
+  __disable_irq();
+  if(dblBuffer_getTXtoWriteWhenWriting(&dblBuffer_VIRT_UART) + len < DBL_BUFF_UART_SIZE) {
+    dbg_printf("[VUART_BUFF] len: %d, new_pos: %d\n", len, dblBuffer_getTXtoWriteWhenWriting(&dblBuffer_VIRT_UART) + len);
+    uint8_t *dst = dblBuffer_getTXtoWrite(&dblBuffer_VIRT_UART, 1);
+    memcpy(dst, (uint8_t *)data, len);
+    dblBuffer_increaseTXtoWritePosWhenWriting(&dblBuffer_VIRT_UART, len);
+  }else {
+    dbg_printf("[VUART_DROP] Buffer full!\n");
   }
-  dbg_printf("\n");
-  */
-  ring_buffer_queue_arr(&virtual_uart_ring_buffer, (const char *)data, len);
-
+  __enable_irq();
   return 0;
 }
 

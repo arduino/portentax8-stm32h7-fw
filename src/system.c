@@ -43,7 +43,7 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t TX_Buffer_2     
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer          [SPI_DMA_BUFFER_SIZE];
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
-volatile DblBuffer_t *dblBufferSPI = NULL; 
+volatile DblBuffer_t dblBufferSPI; 
 volatile bool is_rx_buf_userspace_processed = false;
 
 /**************************************************************************************
@@ -193,22 +193,20 @@ static void MX_DMA_Init(void)
 
 void clean_dma_buffer()
 {
-  dblBufferSPI = dblBuffer_init(RX_Buffer,
-                                RX_Buffer_userspace,
-                                TX_Buffer_1,
-                                TX_Buffer_2,
-                                SPI_DMA_BUFFER_SIZE,
-                                SPI_DMA_BUFFER_SIZE);
+  dblBuffer_init(&dblBufferSPI,
+                  RX_Buffer,
+                  RX_Buffer_userspace,
+                  TX_Buffer_1,
+                  TX_Buffer_2,
+                  SPI_DMA_BUFFER_SIZE,
+                  SPI_DMA_BUFFER_SIZE);
 
-  if(dblBufferSPI == NULL) {
-    return;
-  }
 
-  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
+  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoSend(&dblBufferSPI,0);
   pkt->header.size = 0;
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 
-  pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(dblBufferSPI);
+  pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(&dblBufferSPI,0);
   pkt->header.size = 0;
   pkt->header.checksum = pkt->header.size ^ 0x5555;
 }
@@ -219,7 +217,7 @@ int get_available_enqueue()
   uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1) ;
 
-  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(dblBufferSPI);
+  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(&dblBufferSPI,0);
   int const num_bytes_available = (SPI_DMA_BUFFER_SIZE - 4) - pkt->header.size;
 
   /* Exit critical section: restore previous priority mask */
@@ -253,7 +251,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
    * - uint16_t size;      |
    * - uint16_t checksum;  | sizeof(complete_packet.header) = 4 Bytes
    */
-  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(dblBufferSPI);;
+  struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(&dblBufferSPI,0);
   if ((pkt->header.size + size) > (SPI_DMA_BUFFER_SIZE - 4))
     goto cleanup;
 
@@ -326,7 +324,7 @@ bool is_ncs_low()
 
 uint16_t get_tx_packet_size()
 {
-  struct complete_packet * tx_pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(dblBufferSPI);
+  struct complete_packet * tx_pkt = (struct complete_packet *)dblBuffer_getTXtoWrite(&dblBufferSPI,0);
   uint16_t const tx_packet_size = tx_pkt->header.size;
   return tx_packet_size;
 }
@@ -358,10 +356,10 @@ void dma_load(bool const swap_tx_buf)
   HAL_SPI_Abort(&hspi3);
 
   if (swap_tx_buf) {
-    dblBuffer_swapTX(dblBufferSPI);
+    dblBuffer_swapTX(&dblBufferSPI);
   }
-  uint8_t *tx_buf = dblBuffer_getTXtoSend(dblBufferSPI);
-  uint8_t *rx_buf = dblBuffer_getRXtoReceive(dblBufferSPI);
+  uint8_t *tx_buf = dblBuffer_getTXtoSend(&dblBufferSPI,0);
+  uint8_t *rx_buf = dblBuffer_getRXtoReceive(&dblBufferSPI);
 
   HAL_StatusTypeDef const rc = HAL_SPI_TransmitReceive_DMA(&hspi3, tx_buf, rx_buf, SPI_DMA_BUFFER_SIZE);
   if (rc != HAL_OK) {
@@ -376,18 +374,18 @@ void EXTI15_10_IRQHandler(void)
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  struct complete_packet *tx_pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
-  struct complete_packet *rx_pkt = (struct complete_packet *)dblBuffer_getRXtoReceive(dblBufferSPI);
+  struct complete_packet *tx_pkt = (struct complete_packet *)dblBuffer_getTXtoSend(&dblBufferSPI,0);
+  struct complete_packet *rx_pkt = (struct complete_packet *)dblBuffer_getRXtoReceive(&dblBufferSPI);
 
   /* Limit the amount of data copied to prevent buffer overflow. */
   if (rx_pkt->header.size > SPI_DMA_BUFFER_SIZE)
     rx_pkt->header.size = SPI_DMA_BUFFER_SIZE;
 
   /* The SPI transfer is now complete, copy to userspace memory. */
-  dblBuffer_swapRX(dblBufferSPI);
+  dblBuffer_swapRX(&dblBufferSPI);
 
   // Get the pointer to the buffer that is now ready for processing
-  struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(dblBufferSPI);
+  struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(&dblBufferSPI);
 
   /* Mark the next packet as invalid. */
   *((uint32_t*)((uint8_t *)&(rx_pkt_for_processing->data) + rx_pkt_for_processing->header.size)) = 0xFFFFFFFF;
@@ -414,7 +412,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 
 void dma_handle_data() {
   /* Get the pointer to the buffer that is ready for processing */
-  struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(dblBufferSPI);
+  struct complete_packet *rx_pkt_for_processing = (struct complete_packet *)dblBuffer_getRXtoRead(&dblBufferSPI);
   /* Get the pointer to the *first subpacket* within that buffer's data */
   struct subpacket * rx_sub_pkt = (struct subpacket *)&(rx_pkt_for_processing->data);
   /* Enter critical section. */
