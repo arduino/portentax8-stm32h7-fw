@@ -152,6 +152,7 @@ int main(void)
   //gpio_init_ncs();
 
   for(;;) {
+    //dma_load(false);
     handle_data();
   }
 
