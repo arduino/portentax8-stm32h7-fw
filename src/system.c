@@ -44,13 +44,7 @@ __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer       
 __attribute__((section("dma"), aligned(2048))) volatile uint8_t RX_Buffer_userspace[SPI_DMA_BUFFER_SIZE];
 
 volatile DblBuffer_t *dblBufferSPI = NULL; 
-
-
 volatile bool is_rx_buf_userspace_processed = false;
-
-//volatile uint8_t * p_tx_buf_active   = TX_Buffer_1;
-//volatile uint8_t * p_tx_buf_transfer = TX_Buffer_2;
-//volatile struct subpacket * rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
 
 /**************************************************************************************
  * FUNCTION DEFINITION
@@ -210,11 +204,6 @@ void clean_dma_buffer()
     return;
   }
 
-  //memset((uint8_t*)TX_Buffer_1, 0, sizeof(TX_Buffer_1));
-  //memset((uint8_t*)TX_Buffer_2, 0, sizeof(TX_Buffer_2));
-  //memset((uint8_t*)RX_Buffer, 0, sizeof(RX_Buffer));
-  //memset((uint8_t*)RX_Buffer_userspace, 0, sizeof(RX_Buffer_userspace));
-
   struct complete_packet * pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
   pkt->header.size = 0;
   pkt->header.checksum = pkt->header.size ^ 0x5555;
@@ -241,8 +230,6 @@ int get_available_enqueue()
 
 int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t const size, void * data)
 {
-  
-
   /* Enter critical section: Since this function is called both from inside
    * interrupt context (gpio_handle_irq/gpio.c) as well as from normal execution
    * context it is necessary not only to blindly re-enable interrupts, but
@@ -290,12 +277,6 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   pkt->header.checksum = pkt->header.size ^ 0x5555;
   /* Update internal status variable of how many bytes have been enqueued. */
   bytes_enqueued += sizeof(subpkt.header) + size;
-
-  //if(subpkt.header.peripheral == PERIPH_VIRTUAL_UART) {
-    //dbg_printf("  M4 to X8 %i bytes (encoded %i)\n", subpkt.header.size, bytes_enqueued);
-  //}
-
-
 
 #ifdef DEBUG_no
   //dbg_printf("EQ>>");
@@ -376,11 +357,8 @@ void dma_load(bool const swap_tx_buf)
 {
   HAL_SPI_Abort(&hspi3);
 
-  if (swap_tx_buf)
-  {
+  if (swap_tx_buf) {
     dblBuffer_swapTX(dblBufferSPI);
-    //p_tx_buf_transfer = p_tx_buf_active;
-    //p_tx_buf_active = (p_tx_buf_active == TX_Buffer_1) ? TX_Buffer_2 : TX_Buffer_1;
   }
   struct complete_packet *tx_pkt = (struct complete_packet *)dblBuffer_getTXtoSend(dblBufferSPI);
   struct complete_packet *rx_pkt = (struct complete_packet *)dblBuffer_getRXtoReceive(dblBufferSPI);
@@ -421,7 +399,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     rx_pkt->header.size = SPI_DMA_BUFFER_SIZE;
 
   /* The SPI transfer is now complete, copy to userspace memory. */
-  //memcpy((void *)rx_pkt_userspace, &(rx_pkt->data), rx_pkt->header.size);
   dblBuffer_swapRX(dblBufferSPI);
 
   // Get the pointer to the buffer that is now ready for processing
@@ -437,7 +414,6 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
   is_rx_buf_userspace_processed = false;
 
   /* Preload buffers for next communication. */
-
   dma_load(false);
 }
 
@@ -479,42 +455,15 @@ void dma_handle_data()
   volatile uint32_t primask_bit = __get_PRIMASK();
   __set_PRIMASK(1);
 
-
-  while (!is_rx_buf_userspace_processed)
-  {
+  while (!is_rx_buf_userspace_processed) {
     if (rx_sub_pkt->header.peripheral != 0xFF &&
-        rx_sub_pkt->header.peripheral != 0x00)
-    {
-
-  #ifdef DEBUG_no
-      {
-        //dbg_printf("DHD>>");
-        char dbg_msg[64] = {0};
-        snprintf(dbg_msg,
-                 sizeof(dbg_msg),
-                 "dma_handle_data: %s op: %02X size: %d",
-                 peripheral_to_string(rx_pkt_userspace->header.peripheral),
-                 rx_pkt_userspace->header.opcode,
-                 rx_pkt_userspace->header.size);
-
-        char data_msg[64] = {0};
-        uint16_t data_msg_len = 0;
-
-        for (uint16_t i = 0; i < rx_pkt_userspace->header.size && i < sizeof(data_msg); i++)
-          data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *((&rx_pkt_userspace->raw_data) + i));
-
-        dbg_printf("%s data: %s\n", dbg_msg, data_msg);
-        //dbg_printf("<<DHD");
-      }
-  #endif
+        rx_sub_pkt->header.peripheral != 0x00) {
 
       /* Invoke the registered callback for the selected peripheral. */
       int const rc = peripheral_invoke_callback(rx_sub_pkt->header.peripheral,
                                                 rx_sub_pkt->header.opcode,
                                                 (uint8_t *)(&(rx_sub_pkt->raw_data)),
                                                 rx_sub_pkt->header.size);
-       
-
 
       if (rc < 0) {
         dbg_printf("dma_handle_data: %s callback error: %d",
@@ -524,12 +473,9 @@ void dma_handle_data()
       /* Advance to the next package. */
       rx_sub_pkt = (struct subpacket *)((uint8_t *)rx_sub_pkt + 4 /* sizeof(subpacket.header) */ + rx_sub_pkt->header.size);
     }
-    else
-    {
+    else {
       /* Mark the receive buffer as having been processed. */
       is_rx_buf_userspace_processed = true;
-      /* Make sure that the RX packet processing pointer is pointing to the start of the receive buffer. */
-      //rx_pkt_userspace = (struct subpacket *)RX_Buffer_userspace;
       /* Enable IRQs sent by device again. */
       set_nirq_high();
     }
