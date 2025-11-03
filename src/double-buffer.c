@@ -33,6 +33,19 @@ void dblBuffer_init(DblBuffer_t *db, uint8_t *rx1, uint8_t *rx2, uint8_t *tx1, u
 }
 
 
+/* --------------------------------------------------------------------------*/
+void dblBuffer_reset(DblBuffer_t *db) {
+  if(db != NULL) {
+    if(db->rx_to_receive != NULL)
+      memset(db->rx_to_receive,0x00,db->len_rx);
+    if(db->rx_to_read != NULL)
+      memset(db->rx_to_read,0x00,db->len_rx);
+    if(db->tx_to_write != NULL)
+      memset(db->tx_to_write,0x00,db->len_tx);
+    if(db->tx_to_send != NULL)
+      memset(db->tx_to_send,0x00,db->len_tx);
+  }
+}
 
 /* --------------------------------------------------------------------------*/
 uint8_t *dblBuffer_getRXtoRead(DblBuffer_t *db) {

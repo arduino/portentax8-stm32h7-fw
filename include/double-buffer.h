@@ -42,7 +42,7 @@ uint16_t dblBuffer_getTXtoWriteWhenWriting(DblBuffer_t *db);
 uint16_t dblBuffer_getTXtoWriteWhenRemoving(DblBuffer_t *db);
 uint16_t dblBuffer_howMuchTXtoWrite(DblBuffer_t *db);
 int dblBuffer_numTxToRemove(DblBuffer_t *db);
-
+void dblBuffer_reset(DblBuffer_t *db);
 #define DBL_BUFF_UART_SIZE 4096
 
 #endif
