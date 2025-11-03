@@ -130,8 +130,7 @@ int main(void) {
   disableCM4Autoboot();
 
   extern char const REAL_VERSION_FLASH[];
-  printf("Porca Paletta ! Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
-  dbg_printf("Cazzarola impestata 1");
+  printf("Portenta X8 - STM32H7 companion fw - %s\n", REAL_VERSION_FLASH);
 
   try_execute_m4_app();
 
