@@ -54,26 +54,13 @@ extern DblBuffer_t dblBuffer_VIRT_UART;
  **************************************************************************************/
 
 int rpmsg_recv_raw_callback(struct rpmsg_endpoint *ept, void *data,
-                                       size_t len, uint32_t src, void *priv)
-{
-  uint8_t *p = (uint8_t *)data;
-  dbg_printf("-");
-  for(int i = 0; i < 5; i++) {
-    dbg_printf("%X ", p[i]);
-  }
-  dbg_printf("\n");
-
-
-
-  //dbg_printf("[VUART_RECV] len: %d\n", len);
+                                       size_t len, uint32_t src, void *priv) {
   __disable_irq();
   if(dblBuffer_getTXtoWriteWhenWriting(&dblBuffer_VIRT_UART) + len < DBL_BUFF_UART_SIZE) {
-    //dbg_printf("[VUART_BUFF] len: %d, new_pos: %d\n", len, dblBuffer_getTXtoWriteWhenWriting(&dblBuffer_VIRT_UART) + len);
     uint8_t *dst = dblBuffer_getTXtoWrite(&dblBuffer_VIRT_UART, 1);
     memcpy(dst, (uint8_t *)data, len);
     dblBuffer_increaseTXtoWritePosWhenWriting(&dblBuffer_VIRT_UART, len);
   }else {
-    //dbg_printf("[VUART_DROP] Buffer full!\n");
   }
   __enable_irq();
   return 0;

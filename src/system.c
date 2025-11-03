@@ -277,8 +277,7 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
   /* Update internal status variable of how many bytes have been enqueued. */
   bytes_enqueued += sizeof(subpkt.header) + size;
 
-#ifdef DEBUG_no
-  //dbg_printf("EQ>>");
+#ifdef DEBUG
   char dbg_msg[64] = {0};
   snprintf(dbg_msg, sizeof(dbg_msg), "%s op: %02X size: %d", peripheral_to_string(peripheral), opcode, size);
 
@@ -289,7 +288,6 @@ int enqueue_packet(uint8_t const peripheral, uint8_t const opcode, uint16_t cons
     data_msg_len += snprintf(data_msg + data_msg_len, sizeof(data_msg) - data_msg_len, "%02X ", *(((uint8_t*)data) + i));
 
   dbg_printf("enqueue_packet: %s data: %s\n", dbg_msg, data_msg);
-  //dbg_printf("<<EQ");
 #endif
 
   __set_PRIMASK(primask_bit);
