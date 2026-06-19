@@ -260,7 +260,7 @@ int fdcan_handler(FDCAN_HandleTypeDef * handle, uint8_t const opcode, uint8_t co
   else if (opcode == CAN_TX_FRAME)
   {
     union x8h7_can_frame_message msg;
-    memcpy(&msg, data, size);
+    memcpy(&msg, data, min(size, sizeof(msg)));
     dbg_printf("fdcan_handler: sending CAN message to %lx, size %d, content[0]=0x%02X\n", msg.field.id, msg.field.len, msg.field.data[0]);
     return on_CAN_TX_FRAME_Request(handle, &msg);
   }
